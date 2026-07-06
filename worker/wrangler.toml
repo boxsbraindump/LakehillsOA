@@ -1,0 +1,12 @@
+name = "lakehills-oa-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Not secret — Google Client IDs are meant to be public (the frontend embeds the same value).
+[vars]
+GOOGLE_CLIENT_ID = "266656169647-si258nfdhvudk20hl5jdi03kg9411rj4.apps.googleusercontent.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lakehills-oa"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"

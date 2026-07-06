@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { ClipboardCheck, FileSearch, CreditCard, Sparkles, Trash2 } from "lucide-react";
+import { ClipboardCheck, FileSearch, CreditCard, Sparkles, Trash2, LogOut } from "lucide-react";
+import { useAuth } from "./AuthProvider";
 
 const NAV_ITEMS = [
   { to: "/checklist", label: "前台工作 Checklist", icon: ClipboardCheck, dot: "var(--color-accent-teal)" },
@@ -10,6 +11,8 @@ const NAV_ITEMS = [
 const UTILITY_NAV_ITEMS = [{ to: "/trash", label: "垃圾桶", icon: Trash2 }] as const;
 
 export default function Sidebar() {
+  const { syncEnabled, email, logout } = useAuth();
+
   return (
     <aside className="flex shrink-0 flex-col border-b border-(--color-hairline) bg-(--color-canvas) px-3 py-3 md:h-svh md:w-64 md:border-r md:border-b-0 md:py-4">
       <NavLink
@@ -67,6 +70,22 @@ export default function Sidebar() {
             <span className="truncate">{label}</span>
           </NavLink>
         ))}
+        {syncEnabled && (
+          <>
+            {email && (
+              <div className="hidden truncate px-2 pt-1 text-[12px] text-(--color-ink-faint) md:block">
+                {email}
+              </div>
+            )}
+            <button
+              onClick={logout}
+              className="flex shrink-0 items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] whitespace-nowrap text-(--color-ink-secondary) transition-colors hover:bg-(--color-canvas-soft)"
+            >
+              <LogOut size={16} strokeWidth={2} className="shrink-0" />
+              <span className="truncate">退出登录</span>
+            </button>
+          </>
+        )}
       </nav>
     </aside>
   );

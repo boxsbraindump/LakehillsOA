@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Search, Pencil, Plus, Trash2 } from "lucide-react";
 import { oaCases as seedCases } from "../data/oaCases";
 import { useHashHighlight } from "../hooks/useHashHighlight";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import OACaseForm from "../components/OACaseForm";
@@ -11,12 +11,12 @@ import type { OACase } from "../lib/types";
 export default function OACases() {
   useHashHighlight();
   const [query, setQuery] = useState("");
-  const [overrides, setOverrides] = useLocalStorage<Record<string, OACase>>(
+  const [overrides, setOverrides] = useSyncedStorage<Record<string, OACase>>(
     "lh-oacases-overrides",
     {},
   );
-  const [customCases, setCustomCases] = useLocalStorage<OACase[]>("lh-oacases-custom", []);
-  const [hiddenIds, setHiddenIds] = useLocalStorage<string[]>("lh-oacases-hidden", []);
+  const [customCases, setCustomCases] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
+  const [hiddenIds, setHiddenIds] = useSyncedStorage<string[]>("lh-oacases-hidden", []);
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);

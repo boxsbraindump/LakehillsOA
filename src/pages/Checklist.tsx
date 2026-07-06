@@ -10,7 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { checklistSections } from "../data/checklist";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
@@ -37,27 +37,27 @@ interface NoteMatch {
 
 export default function Checklist() {
   useHashHighlight();
-  const [state, setState] = useLocalStorage<ChecklistState>("lh-checklist-state", {});
+  const [state, setState] = useSyncedStorage<ChecklistState>("lh-checklist-state", {});
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [noteQuery, setNoteQuery] = useState("");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
-  const [itemOverrides, setItemOverrides] = useLocalStorage<Record<string, ChecklistItem>>(
+  const [itemOverrides, setItemOverrides] = useSyncedStorage<Record<string, ChecklistItem>>(
     "lh-checklist-item-overrides",
     {},
   );
-  const [customItems, setCustomItems] = useLocalStorage<Record<string, ChecklistItem[]>>(
+  const [customItems, setCustomItems] = useSyncedStorage<Record<string, ChecklistItem[]>>(
     "lh-checklist-custom-items",
     {},
   );
-  const [hiddenItemIds, setHiddenItemIds] = useLocalStorage<string[]>(
+  const [hiddenItemIds, setHiddenItemIds] = useSyncedStorage<string[]>(
     "lh-checklist-hidden-items",
     [],
   );
-  const [customSections, setCustomSections] = useLocalStorage<ChecklistSectionMeta[]>(
+  const [customSections, setCustomSections] = useSyncedStorage<ChecklistSectionMeta[]>(
     "lh-checklist-custom-sections",
     [],
   );
-  const [hiddenSectionIds, setHiddenSectionIds] = useLocalStorage<string[]>(
+  const [hiddenSectionIds, setHiddenSectionIds] = useSyncedStorage<string[]>(
     "lh-checklist-hidden-sections",
     [],
   );

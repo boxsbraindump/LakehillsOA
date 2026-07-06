@@ -1,6 +1,6 @@
 import { Trash2, RotateCcw } from "lucide-react";
 import { useTrash } from "../hooks/useTrash";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useToast } from "../components/ToastProvider";
 import { daysRemaining, TRASH_RETENTION_DAYS } from "../lib/trash";
 import { CATEGORY_LABEL, CATEGORY_DOT } from "../lib/searchIndex";
@@ -16,23 +16,23 @@ export default function Trash() {
   const { trash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
 
-  const [, setChecklistHidden] = useLocalStorage<string[]>("lh-checklist-hidden-items", []);
-  const [, setChecklistCustom] = useLocalStorage<Record<string, ChecklistItem[]>>(
+  const [, setChecklistHidden] = useSyncedStorage<string[]>("lh-checklist-hidden-items", []);
+  const [, setChecklistCustom] = useSyncedStorage<Record<string, ChecklistItem[]>>(
     "lh-checklist-custom-items",
     {},
   );
-  const [, setChecklistHiddenSections] = useLocalStorage<string[]>(
+  const [, setChecklistHiddenSections] = useSyncedStorage<string[]>(
     "lh-checklist-hidden-sections",
     [],
   );
-  const [, setChecklistCustomSections] = useLocalStorage<ChecklistSectionMeta[]>(
+  const [, setChecklistCustomSections] = useSyncedStorage<ChecklistSectionMeta[]>(
     "lh-checklist-custom-sections",
     [],
   );
-  const [, setOACasesHidden] = useLocalStorage<string[]>("lh-oacases-hidden", []);
-  const [, setOACasesCustom] = useLocalStorage<OACase[]>("lh-oacases-custom", []);
-  const [, setPaymentsHidden] = useLocalStorage<string[]>("lh-payments-hidden", []);
-  const [, setPaymentsCustom] = useLocalStorage<PaymentEntry[]>("lh-payments-custom", []);
+  const [, setOACasesHidden] = useSyncedStorage<string[]>("lh-oacases-hidden", []);
+  const [, setOACasesCustom] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
+  const [, setPaymentsHidden] = useSyncedStorage<string[]>("lh-payments-hidden", []);
+  const [, setPaymentsCustom] = useSyncedStorage<PaymentEntry[]>("lh-payments-custom", []);
 
   function handleRestore(entry: TrashEntry) {
     if (entry.category === "checklist" && entry.entryType === "section") {

@@ -37,8 +37,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center px-6 py-16">
-      <div className="relative isolate w-full max-w-2xl">
-        <div className="search-glow" aria-hidden />
+      <div className="w-full max-w-2xl">
         <div className="mb-8 flex flex-col items-center text-center">
           <span className="inline-flex max-w-full items-center rounded-full bg-(--color-canvas) px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-primary) shadow-(--shadow-level-1)">
             Lake Hills Acupuncture · Internal

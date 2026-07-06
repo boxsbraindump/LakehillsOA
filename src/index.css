@@ -115,24 +115,6 @@ body {
   animation: fade-in-up 0.3s ease-out;
 }
 
-.search-glow {
-  position: absolute;
-  top: var(--search-glow-top, 50%);
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(1100px, 160%);
-  height: 680px;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 55% 55% at 50% 50%,
-    color-mix(in srgb, var(--color-accent-sky) 34%, transparent) 0%,
-    color-mix(in srgb, var(--color-accent-purple) 20%, transparent) 42%,
-    transparent 75%
-  );
-  filter: blur(36px);
-}
-
 @keyframes fade-in-up {
   from {
     opacity: 0;

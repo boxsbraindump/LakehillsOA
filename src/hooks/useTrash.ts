@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { useLocalStorage } from "./useLocalStorage";
+import { useSyncedStorage } from "./useSyncedStorage";
 import { purgeExpiredTrash, TRASH_KEY } from "../lib/trash";
 import type { TrashEntry } from "../lib/types";
 
 export function useTrash() {
-  const [trash, setTrash] = useLocalStorage<TrashEntry[]>(TRASH_KEY, []);
+  const [trash, setTrash] = useSyncedStorage<TrashEntry[]>(TRASH_KEY, []);
 
   // Opportunistically drop entries past their 30-day retention whenever this hook mounts.
   useEffect(() => {

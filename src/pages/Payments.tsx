@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { paymentEntries as seedEntries } from "../data/payments";
 import { useHashHighlight } from "../hooks/useHashHighlight";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import PaymentEntryForm from "../components/PaymentEntryForm";
@@ -10,15 +10,15 @@ import type { PaymentEntry } from "../lib/types";
 
 export default function Payments() {
   useHashHighlight();
-  const [overrides, setOverrides] = useLocalStorage<Record<string, PaymentEntry>>(
+  const [overrides, setOverrides] = useSyncedStorage<Record<string, PaymentEntry>>(
     "lh-payments-overrides",
     {},
   );
-  const [customEntries, setCustomEntries] = useLocalStorage<PaymentEntry[]>(
+  const [customEntries, setCustomEntries] = useSyncedStorage<PaymentEntry[]>(
     "lh-payments-custom",
     [],
   );
-  const [hiddenIds, setHiddenIds] = useLocalStorage<string[]>("lh-payments-hidden", []);
+  const [hiddenIds, setHiddenIds] = useSyncedStorage<string[]>("lh-payments-hidden", []);
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
