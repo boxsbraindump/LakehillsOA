@@ -9,4 +9,4 @@ GOOGLE_CLIENT_ID = "266656169647-si258nfdhvudk20hl5jdi03kg9411rj4.apps.googleuse
 [[d1_databases]]
 binding = "DB"
 database_name = "lakehills-oa"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "7bc78e4f-af1e-4dba-8e9e-a41184e72b79"
