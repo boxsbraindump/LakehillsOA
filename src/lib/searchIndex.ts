@@ -1,7 +1,7 @@
 import Fuse from "fuse.js";
 import { checklistSections } from "../data/checklist";
 import { oaCases } from "../data/oaCases";
-import { paymentSections } from "../data/payments";
+import { paymentEntries } from "../data/payments";
 import type { SearchDoc } from "./types";
 
 export const searchDocs: SearchDoc[] = [
@@ -27,14 +27,14 @@ export const searchDocs: SearchDoc[] = [
       keywords: [c.payer, ...c.tags],
     }),
   ),
-  ...paymentSections.map(
+  ...paymentEntries.map(
     (p): SearchDoc => ({
       id: p.id,
       category: "payments",
       path: `/payments#${p.id}`,
-      title: p.title,
-      snippet: p.steps[0] ?? "",
-      keywords: [p.notes ?? "", ...p.steps],
+      title: p.payer,
+      snippet: p.portals.map((portal) => portal.name).join(" · "),
+      keywords: [p.notes ?? "", ...p.portals.map((portal) => portal.name)],
     }),
   ),
 ];

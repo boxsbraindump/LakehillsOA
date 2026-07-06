@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Update to match the actual GitHub repo name if it differs.
-  base: '/lake-hills-acupuncture-oa/',
+  base: '/LakehillsOA/',
   plugins: [react(), tailwindcss()],
 })

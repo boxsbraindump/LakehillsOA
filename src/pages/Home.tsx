@@ -3,14 +3,15 @@ import { useNavigate, Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { searchFuse, searchDocs, CATEGORY_DOT } from "../lib/searchIndex";
 import SearchResults from "../components/SearchResults";
+import SplitText from "../components/SplitText";
 
 const QUICK_CHIP_IDS = [
   "opening-voicemail",
   "case-secondary-denial",
-  "insurance-era",
+  "kaiser-permanente",
   "day-copay",
   "case-auth-expired",
-  "bank-deposit",
+  "medicare",
 ];
 
 export default function Home() {
@@ -36,22 +37,41 @@ export default function Home() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-2xl">
-        <div className="mb-8 text-center">
+      <div className="relative isolate w-full max-w-2xl">
+        <div className="search-glow" aria-hidden />
+        <div className="mb-8 flex flex-col items-center text-center">
           <span className="inline-flex max-w-full items-center rounded-full bg-(--color-canvas) px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-primary) shadow-(--shadow-level-1)">
             Lake Hills Acupuncture · Internal
           </span>
-          <h1 className="mt-4 text-[40px] leading-[1.1] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-            有什么想查的？
-          </h1>
-          <p className="mt-2 text-[16px] text-(--color-ink-muted)">
-            搜索前台 checklist、OA 理赔案例，或付款查询位置
-          </p>
+          <SplitText
+            tag="h1"
+            text="有什么想查的？"
+            className="mt-4 text-[40px] leading-[1.1] font-bold tracking-(--tracking-heading) text-(--color-ink)"
+            splitType="chars"
+            delay={50}
+            duration={0.6}
+            ease="power3.out"
+            from={{ opacity: 0, y: 20 }}
+            to={{ opacity: 1, y: 0 }}
+            textAlign="center"
+          />
+          <SplitText
+            tag="p"
+            text="搜索前台 checklist、OA 理赔案例，或付款查询位置"
+            className="mt-2 text-[16px] text-(--color-ink-muted)"
+            splitType="words"
+            delay={50}
+            duration={0.5}
+            ease="power3.out"
+            from={{ opacity: 0, y: 12 }}
+            to={{ opacity: 1, y: 0 }}
+            textAlign="center"
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="relative">
-          <div className="relative flex items-center rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-1) focus-within:shadow-(--shadow-level-2)">
-            <Search size={18} className="ml-4 shrink-0 text-(--color-ink-faint)" />
+          <div className="relative flex items-center rounded-full bg-(--color-canvas) shadow-(--shadow-level-1) transition-shadow focus-within:shadow-(--shadow-level-2)">
+            <Search size={18} className="ml-5 shrink-0 text-(--color-ink-faint)" />
             <input
               autoFocus
               value={query}
@@ -62,7 +82,7 @@ export default function Home() {
           </div>
 
           {query.trim() && (
-            <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-10 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
+            <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-10 rounded-(--radius-xl) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
               <SearchResults results={results} />
             </div>
           )}

@@ -1,0 +1,130 @@
+import { useState } from "react";
+import { Plus, X } from "lucide-react";
+import type { PaymentEntry, PaymentPortal } from "../lib/types";
+import { slugify } from "../lib/slugify";
+
+const inputClass =
+  "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
+
+export default function PaymentEntryForm({
+  initial,
+  onSave,
+  onCancel,
+}: {
+  initial?: PaymentEntry;
+  onSave: (entry: PaymentEntry) => void;
+  onCancel: () => void;
+}) {
+  const [payer, setPayer] = useState(initial?.payer ?? "");
+  const [portals, setPortals] = useState<PaymentPortal[]>(
+    initial?.portals ?? [{ name: "", url: "" }],
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  function updatePortal(index: number, field: keyof PaymentPortal, value: string) {
+    setPortals((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+  }
+
+  function removePortal(index: number) {
+    setPortals((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!payer.trim()) return;
+    const cleanPortals = portals
+      .map((p) => ({ name: p.name.trim(), url: p.url.trim() }))
+      .filter((p) => p.name || p.url);
+
+    onSave({
+      id: initial?.id ?? slugify(payer, "payer"),
+      payer: payer.trim(),
+      portals: cleanPortals.length > 0 ? cleanPortals : [{ name: "", url: "" }],
+      notes: notes.trim() || undefined,
+    });
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)"
+    >
+      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+        保险公司 / Payer
+      </label>
+      <input
+        autoFocus
+        value={payer}
+        onChange={(e) => setPayer(e.target.value)}
+        placeholder="例如 Kaiser Permanente"
+        className={`${inputClass} mb-3`}
+      />
+
+      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+        查询入口
+      </label>
+      <div className="flex flex-col gap-2">
+        {portals.map((portal, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <input
+              value={portal.name}
+              onChange={(e) => updatePortal(i, "name", e.target.value)}
+              placeholder="平台名称，如 Availity"
+              className={`${inputClass} flex-1`}
+            />
+            <input
+              value={portal.url}
+              onChange={(e) => updatePortal(i, "url", e.target.value)}
+              placeholder="https://…"
+              className={`${inputClass} flex-1`}
+            />
+            {portals.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removePortal(i)}
+                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => setPortals((prev) => [...prev, { name: "", url: "" }])}
+        className="mt-2 flex items-center gap-1 text-[13px] font-medium text-(--color-primary)"
+      >
+        <Plus size={14} />
+        添加一个入口
+      </button>
+
+      <label className="mt-3 mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+        备注（可选）
+      </label>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={2}
+        placeholder="到账周期、注意事项…"
+        className={inputClass}
+      />
+
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+        >
+          取消
+        </button>
+        <button
+          type="submit"
+          className="rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+        >
+          保存
+        </button>
+      </div>
+    </form>
+  );
+}

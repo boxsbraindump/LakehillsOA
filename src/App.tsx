@@ -1,14 +1,17 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
+import { ToastProvider } from "./components/ToastProvider";
 
 function App() {
   return (
-    <div className="flex min-h-svh flex-col bg-(--color-canvas-soft) md:flex-row">
-      <Sidebar />
-      <main className="min-w-0 flex-1">
-        <Outlet />
-      </main>
-    </div>
+    <ToastProvider>
+      <div className="flex h-svh flex-col overflow-hidden bg-(--color-canvas-soft) md:flex-row">
+        <Sidebar />
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    </ToastProvider>
   );
 }
 
