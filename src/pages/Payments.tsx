@@ -6,6 +6,7 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 import PaymentEntryForm from "../components/PaymentEntryForm";
 import type { PaymentEntry } from "../lib/types";
 
@@ -23,6 +24,7 @@ export default function Payments() {
   const [hiddenIds, setHiddenIds] = useSyncedStorage<string[]>("lh-payments-hidden", []);
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
@@ -51,8 +53,8 @@ export default function Payments() {
     setJustAddedId(created.id);
   }
 
-  function handleDelete(entry: PaymentEntry) {
-    if (!window.confirm(t("payments.deleteConfirm", { payer: entry.payer }))) return;
+  async function handleDelete(entry: PaymentEntry) {
+    if (!(await confirm({ message: t("payments.deleteConfirm", { payer: entry.payer }) }))) return;
     const wasCustom = isCustom(entry.id);
     const trashId = `payments:${entry.id}`;
 

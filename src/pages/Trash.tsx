@@ -3,6 +3,7 @@ import { useTrash } from "../hooks/useTrash";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 import { daysRemaining, TRASH_RETENTION_DAYS } from "../lib/trash";
 import { categoryLabel, CATEGORY_DOT } from "../lib/searchIndex";
 import {
@@ -24,6 +25,7 @@ export default function Trash() {
   const { trash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const { t, lang } = useLanguage();
+  const { confirm } = useConfirm();
 
   const [, setChecklistHidden] = useSyncedStorage<string[]>("lh-checklist-hidden-items", []);
   const [, setChecklistCustom] = useSyncedStorage<Record<string, ChecklistItem[]>>(
@@ -105,8 +107,15 @@ export default function Trash() {
     showToast(t("trash.restoredToast", { title: entry.title }));
   }
 
-  function handlePurgeNow(entry: TrashEntry) {
-    if (!window.confirm(t("trash.purgeConfirm", { title: entry.title }))) return;
+  async function handlePurgeNow(entry: TrashEntry) {
+    if (
+      !(await confirm({
+        title: t("trash.purgeNowAria"),
+        message: t("trash.purgeConfirm", { title: entry.title }),
+        confirmLabel: t("trash.purgeNowAria"),
+      }))
+    )
+      return;
     removeFromTrash(entry.trashId);
   }
 

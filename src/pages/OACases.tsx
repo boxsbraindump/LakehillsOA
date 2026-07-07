@@ -6,6 +6,7 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 import OACaseForm from "../components/OACaseForm";
 import type { OACase } from "../lib/types";
 
@@ -21,6 +22,7 @@ export default function OACases() {
   const [hiddenIds, setHiddenIds] = useSyncedStorage<string[]>("lh-oacases-hidden", []);
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
@@ -48,8 +50,8 @@ export default function OACases() {
     setJustAddedId(created.id);
   }
 
-  function handleDelete(c: OACase) {
-    if (!window.confirm(t("oaCases.deleteConfirm", { title: c.title }))) return;
+  async function handleDelete(c: OACase) {
+    if (!(await confirm({ message: t("oaCases.deleteConfirm", { title: c.title }) }))) return;
     const wasCustom = isCustom(c.id);
     const trashId = `oa-cases:${c.id}`;
 

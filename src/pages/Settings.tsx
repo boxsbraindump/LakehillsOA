@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LogOut, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { useLanguage } from "../components/LanguageProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { slugify } from "../lib/slugify";
 import type { Payer } from "../lib/types";
@@ -12,6 +13,7 @@ const inputClass =
 export default function Settings() {
   const { email, logout } = useAuth();
   const { t, lang, setLang } = useLanguage();
+  const { confirm } = useConfirm();
   const [payers, setPayers] = useSyncedStorage<Payer[]>("lh-payers", []);
   const [newName, setNewName] = useState("");
   const [newPayerId, setNewPayerId] = useState("");
@@ -27,8 +29,8 @@ export default function Settings() {
     setNewPayerId("");
   }
 
-  function handleDeletePayer(payer: Payer) {
-    if (!window.confirm(t("payers.deleteConfirm", { name: payer.name }))) return;
+  async function handleDeletePayer(payer: Payer) {
+    if (!(await confirm({ message: t("payers.deleteConfirm", { name: payer.name }) }))) return;
     setPayers((prev) => prev.filter((p) => p.id !== payer.id));
   }
 

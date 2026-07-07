@@ -6,6 +6,7 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 import CustomEntryForm from "../components/CustomEntryForm";
 import { todayKey, formatDisplayDate } from "../lib/date";
 import {
@@ -65,6 +66,7 @@ export default function CustomCategory() {
   );
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const { lang } = useLanguage();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -143,8 +145,8 @@ export default function CustomCategory() {
     setEditingId(null);
   }
 
-  function handleDelete(entry: CustomEntry) {
-    if (!window.confirm(t("customCategory.deleteConfirm", { title: entry.title }))) return;
+  async function handleDelete(entry: CustomEntry) {
+    if (!(await confirm({ message: t("customCategory.deleteConfirm", { title: entry.title }) }))) return;
     const trashId = `custom:${entry.id}`;
 
     setAllEntries((prev) => ({

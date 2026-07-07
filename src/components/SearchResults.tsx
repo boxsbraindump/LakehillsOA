@@ -22,12 +22,16 @@ export default function SearchResults({
 
   return (
     <ul className="max-h-96 overflow-y-auto py-1.5">
-      {results.map((doc) => (
-        <li key={doc.id}>
+      {results.map((doc, index) => (
+        <li
+          key={doc.id}
+          className="search-result-enter"
+          style={{ animationDelay: `${Math.min(index, 5) * 10}ms` }}
+        >
           <Link
             to={doc.path}
             onClick={onNavigate}
-            className="flex items-start gap-3 px-4 py-2.5 hover:bg-(--color-canvas-soft)"
+            className="flex items-start gap-3 px-4 py-2.5 transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-(--color-canvas-tint)"
           >
             <span
               className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"

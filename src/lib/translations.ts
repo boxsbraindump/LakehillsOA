@@ -57,6 +57,12 @@ export const translations = {
 
   "checklist.title": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
   "checklist.resetDay": { zh: "重置当日进度", en: "Reset today's progress" },
+  "checklist.clearDay": { zh: "清空当天", en: "Clear this day" },
+  "checklist.clearDayConfirmTitle": { zh: "清空当天 Checklist？", en: "Clear this day's checklist?" },
+  "checklist.clearDayConfirm": {
+    zh: "将清空 {date} 的所有勾选和备注。",
+    en: "This will clear all checks and notes for {date}.",
+  },
   "checklist.searchPlaceholder": {
     zh: "搜索所有日期的备注，比如患者姓名…",
     en: "Search notes across all dates, e.g. a patient's name…",
@@ -65,11 +71,20 @@ export const translations = {
   "checklist.prevDay": { zh: "前一天", en: "Previous day" },
   "checklist.nextDay": { zh: "后一天", en: "Next day" },
   "checklist.today": { zh: "今天", en: "Today" },
+  "checklist.copyPreviousDay": { zh: "复制前一天", en: "Copy previous day" },
+  "checklist.copyPreviousDayConfirmTitle": { zh: "覆盖当天 Checklist？", en: "Replace this day's checklist?" },
+  "checklist.copyPreviousDayConfirm": {
+    zh: "将用 {sourceDate} 的勾选和备注覆盖 {targetDate}。当前这一天已有内容会被替换。",
+    en: "This will replace {targetDate}'s checks and notes with {sourceDate}'s checklist.",
+  },
+  "checklist.copiedPreviousDayToast": { zh: "已复制 {date} 的 Checklist", en: "Copied checklist from {date}" },
+  "checklist.noPreviousDayToast": { zh: "{date} 没有可复制的 Checklist", en: "No checklist to copy from {date}" },
   "checklist.completedCount": { zh: "{done} / {total} 已完成", en: "{done} / {total} done" },
   "checklist.addItem": { zh: "添加事项", en: "Add item" },
   "checklist.addSection": { zh: "添加新 Section", en: "Add new section" },
   "checklist.sectionNameLabel": { zh: "Section 名称", en: "Section name" },
   "checklist.sectionNamePlaceholder": { zh: "例如 夜间检查", en: "e.g. Night check" },
+  "checklist.editSectionAria": { zh: "修改 Section 标题", en: "Edit section title" },
   "checklist.deleteSectionAria": { zh: "删除 Section", en: "Delete section" },
   "checklist.deleteItemConfirm": { zh: "删除「{label}」？", en: 'Delete "{label}"?' },
   "checklist.deleteSectionConfirm": {
@@ -89,6 +104,7 @@ export const translations = {
   "common.delete": { zh: "删除", en: "Delete" },
   "common.undo": { zh: "撤销", en: "Undo" },
   "common.link": { zh: "链接", en: "Link" },
+  "confirm.title": { zh: "确认删除", en: "Confirm delete" },
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
   "checklistItemForm.detailPlaceholder": {

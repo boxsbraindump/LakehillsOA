@@ -14,7 +14,7 @@ export function useHashHighlight() {
 
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.classList.add("ring-highlight");
-    const timer = setTimeout(() => el.classList.remove("ring-highlight"), 2000);
+    const timer = setTimeout(() => el.classList.remove("ring-highlight"), 2200);
     return () => clearTimeout(timer);
   }, [location]);
 }

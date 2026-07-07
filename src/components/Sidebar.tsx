@@ -21,6 +21,7 @@ import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "./ToastProvider";
+import { useConfirm } from "./ConfirmProvider";
 import { slugify } from "../lib/slugify";
 import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
@@ -71,14 +72,14 @@ function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
   return [
     "group flex shrink-0 items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] whitespace-nowrap transition-colors",
     isActive
-      ? "bg-(--color-primary)/8 font-medium text-(--color-primary)"
-      : "text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)",
+      ? "active bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
+      : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
     extra,
   ].join(" ");
 }
 
 const inlineInputClass =
-  "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2 py-1 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
+  "w-full rounded-(--radius-xs) border border-(--color-sidebar-border) bg-white/80 px-2 py-1 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary) focus:shadow-(--shadow-level-1)";
 
 export default function Sidebar() {
   const { syncEnabled } = useAuth();
@@ -87,6 +88,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
 
   const [customCategories, setCustomCategories] = useSyncedStorage<CustomCategory[]>(
     "lh-custom-categories",
@@ -158,14 +160,18 @@ export default function Sidebar() {
     setNewCategoryTemplate("checklist");
   }
 
-  function handleDeleteCategory(category: CustomCategory) {
+  async function handleDeleteCategory(category: CustomCategory) {
     const normalizedTitle = normalizeCategoryTitle(category.title);
     const categoriesToDelete = customCategories.filter(
       (c) => c.id === category.id || normalizeCategoryTitle(c.title) === normalizedTitle,
     );
     const idsToDelete = new Set(categoriesToDelete.map((c) => c.id));
     const entries = categoriesToDelete.flatMap((c) => customEntries[c.id] ?? []);
-    if (!window.confirm(t("sidebar.deleteCategoryConfirm", { title: category.title, count: entries.length })))
+    if (
+      !(await confirm({
+        message: t("sidebar.deleteCategoryConfirm", { title: category.title, count: entries.length }),
+      }))
+    )
       return;
 
     const trashId = `custom-category:${category.id}`;
@@ -218,16 +224,18 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex shrink-0 flex-col border-b border-(--color-hairline) bg-(--color-canvas) px-3 py-3 md:h-svh md:w-64 md:border-r md:border-b-0 md:py-4">
+    <aside className="flex shrink-0 flex-col border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:w-64 md:border-r md:border-b-0 md:py-4">
       <NavLink
         to="/"
-        className="flex items-center gap-2 rounded-(--radius-md) px-2 py-1.5 text-[15px] font-semibold text-(--color-ink) hover:bg-(--color-canvas-soft)"
+        className="flex items-center gap-2 rounded-(--radius-md) px-2 py-1.5 text-[15px] font-semibold text-(--color-ink) hover:bg-(--color-sidebar-hover)"
       >
-        <Sparkles size={18} className="text-(--color-primary)" strokeWidth={2.25} />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
+          <Sparkles size={15} strokeWidth={2.25} />
+        </span>
         Lake Hills OA
       </NavLink>
 
-      <div className="hidden px-2 pb-4 text-[12px] text-(--color-ink-faint) md:block">
+      <div className="hidden px-2 pb-4 text-[12px] text-(--color-ink-muted) md:block">
         Lake Hills Acupuncture · Internal
       </div>
 
@@ -237,7 +245,7 @@ export default function Sidebar() {
             <Icon size={16} strokeWidth={2} className="shrink-0" />
             <span className="truncate">{t(key)}</span>
             <span
-              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full md:block"
+              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
               style={{ backgroundColor: dot }}
               aria-hidden
             />
@@ -261,14 +269,14 @@ export default function Sidebar() {
                   onChange={(e) => setRenameValue(e.target.value)}
                   className={inlineInputClass}
                 />
-                <button type="submit" aria-label={t("common.save")} className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-primary) hover:bg-(--color-canvas-soft)">
+                <button type="submit" aria-label={t("common.save")} className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-secondary) hover:bg-(--color-sidebar-hover)">
                   <Check size={14} />
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingCategoryId(null)}
                   aria-label={t("common.cancel")}
-                  className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:bg-(--color-canvas-soft)"
+                  className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)"
                 >
                   <X size={14} />
                 </button>
@@ -284,15 +292,15 @@ export default function Sidebar() {
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 <span className="truncate">{category.title}</span>
                 <span
-                  className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full md:block"
-                  style={{ backgroundColor: "var(--color-accent-green)" }}
+                  className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
+                  style={{ backgroundColor: "var(--color-primary)" }}
                   aria-hidden
                 />
               </NavLink>
               <button
                 onClick={() => startRename(category)}
                 aria-label={t("common.edit")}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) md:opacity-0 md:group-hover/cat:opacity-100"
+                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-secondary) md:opacity-0 md:group-hover/cat:opacity-100"
               >
                 <Pencil size={13} />
               </button>
@@ -330,8 +338,8 @@ export default function Sidebar() {
                     className={[
                       "flex min-h-12 flex-col items-center justify-center gap-1 rounded-(--radius-sm) border px-1.5 py-1 text-[11px] font-medium",
                       newCategoryTemplate === template
-                        ? "border-(--color-primary)/30 bg-(--color-primary)/8 text-(--color-primary)"
-                        : "border-(--color-hairline) text-(--color-ink-muted) hover:bg-(--color-canvas-soft)",
+                        ? "border-white/20 bg-(--color-sidebar-active) text-white"
+                        : "border-(--color-sidebar-border) text-(--color-ink-muted) hover:bg-(--color-sidebar-hover)",
                     ].join(" ")}
                   >
                     <Icon size={14} />
@@ -351,8 +359,8 @@ export default function Sidebar() {
                     className={[
                       "rounded-(--radius-sm) p-1.5",
                       newCategoryIcon === iconKey
-                        ? "bg-(--color-primary)/10 text-(--color-primary)"
-                        : "text-(--color-ink-faint) hover:bg-(--color-canvas-soft)",
+                        ? "bg-(--color-sidebar-active) text-white"
+                        : "text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)",
                     ].join(" ")}
                   >
                     <Icon size={14} />
@@ -368,13 +376,13 @@ export default function Sidebar() {
                   setNewCategoryTitle("");
                   setNewCategoryTemplate("checklist");
                 }}
-                className="rounded-(--radius-sm) border border-(--color-hairline) px-2 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+                className="rounded-(--radius-sm) border border-(--color-sidebar-border) px-2 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover)"
               >
                 {t("common.cancel")}
               </button>
               <button
                 type="submit"
-                className="rounded-(--radius-sm) bg-(--color-primary) px-2 py-1 text-[12px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                className="rounded-(--radius-sm) bg-(--color-primary) px-2 py-1 text-[12px] font-medium text-white hover:bg-(--color-primary-active)"
               >
                 {t("common.save")}
               </button>
@@ -383,7 +391,7 @@ export default function Sidebar() {
         ) : (
           <button
             onClick={() => setIsAddingCategory(true)}
-            className="flex items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] text-(--color-ink-faint) transition-colors hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+            className="flex items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)"
           >
             <Plus size={16} strokeWidth={2} className="shrink-0" />
             <span className="truncate">{t("sidebar.addCategory")}</span>
@@ -391,7 +399,7 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <nav className="mt-auto flex gap-0.5 overflow-x-auto border-(--color-hairline) pt-2 md:flex-col md:overflow-visible md:border-t">
+      <nav className="mt-auto flex gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:flex-col md:overflow-visible md:border-t">
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
           <NavLink key={to} to={to} className={navLinkClass}>
             <Icon size={16} strokeWidth={2} className="shrink-0" />
@@ -401,7 +409,7 @@ export default function Sidebar() {
       </nav>
 
       {syncEnabled && (
-        <div className="mt-2 border-t border-(--color-hairline) pt-2 md:mt-2">
+        <div className="mt-2 border-t border-(--color-sidebar-border) pt-2 md:mt-2">
           <ProfileMenu />
         </div>
       )}

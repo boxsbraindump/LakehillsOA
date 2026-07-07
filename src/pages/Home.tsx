@@ -41,16 +41,16 @@ export default function Home() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="inline-flex max-w-full items-center rounded-full bg-(--color-canvas) px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-primary) shadow-(--shadow-level-1)">
+          <span className="inline-flex max-w-full items-center rounded-full border border-(--color-primary)/15 bg-white/78 px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-secondary) shadow-(--shadow-level-1)">
             Lake Hills Acupuncture · Internal
           </span>
           <SplitText
             key={`h1-${lang}`}
             tag="h1"
             text={t("home.heading")}
-            className="mt-4 text-[40px] leading-[1.1] font-bold tracking-(--tracking-heading) text-(--color-ink)"
+            className="mt-4 text-[44px] leading-[1.04] font-bold tracking-(--tracking-heading) text-(--color-ink)"
             splitType="chars"
             delay={50}
             duration={0.6}
@@ -63,7 +63,7 @@ export default function Home() {
             key={`p-${lang}`}
             tag="p"
             text={t("home.subtitle")}
-            className="mt-2 text-[16px] text-(--color-ink-muted)"
+            className="mt-3 text-[16px] text-(--color-ink-muted)"
             splitType="words"
             delay={50}
             duration={0.5}
@@ -75,8 +75,8 @@ export default function Home() {
         </div>
 
         <form onSubmit={handleSubmit} className="relative">
-          <div className="relative flex items-center rounded-full bg-(--color-canvas) shadow-(--shadow-level-1) transition-shadow focus-within:shadow-(--shadow-level-2)">
-            <Search size={18} className="ml-5 shrink-0 text-(--color-ink-faint)" />
+          <div className="relative flex items-center rounded-full border border-(--color-hairline) bg-white/88 shadow-(--shadow-level-1) transition-[box-shadow,border-color,transform] duration-200 focus-within:border-(--color-primary)/30 focus-within:shadow-(--shadow-level-2)">
+            <Search size={18} className="ml-5 shrink-0 text-(--color-primary)" />
             <input
               autoFocus
               value={query}
@@ -87,7 +87,7 @@ export default function Home() {
           </div>
 
           {query.trim() && (
-            <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-10 rounded-(--radius-xl) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
+            <div className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 rounded-(--radius-xl) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
               <SearchResults results={results} />
             </div>
           )}
@@ -100,7 +100,7 @@ export default function Home() {
                 <Link
                   key={doc.id}
                   to={doc.path}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] text-(--color-ink-secondary) shadow-(--shadow-level-1) transition-colors hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-(--color-hairline) bg-white/82 px-3 py-1.5 text-[13px] text-(--color-ink-secondary) shadow-(--shadow-level-1) transition-[border-color,color,transform] duration-200 hover:-translate-y-0.5 hover:border-(--color-primary)/40 hover:text-(--color-secondary)"
                 >
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full"

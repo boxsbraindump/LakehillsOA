@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
+  Check,
   StickyNote,
+  Copy,
   RotateCcw,
   Pencil,
   Plus,
@@ -8,13 +10,14 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
-import { checklistSections } from "../data/checklist";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
+import { useConfirm } from "../components/ConfirmProvider";
 import ChecklistItemForm from "../components/ChecklistItemForm";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
@@ -42,28 +45,17 @@ export default function Checklist() {
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [noteQuery, setNoteQuery] = useState("");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
-  const [itemOverrides, setItemOverrides] = useSyncedStorage<Record<string, ChecklistItem>>(
-    "lh-checklist-item-overrides",
-    {},
-  );
   const [customItems, setCustomItems] = useSyncedStorage<Record<string, ChecklistItem[]>>(
     "lh-checklist-custom-items",
     {},
-  );
-  const [hiddenItemIds, setHiddenItemIds] = useSyncedStorage<string[]>(
-    "lh-checklist-hidden-items",
-    [],
   );
   const [customSections, setCustomSections] = useSyncedStorage<ChecklistSectionMeta[]>(
     "lh-checklist-custom-sections",
     [],
   );
-  const [hiddenSectionIds, setHiddenSectionIds] = useSyncedStorage<string[]>(
-    "lh-checklist-hidden-sections",
-    [],
-  );
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const { t, lang } = useLanguage();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [addingSectionId, setAddingSectionId] = useState<string | null>(null);
@@ -71,24 +63,79 @@ export default function Checklist() {
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [justAddedSectionId, setJustAddedSectionId] = useState<string | null>(null);
+  const [dayItemIds, setDayItemIds] = useSyncedStorage<Record<string, string[]>>(
+    "lh-checklist-day-item-ids",
+    {},
+  );
+  const [daySectionIds, setDaySectionIds] = useSyncedStorage<Record<string, string[]>>(
+    "lh-checklist-day-section-ids",
+    {},
+  );
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [editingSectionTitle, setEditingSectionTitle] = useState("");
 
-  const sectionMetas = [
-    ...checklistSections
-      .filter((s) => !hiddenSectionIds.includes(s.id))
-      .map((s) => ({ id: s.id, title: s.title, baseItems: s.items })),
-    ...customSections.map((s) => ({ id: s.id, title: s.title, baseItems: [] as ChecklistItem[] })),
-  ];
-
-  const displayedSections = sectionMetas.map((section) => ({
-    id: section.id,
-    title: section.title,
-    items: [
-      ...section.baseItems.map((item) => itemOverrides[item.id] ?? item),
-      ...(customItems[section.id] ?? []),
-    ].filter((item) => !hiddenItemIds.includes(item.id)),
+  const sectionMetas = customSections.map((s) => ({
+    id: s.id,
+    title: s.title,
+    baseItems: [] as ChecklistItem[],
   }));
 
+  const allSections = sectionMetas.map((section) => ({
+    id: section.id,
+    title: section.title,
+    items: [...section.baseItems, ...(customItems[section.id] ?? [])],
+  }));
+
+  const allItemIdSet = new Set(allSections.flatMap((section) => section.items.map((item) => item.id)));
   const dayState = state[selectedDate] ?? {};
+  const selectedDayItemIds = getDayItemIds(selectedDate);
+  const selectedDayItemIdSet = new Set(selectedDayItemIds);
+  const selectedDaySectionIdSet = new Set(getDaySectionIds(selectedDate, selectedDayItemIds));
+  const displayedSections = allSections
+    .filter(
+      (section) =>
+        selectedDaySectionIdSet.has(section.id) ||
+        section.items.some((item) => selectedDayItemIdSet.has(item.id)),
+    )
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => selectedDayItemIdSet.has(item.id)),
+    }));
+
+  function getDayItemIds(date: string) {
+    const storedIds = dayItemIds[date];
+    if (storedIds) return storedIds.filter((id) => allItemIdSet.has(id));
+
+    return Object.entries(state[date] ?? {})
+      .filter(([, itemState]) => itemState.checked || itemState.note.trim())
+      .filter(([id]) => allItemIdSet.has(id))
+      .map(([id]) => id);
+  }
+
+  function getDaySectionIds(date: string, itemIds = getDayItemIds(date)) {
+    const customSectionIdSet = new Set(customSections.map((section) => section.id));
+    const storedIds = daySectionIds[date];
+    if (storedIds) return storedIds.filter((id) => customSectionIdSet.has(id));
+
+    const itemIdSet = new Set(itemIds);
+    return allSections
+      .filter((section) => section.items.some((item) => itemIdSet.has(item.id)))
+      .map((section) => section.id);
+  }
+
+  function addItemsToDay(date: string, itemIds: string[]) {
+    setDayItemIds((prev) => ({
+      ...prev,
+      [date]: Array.from(new Set([...(prev[date] ?? getDayItemIds(date)), ...itemIds])),
+    }));
+  }
+
+  function addSectionsToDay(date: string, sectionIds: string[]) {
+    setDaySectionIds((prev) => ({
+      ...prev,
+      [date]: Array.from(new Set([...(prev[date] ?? getDaySectionIds(date)), ...sectionIds])),
+    }));
+  }
 
   function toggle(id: string) {
     setState((prev) => {
@@ -113,16 +160,81 @@ export default function Checklist() {
     });
   }
 
-  function resetSelectedDay() {
+  async function resetSelectedDay() {
+    if (
+      hasSelectedDayContent(selectedDate) &&
+      !(await confirm({
+        title: t("checklist.clearDayConfirmTitle"),
+        message: t("checklist.clearDayConfirm", {
+          date: formatDisplayDate(selectedDate, lang),
+        }),
+        confirmLabel: t("checklist.clearDay"),
+        tone: "default",
+      }))
+    )
+      return;
+
     setState((prev) => {
-      const day = prev[selectedDate] ?? {};
-      return {
-        ...prev,
-        [selectedDate]: Object.fromEntries(
-          Object.entries(day).map(([id, s]) => [id, { ...s, checked: false }]),
-        ),
-      };
+      const { [selectedDate]: _removed, ...rest } = prev;
+      return rest;
     });
+    setDayItemIds((prev) => {
+      const { [selectedDate]: _removed, ...rest } = prev;
+      return rest;
+    });
+    setDaySectionIds((prev) => {
+      const { [selectedDate]: _removed, ...rest } = prev;
+      return rest;
+    });
+    setOpenNoteId(null);
+  }
+
+  function compactDayState(day: DayState | undefined) {
+    return Object.fromEntries(
+      Object.entries(day ?? {}).filter(([, itemState]) => itemState.checked || itemState.note.trim()),
+    ) as DayState;
+  }
+
+  function hasDayContent(day: DayState | undefined) {
+    return Object.keys(compactDayState(day)).length > 0;
+  }
+
+  function hasSelectedDayContent(date: string) {
+    return getDaySectionIds(date).length > 0 || getDayItemIds(date).length > 0 || hasDayContent(state[date]);
+  }
+
+  async function copyPreviousDay() {
+    const sourceDate = shiftDateKey(selectedDate, -1);
+    const sourceDay = compactDayState(state[sourceDate]);
+    const sourceItemIds = getDayItemIds(sourceDate);
+    const sourceSectionIds = getDaySectionIds(sourceDate, sourceItemIds);
+
+    if (sourceSectionIds.length === 0 && sourceItemIds.length === 0 && Object.keys(sourceDay).length === 0) {
+      showToast(t("checklist.noPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }));
+      return;
+    }
+
+    if (
+      hasSelectedDayContent(selectedDate) &&
+      !(await confirm({
+        title: t("checklist.copyPreviousDayConfirmTitle"),
+        message: t("checklist.copyPreviousDayConfirm", {
+          sourceDate: formatDisplayDate(sourceDate, lang),
+          targetDate: formatDisplayDate(selectedDate, lang),
+        }),
+        confirmLabel: t("checklist.copyPreviousDay"),
+        tone: "default",
+      }))
+    )
+      return;
+
+    setState((prev) => ({ ...prev, [selectedDate]: sourceDay }));
+    setDayItemIds((prev) => ({ ...prev, [selectedDate]: sourceItemIds }));
+    setDaySectionIds((prev) => ({ ...prev, [selectedDate]: sourceSectionIds }));
+    setOpenNoteId(null);
+    showToast(
+      t("checklist.copiedPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }),
+    );
   }
 
   function jumpToMatch(match: NoteMatch) {
@@ -137,23 +249,15 @@ export default function Checklist() {
     });
   }
 
-  function isCustomItem(sectionId: string, itemId: string) {
-    return (customItems[sectionId] ?? []).some((i) => i.id === itemId);
-  }
-
   function isCustomSection(sectionId: string) {
     return customSections.some((s) => s.id === sectionId);
   }
 
   function handleSaveItem(sectionId: string, updated: ChecklistItem) {
-    if (isCustomItem(sectionId, updated.id)) {
-      setCustomItems((prev) => ({
-        ...prev,
-        [sectionId]: prev[sectionId].map((i) => (i.id === updated.id ? updated : i)),
-      }));
-    } else {
-      setItemOverrides((prev) => ({ ...prev, [updated.id]: updated }));
-    }
+    setCustomItems((prev) => ({
+      ...prev,
+      [sectionId]: (prev[sectionId] ?? []).map((i) => (i.id === updated.id ? updated : i)),
+    }));
     setEditingItemId(null);
   }
 
@@ -162,30 +266,27 @@ export default function Checklist() {
       ...prev,
       [sectionId]: [...(prev[sectionId] ?? []), created],
     }));
+    addItemsToDay(selectedDate, [created.id]);
+    addSectionsToDay(selectedDate, [sectionId]);
     setAddingSectionId(null);
     setJustAddedId(created.id);
   }
 
-  function handleDeleteItem(sectionId: string, item: ChecklistItem) {
-    if (!window.confirm(t("checklist.deleteItemConfirm", { label: item.label }))) return;
-    const wasCustom = isCustomItem(sectionId, item.id);
+  async function handleDeleteItem(sectionId: string, item: ChecklistItem) {
+    if (!(await confirm({ message: t("checklist.deleteItemConfirm", { label: item.label }) }))) return;
     const trashId = `checklist:${item.id}`;
 
-    if (wasCustom) {
-      setCustomItems((prev) => ({
-        ...prev,
-        [sectionId]: prev[sectionId].filter((i) => i.id !== item.id),
-      }));
-    } else {
-      setHiddenItemIds((prev) => [...prev, item.id]);
-    }
+    setCustomItems((prev) => ({
+      ...prev,
+      [sectionId]: (prev[sectionId] ?? []).filter((i) => i.id !== item.id),
+    }));
 
     addToTrash({
       trashId,
       category: "checklist",
       itemId: item.id,
       sectionId,
-      wasCustom,
+      wasCustom: true,
       deletedAt: Date.now(),
       title: item.label,
       snapshot: item,
@@ -194,17 +295,21 @@ export default function Checklist() {
     showToast(t("checklist.deletedItemToast", { label: item.label }), {
       label: t("common.undo"),
       onClick: () => {
-        if (wasCustom) {
-          setCustomItems((prev) => ({
-            ...prev,
-            [sectionId]: [...(prev[sectionId] ?? []), item],
-          }));
-        } else {
-          setHiddenItemIds((prev) => prev.filter((id) => id !== item.id));
-        }
+        setCustomItems((prev) => ({
+          ...prev,
+          [sectionId]: [...(prev[sectionId] ?? []), item],
+        }));
+        addItemsToDay(selectedDate, [item.id]);
+        addSectionsToDay(selectedDate, [sectionId]);
         removeFromTrash(trashId);
       },
     });
+    setDayItemIds((prev) => ({
+      ...prev,
+      [selectedDate]: (prev[selectedDate] ?? getDayItemIds(selectedDate)).filter(
+        (id) => id !== item.id,
+      ),
+    }));
   }
 
   function handleCreateSection(title: string) {
@@ -212,26 +317,61 @@ export default function Checklist() {
     if (!trimmed) return;
     const id = slugify(trimmed, "section");
     setCustomSections((prev) => [...prev, { id, title: trimmed }]);
+    addSectionsToDay(selectedDate, [id]);
     setIsAddingSection(false);
     setNewSectionTitle("");
     setJustAddedSectionId(id);
   }
 
-  function handleDeleteSection(section: { id: string; title: string; items: ChecklistItem[] }) {
+  function startEditingSection(section: { id: string; title: string }) {
+    setEditingSectionId(section.id);
+    setEditingSectionTitle(section.title);
+  }
+
+  function cancelEditingSection() {
+    setEditingSectionId(null);
+    setEditingSectionTitle("");
+  }
+
+  function handleSaveSectionTitle(sectionId: string) {
+    const trimmed = editingSectionTitle.trim();
+    if (!trimmed) return;
+
+    setCustomSections((prev) =>
+      prev.map((section) => (section.id === sectionId ? { ...section, title: trimmed } : section)),
+    );
+
+    cancelEditingSection();
+  }
+
+  async function handleDeleteSection(section: { id: string; title: string; items: ChecklistItem[] }) {
     if (
-      !window.confirm(
-        t("checklist.deleteSectionConfirm", { title: section.title, count: section.items.length }),
-      )
+      !(await confirm({
+        message: t("checklist.deleteSectionConfirm", {
+          title: section.title,
+          count: section.items.length,
+        }),
+      }))
     )
       return;
     const wasCustom = isCustomSection(section.id);
     const trashId = `checklist-section:${section.id}`;
 
-    if (wasCustom) {
-      setCustomSections((prev) => prev.filter((s) => s.id !== section.id));
-    } else {
-      setHiddenSectionIds((prev) => [...prev, section.id]);
-    }
+    setCustomSections((prev) => prev.filter((s) => s.id !== section.id));
+    const removedItemIds = new Set(section.items.map((item) => item.id));
+    setDaySectionIds((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([date, ids]) => [date, ids.filter((id) => id !== section.id)]),
+      ),
+    );
+    setDayItemIds((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([date, ids]) => [
+          date,
+          ids.filter((id) => !removedItemIds.has(id)),
+        ]),
+      ),
+    );
 
     addToTrash({
       trashId,
@@ -247,18 +387,19 @@ export default function Checklist() {
     showToast(t("checklist.deletedSectionToast", { title: section.title }), {
       label: t("common.undo"),
       onClick: () => {
-        if (wasCustom) {
-          setCustomSections((prev) => [...prev, { id: section.id, title: section.title }]);
-        } else {
-          setHiddenSectionIds((prev) => prev.filter((id) => id !== section.id));
-        }
+        setCustomSections((prev) => [...prev, { id: section.id, title: section.title }]);
+        addSectionsToDay(selectedDate, [section.id]);
+        addItemsToDay(selectedDate, section.items.map((item) => item.id));
         removeFromTrash(trashId);
       },
     });
   }
 
   const total = displayedSections.reduce((n, s) => n + s.items.length, 0);
-  const done = Object.values(dayState).filter((s) => s.checked).length;
+  const done = displayedSections.reduce(
+    (n, s) => n + s.items.filter((item) => dayState[item.id]?.checked).length,
+    0,
+  );
   const isToday = selectedDate === todayKey();
 
   const noteMatches: NoteMatch[] = (() => {
@@ -269,7 +410,7 @@ export default function Checklist() {
       for (const [itemId, itemState] of Object.entries(day)) {
         if (!itemState.note || !itemState.note.toLowerCase().includes(q)) continue;
         let itemLabel = itemId;
-        for (const section of displayedSections) {
+        for (const section of allSections) {
           const found = section.items.find((i) => i.id === itemId);
           if (found) {
             itemLabel = found.label;
@@ -293,7 +434,7 @@ export default function Checklist() {
           className="flex shrink-0 items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
         >
           <RotateCcw size={14} />
-          {t("checklist.resetDay")}
+          {t("checklist.clearDay")}
         </button>
       </div>
 
@@ -364,6 +505,13 @@ export default function Checklist() {
               {t("checklist.today")}
             </button>
           )}
+          <button
+            onClick={copyPreviousDay}
+            className="flex items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+          >
+            <Copy size={14} />
+            {t("checklist.copyPreviousDay")}
+          </button>
         </div>
         <p className="text-[13px] text-(--color-ink-muted)">
           {formatDisplayDate(selectedDate, lang)} · {t("checklist.completedCount", { done, total })}
@@ -381,14 +529,60 @@ export default function Checklist() {
             ].join(" ")}
           >
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-[18px] font-bold text-(--color-ink)">{section.title}</h2>
-              <button
-                onClick={() => handleDeleteSection(section)}
-                aria-label={t("checklist.deleteSectionAria")}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover/section:opacity-100 hover:text-red-500"
-              >
-                <Trash2 size={14} />
-              </button>
+              {editingSectionId === section.id ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSaveSectionTitle(section.id);
+                  }}
+                  className="flex min-w-0 flex-1 items-center gap-2"
+                >
+                  <input
+                    autoFocus
+                    value={editingSectionTitle}
+                    onChange={(e) => setEditingSectionTitle(e.target.value)}
+                    aria-label={t("checklist.sectionNameLabel")}
+                    className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2.5 py-1.5 text-[16px] font-semibold text-(--color-ink) outline-none focus:border-(--color-primary) focus:shadow-(--shadow-level-1)"
+                  />
+                  <button
+                    type="submit"
+                    aria-label={t("common.save")}
+                    className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-primary) hover:bg-(--color-canvas-soft)"
+                  >
+                    <Check size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditingSection}
+                    aria-label={t("common.cancel")}
+                    className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
+                  >
+                    <X size={15} />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <h2 className="min-w-0 text-[18px] font-bold text-(--color-ink)">
+                    {section.title}
+                  </h2>
+                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/section:opacity-100">
+                    <button
+                      onClick={() => startEditingSection(section)}
+                      aria-label={t("checklist.editSectionAria")}
+                      className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSection(section)}
+                      aria-label={t("checklist.deleteSectionAria")}
+                      className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
             <ul className="flex flex-col divide-y divide-(--color-hairline)">
               {section.items.map((item) => {
@@ -485,6 +679,12 @@ export default function Checklist() {
                         <StickyNote size={14} />
                       </button>
                     </div>
+
+                    {note && !noteOpen && (
+                      <div className="mt-2 ml-[30px] w-[calc(100%-30px)] rounded-(--radius-md) bg-(--color-canvas-soft) px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
+                        {note}
+                      </div>
+                    )}
 
                     {noteOpen && (
                       <textarea
