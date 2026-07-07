@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
 import type { Payer, PaymentEntry, PaymentPortal, Platform } from "../lib/types";
 import { slugify } from "../lib/slugify";
 import { defaultPayers } from "../data/payers";
 import { defaultPlatforms } from "../data/platforms";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "./LanguageProvider";
+import PortalFields from "./PortalFields";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
-const CUSTOM_PLATFORM_VALUE = "__custom__";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -41,36 +40,6 @@ export default function PaymentEntryForm({
       const found = payers.find((p) => p.id === value);
       if (found) setPayer(found.name);
     }
-  }
-
-  function updatePortal(index: number, field: keyof PaymentPortal, value: string) {
-    setPortals((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
-  }
-
-  function handlePlatformSelect(index: number, value: string) {
-    if (value === CUSTOM_PLATFORM_VALUE) {
-      updatePortal(index, "name", "");
-      return;
-    }
-
-    const found = platforms.find((platform) => platform.id === value);
-    if (!found) return;
-
-    setPortals((prev) =>
-      prev.map((portal, i) =>
-        i === index
-          ? {
-              ...portal,
-              name: found.name,
-              url: found.url?.trim() ? found.url : portal.url,
-            }
-          : portal,
-      ),
-    );
-  }
-
-  function removePortal(index: number) {
-    setPortals((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -120,66 +89,7 @@ export default function PaymentEntryForm({
         />
       )}
 
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("paymentEntryForm.portalsLabel")}
-      </label>
-      <div className="flex flex-col gap-2">
-        {portals.map((portal, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <div className="flex flex-1 flex-col gap-1.5">
-              {platforms.length > 0 && (
-                <select
-                  value={
-                    platforms.find((platform) => platform.name === portal.name)?.id ??
-                    CUSTOM_PLATFORM_VALUE
-                  }
-                  onChange={(e) => handlePlatformSelect(i, e.target.value)}
-                  className={inputClass}
-                >
-                  <option value={CUSTOM_PLATFORM_VALUE}>{t("paymentEntryForm.customPlatform")}</option>
-                  {platforms.map((platform) => (
-                    <option key={platform.id} value={platform.id}>
-                      {platform.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {(platforms.length === 0 ||
-                !platforms.some((platform) => platform.name === portal.name)) && (
-                <input
-                  value={portal.name}
-                  onChange={(e) => updatePortal(i, "name", e.target.value)}
-                  placeholder={t("paymentEntryForm.portalNamePlaceholder")}
-                  className={inputClass}
-                />
-              )}
-            </div>
-            <input
-              value={portal.url}
-              onChange={(e) => updatePortal(i, "url", e.target.value)}
-              placeholder="https://…"
-              className={`${inputClass} flex-1`}
-            />
-            {portals.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removePortal(i)}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-      <button
-        type="button"
-        onClick={() => setPortals((prev) => [...prev, { name: "", url: "" }])}
-        className="mt-2 flex items-center gap-1 text-[13px] font-medium text-(--color-primary)"
-      >
-        <Plus size={14} />
-        {t("paymentEntryForm.addPortal")}
-      </button>
+      <PortalFields portals={portals} platforms={platforms} setPortals={setPortals} />
 
       <label className="mt-3 mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
         {t("paymentEntryForm.notes")}

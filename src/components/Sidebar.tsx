@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardCheck,
@@ -27,6 +27,7 @@ import { slugify } from "../lib/slugify";
 import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
   filterDeletedCustomCategories,
+  normalizeCustomCategoryTemplates,
   normalizeCategoryTitle,
 } from "../lib/customCategories";
 import ProfileMenu from "./ProfileMenu";
@@ -130,6 +131,10 @@ export default function Sidebar() {
   const [newCategoryIcon, setNewCategoryIcon] = useState<CustomCategoryIcon>("folder");
   const [newCategoryTemplate, setNewCategoryTemplate] =
     useState<CustomCategoryTemplate>("checklist");
+
+  useEffect(() => {
+    setCustomCategories((prev) => normalizeCustomCategoryTemplates(prev));
+  }, [setCustomCategories]);
 
   function startRename(category: CustomCategory) {
     setEditingCategoryId(category.id);

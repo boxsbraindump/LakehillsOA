@@ -1,7 +1,11 @@
 import { useState } from "react";
-import type { OACase } from "../lib/types";
+import type { OACase, Payer } from "../lib/types";
 import { slugify } from "../lib/slugify";
 import { useLanguage } from "./LanguageProvider";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { defaultPayers } from "../data/payers";
+
+const CUSTOM_PAYER_VALUE = "__custom__";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -16,11 +20,24 @@ export default function OACaseForm({
   onCancel: () => void;
 }) {
   const { t } = useLanguage();
+  const [payers] = useSyncedStorage<Payer[]>("lh-payers", defaultPayers);
+  const matchingPayer = payers.find((p) => p.name === initial?.payer);
+  const [selectedPayerValue, setSelectedPayerValue] = useState(
+    matchingPayer ? matchingPayer.id : CUSTOM_PAYER_VALUE,
+  );
   const [title, setTitle] = useState(initial?.title ?? "");
   const [payer, setPayer] = useState(initial?.payer ?? "");
   const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
   const [summary, setSummary] = useState(initial?.summary ?? "");
   const [resolution, setResolution] = useState(initial?.resolution ?? "");
+
+  function handlePayerSelect(value: string) {
+    setSelectedPayerValue(value);
+    if (value !== CUSTOM_PAYER_VALUE) {
+      const found = payers.find((p) => p.id === value);
+      if (found) setPayer(found.name);
+    }
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,12 +75,28 @@ export default function OACaseForm({
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
         {t("oaCaseForm.payer")}
       </label>
-      <input
-        value={payer}
-        onChange={(e) => setPayer(e.target.value)}
-        placeholder={t("oaCaseForm.payerPlaceholder")}
-        className={`${inputClass} mb-3`}
-      />
+      {payers.length > 0 && (
+        <select
+          value={selectedPayerValue}
+          onChange={(e) => handlePayerSelect(e.target.value)}
+          className={`${inputClass} mb-1.5`}
+        >
+          <option value={CUSTOM_PAYER_VALUE}>{t("paymentEntryForm.customPayer")}</option>
+          {payers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {(payers.length === 0 || selectedPayerValue === CUSTOM_PAYER_VALUE) && (
+        <input
+          value={payer}
+          onChange={(e) => setPayer(e.target.value)}
+          placeholder={t("oaCaseForm.payerPlaceholder")}
+          className={`${inputClass} mb-3`}
+        />
+      )}
 
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
         {t("oaCaseForm.summary")}

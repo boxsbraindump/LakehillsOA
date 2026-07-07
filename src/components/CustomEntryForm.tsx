@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
 import type {
   CustomCategoryTemplate,
   CustomEntry,
@@ -11,9 +10,9 @@ import { slugify } from "../lib/slugify";
 import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { defaultPlatforms } from "../data/platforms";
+import PortalFields from "./PortalFields";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
-const CUSTOM_PLATFORM_VALUE = "__custom__";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -39,51 +38,34 @@ export default function CustomEntryForm({
   const [payer, setPayer] = useState(initial?.payer ?? "");
   const [summary, setSummary] = useState(initial?.summary ?? initial?.notes ?? "");
   const [resolution, setResolution] = useState(initial?.resolution ?? "");
-  const matchingPayer = payers.find((p) => p.name === (initial?.payer ?? initial?.title));
-  const [selectedPayerValue, setSelectedPayerValue] = useState(
-    matchingPayer ? matchingPayer.id : CUSTOM_PAYER_VALUE,
+  const matchingCasePayer = payers.find((p) => p.name === initial?.payer);
+  const [selectedCasePayerValue, setSelectedCasePayerValue] = useState(
+    matchingCasePayer ? matchingCasePayer.id : CUSTOM_PAYER_VALUE,
   );
+  const matchingPaymentPayer = payers.find((p) => p.name === (initial?.payer ?? initial?.title));
+  const [selectedPaymentPayerValue, setSelectedPaymentPayerValue] = useState(
+    matchingPaymentPayer ? matchingPaymentPayer.id : CUSTOM_PAYER_VALUE,
+  );
+
   const [paymentPayer, setPaymentPayer] = useState(initial?.title ?? "");
   const [portals, setPortals] = useState<PaymentPortal[]>(
     initial?.portals ?? [{ name: "", url: "" }],
   );
 
-  function handlePayerSelect(value: string) {
-    setSelectedPayerValue(value);
+  function handleCasePayerSelect(value: string) {
+    setSelectedCasePayerValue(value);
+    if (value !== CUSTOM_PAYER_VALUE) {
+      const found = payers.find((p) => p.id === value);
+      if (found) setPayer(found.name);
+    }
+  }
+
+  function handlePaymentPayerSelect(value: string) {
+    setSelectedPaymentPayerValue(value);
     if (value !== CUSTOM_PAYER_VALUE) {
       const found = payers.find((p) => p.id === value);
       if (found) setPaymentPayer(found.name);
     }
-  }
-
-  function updatePortal(index: number, field: keyof PaymentPortal, value: string) {
-    setPortals((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
-  }
-
-  function handlePlatformSelect(index: number, value: string) {
-    if (value === CUSTOM_PLATFORM_VALUE) {
-      updatePortal(index, "name", "");
-      return;
-    }
-
-    const found = platforms.find((platform) => platform.id === value);
-    if (!found) return;
-
-    setPortals((prev) =>
-      prev.map((portal, i) =>
-        i === index
-          ? {
-              ...portal,
-              name: found.name,
-              url: found.url?.trim() ? found.url : portal.url,
-            }
-          : portal,
-      ),
-    );
-  }
-
-  function removePortal(index: number) {
-    setPortals((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -180,12 +162,28 @@ export default function CustomEntryForm({
           <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
             {t("oaCaseForm.payer")}
           </label>
-          <input
-            value={payer}
-            onChange={(e) => setPayer(e.target.value)}
-            placeholder={t("oaCaseForm.payerPlaceholder")}
-            className={`${inputClass} mb-3`}
-          />
+          {payers.length > 0 && (
+            <select
+              value={selectedCasePayerValue}
+              onChange={(e) => handleCasePayerSelect(e.target.value)}
+              className={`${inputClass} mb-1.5`}
+            >
+              <option value={CUSTOM_PAYER_VALUE}>{t("paymentEntryForm.customPayer")}</option>
+              {payers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {(payers.length === 0 || selectedCasePayerValue === CUSTOM_PAYER_VALUE) && (
+            <input
+              value={payer}
+              onChange={(e) => setPayer(e.target.value)}
+              placeholder={t("oaCaseForm.payerPlaceholder")}
+              className={`${inputClass} mb-3`}
+            />
+          )}
 
           <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
             {t("oaCaseForm.summary")}
@@ -228,8 +226,8 @@ export default function CustomEntryForm({
           </label>
           {payers.length > 0 && (
             <select
-              value={selectedPayerValue}
-              onChange={(e) => handlePayerSelect(e.target.value)}
+              value={selectedPaymentPayerValue}
+              onChange={(e) => handlePaymentPayerSelect(e.target.value)}
               className={`${inputClass} mb-1.5`}
             >
               <option value={CUSTOM_PAYER_VALUE}>{t("paymentEntryForm.customPayer")}</option>
@@ -240,7 +238,7 @@ export default function CustomEntryForm({
               ))}
             </select>
           )}
-          {(payers.length === 0 || selectedPayerValue === CUSTOM_PAYER_VALUE) && (
+          {(payers.length === 0 || selectedPaymentPayerValue === CUSTOM_PAYER_VALUE) && (
             <input
               autoFocus
               value={paymentPayer}
@@ -250,68 +248,7 @@ export default function CustomEntryForm({
             />
           )}
 
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("paymentEntryForm.portalsLabel")}
-          </label>
-          <div className="flex flex-col gap-2">
-            {portals.map((portal, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className="flex flex-1 flex-col gap-1.5">
-                  {platforms.length > 0 && (
-                    <select
-                      value={
-                        platforms.find((platform) => platform.name === portal.name)?.id ??
-                        CUSTOM_PLATFORM_VALUE
-                      }
-                      onChange={(e) => handlePlatformSelect(i, e.target.value)}
-                      className={inputClass}
-                    >
-                      <option value={CUSTOM_PLATFORM_VALUE}>
-                        {t("paymentEntryForm.customPlatform")}
-                      </option>
-                      {platforms.map((platform) => (
-                        <option key={platform.id} value={platform.id}>
-                          {platform.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {(platforms.length === 0 ||
-                    !platforms.some((platform) => platform.name === portal.name)) && (
-                    <input
-                      value={portal.name}
-                      onChange={(e) => updatePortal(i, "name", e.target.value)}
-                      placeholder={t("paymentEntryForm.portalNamePlaceholder")}
-                      className={inputClass}
-                    />
-                  )}
-                </div>
-                <input
-                  value={portal.url}
-                  onChange={(e) => updatePortal(i, "url", e.target.value)}
-                  placeholder="https://..."
-                  className={`${inputClass} flex-1`}
-                />
-                {portals.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removePortal(i)}
-                    className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => setPortals((prev) => [...prev, { name: "", url: "" }])}
-            className="mt-2 flex items-center gap-1 text-[13px] font-medium text-(--color-primary)"
-          >
-            <Plus size={14} />
-            {t("paymentEntryForm.addPortal")}
-          </button>
+          <PortalFields portals={portals} platforms={platforms} setPortals={setPortals} />
 
           <label className="mt-3 mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
             {t("paymentEntryForm.notes")}

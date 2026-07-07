@@ -22,3 +22,17 @@ export function filterDeletedCustomCategories(
 ) {
   return categories.filter((category) => !isDeletedCustomCategory(category, deletedCategories));
 }
+
+export function normalizeCustomCategoryTemplates(categories: CustomCategory[]) {
+  let changed = false;
+  const next = categories.map((category) => {
+    // The "查保险" workspace uses payer portal cards, so keep it on the Payments shape.
+    if (normalizeCategoryTitle(category.title) === "查保险" && category.template !== "payments") {
+      changed = true;
+      return { ...category, template: "payments" as const };
+    }
+    return category;
+  });
+
+  return changed ? next : categories;
+}
