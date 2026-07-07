@@ -23,7 +23,12 @@ import { useTrash } from "../hooks/useTrash";
 import { useToast } from "./ToastProvider";
 import { slugify } from "../lib/slugify";
 import ProfileMenu from "./ProfileMenu";
-import type { CustomCategory, CustomCategoryIcon, CustomEntry } from "../lib/types";
+import type {
+  CustomCategory,
+  CustomCategoryIcon,
+  CustomCategoryTemplate,
+  CustomEntry,
+} from "../lib/types";
 
 const NAV_ITEMS = [
   { to: "/checklist", key: "sidebar.checklist", icon: ClipboardCheck, dot: "var(--color-accent-teal)" },
@@ -40,6 +45,20 @@ const ICON_MAP: Record<CustomCategoryIcon, typeof Folder> = {
   "book-open": BookOpen,
   landmark: Landmark,
   "help-circle": HelpCircle,
+};
+const TEMPLATE_CHOICES: CustomCategoryTemplate[] = ["checklist", "oa-case", "payments"];
+const TEMPLATE_ICON_MAP: Record<CustomCategoryTemplate, typeof Folder> = {
+  checklist: ClipboardCheck,
+  "oa-case": FileSearch,
+  payments: CreditCard,
+};
+const TEMPLATE_LABEL_KEY: Record<
+  CustomCategoryTemplate,
+  "template.checklist" | "template.oaCase" | "template.payments"
+> = {
+  checklist: "template.checklist",
+  "oa-case": "template.oaCase",
+  payments: "template.payments",
 };
 
 function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
@@ -77,6 +96,8 @@ export default function Sidebar() {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
   const [newCategoryIcon, setNewCategoryIcon] = useState<CustomCategoryIcon>("folder");
+  const [newCategoryTemplate, setNewCategoryTemplate] =
+    useState<CustomCategoryTemplate>("checklist");
 
   function startRename(category: CustomCategory) {
     setEditingCategoryId(category.id);
@@ -96,10 +117,19 @@ export default function Sidebar() {
     e.preventDefault();
     if (!newCategoryTitle.trim()) return;
     const id = slugify(newCategoryTitle, "category");
-    setCustomCategories((prev) => [...prev, { id, title: newCategoryTitle.trim(), icon: newCategoryIcon }]);
+    setCustomCategories((prev) => [
+      ...prev,
+      {
+        id,
+        title: newCategoryTitle.trim(),
+        icon: newCategoryIcon,
+        template: newCategoryTemplate,
+      },
+    ]);
     setIsAddingCategory(false);
     setNewCategoryTitle("");
     setNewCategoryIcon("folder");
+    setNewCategoryTemplate("checklist");
   }
 
   function handleDeleteCategory(category: CustomCategory) {
@@ -241,6 +271,27 @@ export default function Sidebar() {
               placeholder={t("sidebar.categoryNamePlaceholder")}
               className={inlineInputClass}
             />
+            <div className="grid grid-cols-3 gap-1">
+              {TEMPLATE_CHOICES.map((template) => {
+                const Icon = TEMPLATE_ICON_MAP[template];
+                return (
+                  <button
+                    key={template}
+                    type="button"
+                    onClick={() => setNewCategoryTemplate(template)}
+                    className={[
+                      "flex min-h-12 flex-col items-center justify-center gap-1 rounded-(--radius-sm) border px-1.5 py-1 text-[11px] font-medium",
+                      newCategoryTemplate === template
+                        ? "border-(--color-primary)/30 bg-(--color-primary)/8 text-(--color-primary)"
+                        : "border-(--color-hairline) text-(--color-ink-muted) hover:bg-(--color-canvas-soft)",
+                    ].join(" ")}
+                  >
+                    <Icon size={14} />
+                    <span className="truncate">{t(TEMPLATE_LABEL_KEY[template])}</span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex items-center gap-1">
               {ICON_CHOICES.map((iconKey) => {
                 const Icon = ICON_MAP[iconKey];
@@ -267,6 +318,7 @@ export default function Sidebar() {
                 onClick={() => {
                   setIsAddingCategory(false);
                   setNewCategoryTitle("");
+                  setNewCategoryTemplate("checklist");
                 }}
                 className="rounded-(--radius-sm) border border-(--color-hairline) px-2 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
               >

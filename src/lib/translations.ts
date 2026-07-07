@@ -12,6 +12,9 @@ export const translations = {
     en: 'Delete the category "{title}"? Its {count} entries will be deleted too.',
   },
   "sidebar.deletedCategoryToast": { zh: "已删除分类「{title}」", en: 'Deleted category "{title}"' },
+  "template.checklist": { zh: "Checklist", en: "Checklist" },
+  "template.oaCase": { zh: "OA 案例", en: "OA Case" },
+  "template.payments": { zh: "Payments", en: "Payments" },
 
   "profileMenu.settings": { zh: "设置", en: "Settings" },
   "profileMenu.logout": { zh: "退出登录", en: "Log out" },
@@ -85,6 +88,7 @@ export const translations = {
   "common.edit": { zh: "编辑", en: "Edit" },
   "common.delete": { zh: "删除", en: "Delete" },
   "common.undo": { zh: "撤销", en: "Undo" },
+  "common.link": { zh: "链接", en: "Link" },
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
   "checklistItemForm.detailPlaceholder": {
@@ -130,6 +134,8 @@ export const translations = {
 
   "customEntryForm.title": { zh: "标题", en: "Title" },
   "customEntryForm.titlePlaceholder": { zh: "例如 Aetna", en: "e.g. Aetna" },
+  "customEntryForm.checklistItem": { zh: "Checklist 事项", en: "Checklist item" },
+  "customEntryForm.detail": { zh: "补充说明（可选）", en: "Detail (optional)" },
   "customEntryForm.notes": { zh: "备注（可选）", en: "Notes (optional)" },
   "customEntryForm.notesPlaceholder": {
     zh: "例如 隶属于 Premera，走 Premera 网络查询",

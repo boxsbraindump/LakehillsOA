@@ -46,18 +46,26 @@ export interface Payer {
 }
 
 export type CustomCategoryIcon = "folder" | "shield" | "book-open" | "landmark" | "help-circle";
+export type CustomCategoryTemplate = "checklist" | "oa-case" | "payments";
 
 export interface CustomCategory {
   id: string;
   title: string;
   icon: CustomCategoryIcon;
+  /** Older custom categories may not have this; treat them as OA-case style for compatibility. */
+  template?: CustomCategoryTemplate;
 }
 
 export interface CustomEntry {
   id: string;
   title: string;
+  detail?: string;
   notes?: string;
   tags: string[];
+  payer?: string;
+  summary?: string;
+  resolution?: string;
+  portals?: PaymentPortal[];
 }
 
 export interface SearchDoc {

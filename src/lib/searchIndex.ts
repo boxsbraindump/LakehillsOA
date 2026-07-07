@@ -54,15 +54,30 @@ export function buildCustomSearchDocs(
 ): SearchDoc[] {
   return customCategories.flatMap((cat) =>
     (customEntries[cat.id] ?? []).map(
-      (entry): SearchDoc => ({
-        id: entry.id,
-        category: "custom",
-        categoryTitle: cat.title,
-        path: `/custom/${cat.id}#${entry.id}`,
-        title: entry.title,
-        snippet: entry.notes ?? cat.title,
-        keywords: [cat.title, ...entry.tags],
-      }),
+      (entry): SearchDoc => {
+        const portalText = (entry.portals ?? []).flatMap((portal) => [portal.name, portal.url]);
+        return {
+          id: entry.id,
+          category: "custom",
+          categoryTitle: cat.title,
+          path: `/custom/${cat.id}#${entry.id}`,
+          title: entry.title,
+          snippet:
+            entry.summary ??
+            entry.notes ??
+            entry.detail ??
+            (entry.portals ?? []).map((portal) => portal.name).join(" · ") ??
+            cat.title,
+          keywords: [
+            cat.title,
+            entry.detail ?? "",
+            entry.payer ?? "",
+            entry.resolution ?? "",
+            ...entry.tags,
+            ...portalText,
+          ],
+        };
+      },
     ),
   );
 }
