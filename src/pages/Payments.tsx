@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { paymentEntries as seedEntries } from "../data/payments";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
@@ -28,11 +28,25 @@ export default function Payments() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const entries = [
     ...seedEntries.map((entry) => overrides[entry.id] ?? entry),
     ...customEntries,
   ].filter((entry) => !hiddenIds.includes(entry.id));
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? entries.filter((entry) =>
+        [
+          entry.payer,
+          entry.notes ?? "",
+          ...entry.portals.flatMap((portal) => [portal.name, portal.url]),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      )
+    : entries;
 
   function isCustom(id: string) {
     return customEntries.some((c) => c.id === id);
@@ -96,8 +110,32 @@ export default function Payments() {
         <p className="mt-1 text-[15px] text-(--color-ink-muted)">{t("payments.subtitle")}</p>
       </div>
 
+      <div className="relative mb-6">
+        <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-(--color-ink-faint)" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("payments.searchPlaceholder")}
+          className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) py-2.5 pr-16 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-sm) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+          >
+            {t("common.cancel")}
+          </button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {entries.map((entry) =>
+        {filtered.length === 0 && (
+          <p className="text-center text-[14px] text-(--color-ink-faint) sm:col-span-2">
+            {t("payments.noMatches")}
+          </p>
+        )}
+        {filtered.map((entry) =>
           editingId === entry.id ? (
             <PaymentEntryForm
               key={entry.id}
@@ -163,13 +201,15 @@ export default function Payments() {
         {isAdding ? (
           <PaymentEntryForm onSave={handleCreate} onCancel={() => setIsAdding(false)} />
         ) : (
-          <button
-            onClick={() => setIsAdding(true)}
-            className="flex min-h-[120px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
-          >
-            <Plus size={16} />
-            {t("payments.addNew")}
-          </button>
+          !query.trim() && (
+            <button
+              onClick={() => setIsAdding(true)}
+              className="flex min-h-[120px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
+            >
+              <Plus size={16} />
+              {t("payments.addNew")}
+            </button>
+          )
         )}
       </div>
     </div>

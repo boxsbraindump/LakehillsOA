@@ -110,6 +110,15 @@ export default function Home() {
               placeholder={t("home.searchPlaceholder")}
               className="w-full bg-transparent px-3 py-4 text-[16px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint)"
             />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="mr-3 shrink-0 rounded-(--radius-md) px-2.5 py-1 text-[13px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+              >
+                {t("common.cancel")}
+              </button>
+            )}
           </div>
 
           {query.trim() && (

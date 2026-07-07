@@ -444,8 +444,17 @@ export default function Checklist() {
           value={noteQuery}
           onChange={(e) => setNoteQuery(e.target.value)}
           placeholder={t("checklist.searchPlaceholder")}
-          className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) py-2.5 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
+          className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) py-2.5 pr-16 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
         />
+        {noteQuery && (
+          <button
+            type="button"
+            onClick={() => setNoteQuery("")}
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-sm) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+          >
+            {t("common.cancel")}
+          </button>
+        )}
         {noteQuery.trim() && (
           <div className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
             {noteMatches.length === 0 ? (

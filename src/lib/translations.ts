@@ -165,6 +165,11 @@ export const translations = {
     en: "Look up the payment portal for each payer",
   },
   "payments.addNew": { zh: "添加新条目", en: "Add new entry" },
+  "payments.searchPlaceholder": {
+    zh: "按保险公司、平台、链接或备注搜索…",
+    en: "Search by payer, platform, link, or note…",
+  },
+  "payments.noMatches": { zh: "没有匹配的付款查询入口", en: "No matching payment portals" },
   "payments.deleteConfirm": { zh: "删除「{payer}」？", en: 'Delete "{payer}"?' },
   "payments.deletedToast": { zh: "已删除「{payer}」", en: 'Deleted "{payer}"' },
 
