@@ -244,14 +244,14 @@ export default function Sidebar() {
               <button
                 onClick={() => startRename(category)}
                 aria-label={t("common.edit")}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover/cat:opacity-100 hover:text-(--color-primary)"
+                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) md:opacity-0 md:group-hover/cat:opacity-100"
               >
                 <Pencil size={13} />
               </button>
               <button
                 onClick={() => handleDeleteCategory(category)}
                 aria-label={t("common.delete")}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover/cat:opacity-100 hover:text-red-500"
+                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 md:opacity-0 md:group-hover/cat:opacity-100"
               >
                 <Trash2 size={13} />
               </button>

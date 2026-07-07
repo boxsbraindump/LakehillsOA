@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type SetStateAction } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { fetchAllRemoteState, pushRemoteValue, syncEnabled } from "../lib/syncApi";
 
@@ -10,25 +10,44 @@ import { fetchAllRemoteState, pushRemoteValue, syncEnabled } from "../lib/syncAp
  * simultaneous conflicting edits.
  */
 export function useSyncedStorage<T>(key: string, initialValue: T) {
-  const [value, setValue] = useLocalStorage<T>(key, initialValue);
+  const [value, setStoredValue] = useLocalStorage<T>(key, initialValue);
   const hydrated = useRef(!syncEnabled);
+  const localEditBeforeHydration = useRef(false);
+  const latestValue = useRef(value);
   const skipNextPush = useRef(false);
+
+  useEffect(() => {
+    latestValue.current = value;
+  }, [value]);
+
+  const setValue = useCallback(
+    (next: SetStateAction<T>) => {
+      if (!hydrated.current) localEditBeforeHydration.current = true;
+      setStoredValue(next);
+    },
+    [setStoredValue],
+  );
 
   useEffect(() => {
     if (!syncEnabled) return;
     let cancelled = false;
     fetchAllRemoteState().then((remote) => {
       if (cancelled) return;
+      hydrated.current = true;
+      if (localEditBeforeHydration.current) {
+        void pushRemoteValue(key, latestValue.current);
+        localEditBeforeHydration.current = false;
+        return;
+      }
       if (Object.prototype.hasOwnProperty.call(remote, key)) {
         skipNextPush.current = true;
-        setValue(remote[key] as T);
+        setStoredValue(remote[key] as T);
       }
-      hydrated.current = true;
     });
     return () => {
       cancelled = true;
     };
-  }, [key, setValue]);
+  }, [key, setStoredValue]);
 
   useEffect(() => {
     if (!hydrated.current) return;

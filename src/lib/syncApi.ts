@@ -127,6 +127,12 @@ export function pushRemoteValue(key: string, value: unknown): Promise<void> {
   })
     .then((res) => {
       if (res.status === 401) onUnauthorized?.();
+      if (res.ok) {
+        cachedStatePromise = (cachedStatePromise ?? Promise.resolve({})).then((state) => ({
+          ...state,
+          [key]: value,
+        }));
+      }
     })
     .catch(() => undefined);
 }
