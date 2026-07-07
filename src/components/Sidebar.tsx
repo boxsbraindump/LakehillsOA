@@ -291,7 +291,7 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <nav className="mt-auto flex gap-0.5 overflow-x-auto border-(--color-hairline) pt-2 md:mt-4 md:flex-col md:overflow-visible md:border-t">
+      <nav className="mt-auto flex gap-0.5 overflow-x-auto border-(--color-hairline) pt-2 md:flex-col md:overflow-visible md:border-t">
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
           <NavLink key={to} to={to} className={navLinkClass}>
             <Icon size={16} strokeWidth={2} className="shrink-0" />
