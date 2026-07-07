@@ -237,6 +237,8 @@ export const translations = {
   "platforms.addNew": { zh: "添加平台", en: "Add platform" },
   "platforms.name": { zh: "平台名称", en: "Platform name" },
   "platforms.namePlaceholder": { zh: "例如 Availity", en: "e.g. Availity" },
+  "platforms.url": { zh: "平台链接", en: "Platform link" },
+  "platforms.urlPlaceholder": { zh: "https://...", en: "https://..." },
   "platforms.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
   "platforms.empty": { zh: "还没有添加平台", en: "No platforms added yet" },
 } as const;

@@ -54,7 +54,19 @@ export default function PaymentEntryForm({
     }
 
     const found = platforms.find((platform) => platform.id === value);
-    if (found) updatePortal(index, "name", found.name);
+    if (!found) return;
+
+    setPortals((prev) =>
+      prev.map((portal, i) =>
+        i === index
+          ? {
+              ...portal,
+              name: found.name,
+              url: found.url?.trim() ? found.url : portal.url,
+            }
+          : portal,
+      ),
+    );
   }
 
   function removePortal(index: number) {

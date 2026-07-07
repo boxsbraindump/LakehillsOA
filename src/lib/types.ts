@@ -48,6 +48,7 @@ export interface Payer {
 export interface Platform {
   id: string;
   name: string;
+  url?: string;
 }
 
 export type CustomCategoryIcon = "folder" | "shield" | "book-open" | "landmark" | "help-circle";
