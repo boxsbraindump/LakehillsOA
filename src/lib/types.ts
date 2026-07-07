@@ -45,6 +45,11 @@ export interface Payer {
   payerId: string;
 }
 
+export interface Platform {
+  id: string;
+  name: string;
+}
+
 export type CustomCategoryIcon = "folder" | "shield" | "book-open" | "landmark" | "help-circle";
 export type CustomCategoryTemplate = "checklist" | "oa-case" | "payments";
 

@@ -178,6 +178,7 @@ export const translations = {
     en: "Select an existing payer…",
   },
   "paymentEntryForm.customPayer": { zh: "其他（手动输入）", en: "Other (type manually)" },
+  "paymentEntryForm.customPlatform": { zh: "其他平台（手动输入）", en: "Other platform (type manually)" },
   "paymentEntryForm.portalsLabel": { zh: "查询入口", en: "Portals" },
   "paymentEntryForm.portalNamePlaceholder": {
     zh: "平台名称，如 Availity",
@@ -209,13 +210,20 @@ export const translations = {
   "settings.title": { zh: "设置", en: "Settings" },
   "settings.account": { zh: "账号", en: "Account" },
   "settings.signedInAs": { zh: "已登录", en: "Signed in as" },
+  "settings.preferences": { zh: "偏好设置", en: "Preferences" },
   "settings.language": { zh: "语言", en: "Language" },
   "settings.languageZh": { zh: "中文", en: "中文" },
   "settings.languageEn": { zh: "English", en: "English" },
+  "settings.workspaceData": { zh: "Workspace Data", en: "Workspace Data" },
   "settings.payers": { zh: "保险公司目录", en: "Payer directory" },
   "settings.payersHint": {
     zh: "在 Payments 页面添加条目时可以从这里选择",
     en: "These show up as choices when adding an entry on the Payments page",
+  },
+  "settings.platforms": { zh: "平台名称目录", en: "Platform directory" },
+  "settings.platformsHint": {
+    zh: "在 Payments 页面填写查询入口时可以从这里选择",
+    en: "These show up as portal name choices on the Payments page",
   },
 
   "payers.addNew": { zh: "添加保险公司", en: "Add payer" },
@@ -225,6 +233,12 @@ export const translations = {
   "payers.payerIdPlaceholder": { zh: "例如 91051", en: "e.g. 91051" },
   "payers.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
   "payers.empty": { zh: "还没有添加保险公司", en: "No payers added yet" },
+
+  "platforms.addNew": { zh: "添加平台", en: "Add platform" },
+  "platforms.name": { zh: "平台名称", en: "Platform name" },
+  "platforms.namePlaceholder": { zh: "例如 Availity", en: "e.g. Availity" },
+  "platforms.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
+  "platforms.empty": { zh: "还没有添加平台", en: "No platforms added yet" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

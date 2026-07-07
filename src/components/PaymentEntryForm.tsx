@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
-import type { Payer, PaymentEntry, PaymentPortal } from "../lib/types";
+import type { Payer, PaymentEntry, PaymentPortal, Platform } from "../lib/types";
 import { slugify } from "../lib/slugify";
+import { defaultPayers } from "../data/payers";
+import { defaultPlatforms } from "../data/platforms";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "./LanguageProvider";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
+const CUSTOM_PLATFORM_VALUE = "__custom__";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -20,7 +23,8 @@ export default function PaymentEntryForm({
   onCancel: () => void;
 }) {
   const { t } = useLanguage();
-  const [payers] = useSyncedStorage<Payer[]>("lh-payers", []);
+  const [payers] = useSyncedStorage<Payer[]>("lh-payers", defaultPayers);
+  const [platforms] = useSyncedStorage<Platform[]>("lh-platforms", defaultPlatforms);
   const matchingPayer = payers.find((p) => p.name === initial?.payer);
   const [selectedPayerValue, setSelectedPayerValue] = useState(
     matchingPayer ? matchingPayer.id : CUSTOM_PAYER_VALUE,
@@ -41,6 +45,16 @@ export default function PaymentEntryForm({
 
   function updatePortal(index: number, field: keyof PaymentPortal, value: string) {
     setPortals((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+  }
+
+  function handlePlatformSelect(index: number, value: string) {
+    if (value === CUSTOM_PLATFORM_VALUE) {
+      updatePortal(index, "name", "");
+      return;
+    }
+
+    const found = platforms.find((platform) => platform.id === value);
+    if (found) updatePortal(index, "name", found.name);
   }
 
   function removePortal(index: number) {
@@ -100,12 +114,34 @@ export default function PaymentEntryForm({
       <div className="flex flex-col gap-2">
         {portals.map((portal, i) => (
           <div key={i} className="flex items-center gap-1.5">
-            <input
-              value={portal.name}
-              onChange={(e) => updatePortal(i, "name", e.target.value)}
-              placeholder={t("paymentEntryForm.portalNamePlaceholder")}
-              className={`${inputClass} flex-1`}
-            />
+            <div className="flex flex-1 flex-col gap-1.5">
+              {platforms.length > 0 && (
+                <select
+                  value={
+                    platforms.find((platform) => platform.name === portal.name)?.id ??
+                    CUSTOM_PLATFORM_VALUE
+                  }
+                  onChange={(e) => handlePlatformSelect(i, e.target.value)}
+                  className={inputClass}
+                >
+                  <option value={CUSTOM_PLATFORM_VALUE}>{t("paymentEntryForm.customPlatform")}</option>
+                  {platforms.map((platform) => (
+                    <option key={platform.id} value={platform.id}>
+                      {platform.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {(platforms.length === 0 ||
+                !platforms.some((platform) => platform.name === portal.name)) && (
+                <input
+                  value={portal.name}
+                  onChange={(e) => updatePortal(i, "name", e.target.value)}
+                  placeholder={t("paymentEntryForm.portalNamePlaceholder")}
+                  className={inputClass}
+                />
+              )}
+            </div>
             <input
               value={portal.url}
               onChange={(e) => updatePortal(i, "url", e.target.value)}
