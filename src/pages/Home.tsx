@@ -3,9 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { CATEGORY_DOT } from "../lib/searchIndex";
 import { useSearchIndex } from "../hooks/useSearchIndex";
+import { useUsageStats } from "../hooks/useUsageStats";
 import SearchResults from "../components/SearchResults";
 import SplitText from "../components/SplitText";
 import { useLanguage } from "../components/LanguageProvider";
+import type { SearchDoc } from "../lib/types";
 
 const QUICK_CHIP_IDS = [
   "opening-voicemail",
@@ -16,25 +18,49 @@ const QUICK_CHIP_IDS = [
   "medicare",
 ];
 
+type QuickChip = Pick<SearchDoc, "id" | "category" | "categoryTitle" | "path" | "title">;
+
 export default function Home() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
   const { docs, fuse } = useSearchIndex();
+  const { trackUsage, usageEntries } = useUsageStats();
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
     return fuse.search(query, { limit: 8 }).map((r) => r.item);
   }, [query, fuse]);
 
-  const quickChips = useMemo(
-    () => QUICK_CHIP_IDS.map((id) => docs.find((d) => d.id === id)).filter(Boolean),
-    [docs],
-  );
+  const quickChips = useMemo(() => {
+    const docsByPath = new Map(docs.map((doc) => [doc.path, doc]));
+    const fallbackDocs = QUICK_CHIP_IDS.map((id) => docs.find((doc) => doc.id === id)).filter(
+      Boolean,
+    );
+    const chips: QuickChip[] = [];
+    const seenPaths = new Set<string>();
+
+    for (const entry of usageEntries) {
+      if (entry.path === "/" || entry.path === "/settings" || entry.path === "/trash") continue;
+      const chip = docsByPath.get(entry.path) ?? entry;
+      if (seenPaths.has(chip.path)) continue;
+      chips.push(chip);
+      seenPaths.add(chip.path);
+    }
+
+    for (const doc of fallbackDocs) {
+      if (!doc || seenPaths.has(doc.path)) continue;
+      chips.push(doc);
+      seenPaths.add(doc.path);
+    }
+
+    return chips.slice(0, 6);
+  }, [docs, usageEntries]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (results.length > 0) {
+      trackUsage(results[0]);
       navigate(results[0].path);
     }
   }
@@ -88,7 +114,7 @@ export default function Home() {
 
           {query.trim() && (
             <div className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 rounded-(--radius-xl) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
-              <SearchResults results={results} />
+              <SearchResults results={results} onNavigate={trackUsage} />
             </div>
           )}
         </form>
@@ -100,6 +126,7 @@ export default function Home() {
                 <Link
                   key={doc.id}
                   to={doc.path}
+                  onClick={() => trackUsage(doc)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-(--color-hairline) bg-white/82 px-3 py-1.5 text-[13px] text-(--color-ink-secondary) shadow-(--shadow-level-1) transition-[border-color,color,transform] duration-200 hover:-translate-y-0.5 hover:border-(--color-primary)/40 hover:text-(--color-secondary)"
                 >
                   <span

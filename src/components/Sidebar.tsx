@@ -19,6 +19,7 @@ import {
 import { useAuth } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { useUsageStats } from "../hooks/useUsageStats";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "./ToastProvider";
 import { useConfirm } from "./ConfirmProvider";
@@ -38,9 +39,27 @@ import type {
 } from "../lib/types";
 
 const NAV_ITEMS = [
-  { to: "/checklist", key: "sidebar.checklist", icon: ClipboardCheck, dot: "var(--color-accent-teal)" },
-  { to: "/oa-cases", key: "sidebar.oaCases", icon: FileSearch, dot: "var(--color-accent-orange)" },
-  { to: "/payments", key: "sidebar.payments", icon: CreditCard, dot: "var(--color-accent-purple)" },
+  {
+    to: "/checklist",
+    key: "sidebar.checklist",
+    category: "checklist",
+    icon: ClipboardCheck,
+    dot: "var(--color-accent-teal)",
+  },
+  {
+    to: "/oa-cases",
+    key: "sidebar.oaCases",
+    category: "oa-cases",
+    icon: FileSearch,
+    dot: "var(--color-accent-orange)",
+  },
+  {
+    to: "/payments",
+    key: "sidebar.payments",
+    category: "payments",
+    icon: CreditCard,
+    dot: "var(--color-accent-purple)",
+  },
 ] as const;
 
 const UTILITY_NAV_ITEMS = [{ to: "/trash", key: "sidebar.trash", icon: Trash2 }] as const;
@@ -89,6 +108,7 @@ export default function Sidebar() {
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
+  const { trackUsage } = useUsageStats();
 
   const [customCategories, setCustomCategories] = useSyncedStorage<CustomCategory[]>(
     "lh-custom-categories",
@@ -240,8 +260,20 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-        {NAV_ITEMS.map(({ to, key, icon: Icon, dot }) => (
-          <NavLink key={to} to={to} className={navLinkClass}>
+        {NAV_ITEMS.map(({ to, key, category, icon: Icon, dot }) => (
+          <NavLink
+            key={to}
+            to={to}
+            onClick={() =>
+              trackUsage({
+                id: category,
+                category,
+                path: to,
+                title: t(key),
+              })
+            }
+            className={navLinkClass}
+          >
             <Icon size={16} strokeWidth={2} className="shrink-0" />
             <span className="truncate">{t(key)}</span>
             <span
@@ -287,6 +319,15 @@ export default function Sidebar() {
             <div key={category.id} className="group/cat flex items-center">
               <NavLink
                 to={`/custom/${category.id}`}
+                onClick={() =>
+                  trackUsage({
+                    id: category.id,
+                    category: "custom",
+                    categoryTitle: category.title,
+                    path: `/custom/${category.id}`,
+                    title: category.title,
+                  })
+                }
                 className={(props) => navLinkClass(props, "min-w-0 flex-1")}
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />

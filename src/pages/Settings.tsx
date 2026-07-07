@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogOut, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, LogOut, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -13,7 +13,7 @@ const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
 
 const PAYER_SEED_VERSION = "2026-07-payers-v1";
-const PLATFORM_SEED_VERSION = "2026-07-platforms-v1";
+const PLATFORM_SEED_VERSION = "2026-07-platforms-v2";
 
 export default function Settings() {
   const { email, logout } = useAuth();
@@ -54,10 +54,19 @@ export default function Settings() {
 
     setPlatforms((prev) => {
       const existingNames = new Set(prev.map((platform) => platform.name.trim().toLowerCase()));
+      const updatedPlatforms = prev.map((platform) => {
+        const defaultPlatform = defaultPlatforms.find(
+          (item) => item.name.toLowerCase() === platform.name.trim().toLowerCase(),
+        );
+        if (!defaultPlatform || platform.url?.trim()) return platform;
+        return { ...platform, url: defaultPlatform.url };
+      });
       const missingPlatforms = defaultPlatforms.filter(
         (platform) => !existingNames.has(platform.name.toLowerCase()),
       );
-      return missingPlatforms.length > 0 ? [...prev, ...missingPlatforms] : prev;
+      return missingPlatforms.length > 0
+        ? [...updatedPlatforms, ...missingPlatforms]
+        : updatedPlatforms;
     });
     setPlatformSeedVersion(PLATFORM_SEED_VERSION);
   }, [platformSeedVersion, setPlatformSeedVersion, setPlatforms]);
@@ -250,13 +259,26 @@ export default function Settings() {
                         <Trash2 size={14} />
                       </button>
                     </div>
-                    <input
-                      value={platform.url ?? ""}
-                      onChange={(e) => updatePlatform(platform.id, { url: e.target.value })}
-                      placeholder={t("platforms.urlPlaceholder")}
-                      aria-label={t("platforms.url")}
-                      className={inputClass}
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={platform.url ?? ""}
+                        onChange={(e) => updatePlatform(platform.id, { url: e.target.value })}
+                        placeholder={t("platforms.urlPlaceholder")}
+                        aria-label={t("platforms.url")}
+                        className={inputClass}
+                      />
+                      {platform.url?.trim() && (
+                        <a
+                          href={platform.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={t("common.link")}
+                          className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+                        >
+                          <ExternalLink size={14} />
+                        </a>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>

@@ -8,7 +8,7 @@ export default function SearchResults({
   onNavigate,
 }: {
   results: SearchDoc[];
-  onNavigate?: () => void;
+  onNavigate?: (doc: SearchDoc) => void;
 }) {
   const { t, lang } = useLanguage();
 
@@ -30,7 +30,7 @@ export default function SearchResults({
         >
           <Link
             to={doc.path}
-            onClick={onNavigate}
+            onClick={() => onNavigate?.(doc)}
             className="flex items-start gap-3 px-4 py-2.5 transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-(--color-canvas-tint)"
           >
             <span
