@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Search } from "lucide-react";
-import { searchFuse, searchDocs, CATEGORY_DOT } from "../lib/searchIndex";
+import { CATEGORY_DOT } from "../lib/searchIndex";
+import { useSearchIndex } from "../hooks/useSearchIndex";
 import SearchResults from "../components/SearchResults";
 import SplitText from "../components/SplitText";
+import { useLanguage } from "../components/LanguageProvider";
 
 const QUICK_CHIP_IDS = [
   "opening-voicemail",
@@ -17,15 +19,17 @@ const QUICK_CHIP_IDS = [
 export default function Home() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
+  const { docs, fuse } = useSearchIndex();
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    return searchFuse.search(query, { limit: 8 }).map((r) => r.item);
-  }, [query]);
+    return fuse.search(query, { limit: 8 }).map((r) => r.item);
+  }, [query, fuse]);
 
   const quickChips = useMemo(
-    () => QUICK_CHIP_IDS.map((id) => searchDocs.find((d) => d.id === id)).filter(Boolean),
-    [],
+    () => QUICK_CHIP_IDS.map((id) => docs.find((d) => d.id === id)).filter(Boolean),
+    [docs],
   );
 
   function handleSubmit(e: React.FormEvent) {
@@ -43,8 +47,9 @@ export default function Home() {
             Lake Hills Acupuncture · Internal
           </span>
           <SplitText
+            key={`h1-${lang}`}
             tag="h1"
-            text="有什么想查的？"
+            text={t("home.heading")}
             className="mt-4 text-[40px] leading-[1.1] font-bold tracking-(--tracking-heading) text-(--color-ink)"
             splitType="chars"
             delay={50}
@@ -55,8 +60,9 @@ export default function Home() {
             textAlign="center"
           />
           <SplitText
+            key={`p-${lang}`}
             tag="p"
-            text="搜索前台 checklist、OA 理赔案例，或付款查询位置"
+            text={t("home.subtitle")}
             className="mt-2 text-[16px] text-(--color-ink-muted)"
             splitType="words"
             delay={50}
@@ -75,7 +81,7 @@ export default function Home() {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="试试「copay」「授权」「ERA」…"
+              placeholder={t("home.searchPlaceholder")}
               className="w-full bg-transparent px-3 py-4 text-[16px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint)"
             />
           </div>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { SearchDoc } from "../lib/types";
-import { CATEGORY_DOT, CATEGORY_LABEL } from "../lib/searchIndex";
+import { CATEGORY_DOT, categoryLabel } from "../lib/searchIndex";
+import { useLanguage } from "./LanguageProvider";
 
 export default function SearchResults({
   results,
@@ -9,10 +10,12 @@ export default function SearchResults({
   results: SearchDoc[];
   onNavigate?: () => void;
 }) {
+  const { t, lang } = useLanguage();
+
   if (results.length === 0) {
     return (
       <div className="px-4 py-6 text-center text-[14px] text-(--color-ink-faint)">
-        没有找到匹配结果，换个关键词试试
+        {t("search.noResults")}
       </div>
     );
   }
@@ -36,7 +39,8 @@ export default function SearchResults({
                 {doc.title}
               </span>
               <span className="block truncate text-[13px] text-(--color-ink-muted)">
-                {CATEGORY_LABEL[doc.category]} · {doc.snippet}
+                {doc.category === "custom" ? doc.categoryTitle : categoryLabel(doc.category, lang)} ·{" "}
+                {doc.snippet}
               </span>
             </span>
           </Link>

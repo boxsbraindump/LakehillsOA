@@ -1,101 +1,107 @@
 import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import { Search, Pencil, Plus, Trash2 } from "lucide-react";
-import { oaCases as seedCases } from "../data/oaCases";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
-import OACaseForm from "../components/OACaseForm";
-import type { OACase } from "../lib/types";
+import CustomEntryForm from "../components/CustomEntryForm";
+import type { CustomCategory as CustomCategoryType, CustomEntry } from "../lib/types";
 
-export default function OACases() {
+export default function CustomCategory() {
   useHashHighlight();
+  const { categoryId = "" } = useParams();
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
-  const [overrides, setOverrides] = useSyncedStorage<Record<string, OACase>>(
-    "lh-oacases-overrides",
+  const [categories] = useSyncedStorage<CustomCategoryType[]>("lh-custom-categories", []);
+  const [allEntries, setAllEntries] = useSyncedStorage<Record<string, CustomEntry[]>>(
+    "lh-custom-entries",
     {},
   );
-  const [customCases, setCustomCases] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
-  const [hiddenIds, setHiddenIds] = useSyncedStorage<string[]>("lh-oacases-hidden", []);
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
-  const cases = [...seedCases.map((c) => overrides[c.id] ?? c), ...customCases].filter(
-    (c) => !hiddenIds.includes(c.id),
-  );
+  const category = categories.find((c) => c.id === categoryId);
+  const entries = allEntries[categoryId] ?? [];
 
-  function isCustom(id: string) {
-    return customCases.some((c) => c.id === id);
-  }
-
-  function handleSave(updated: OACase) {
-    if (isCustom(updated.id)) {
-      setCustomCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    } else {
-      setOverrides((prev) => ({ ...prev, [updated.id]: updated }));
-    }
-    setEditingId(null);
-  }
-
-  function handleCreate(created: OACase) {
-    setCustomCases((prev) => [...prev, created]);
+  function handleCreate(created: CustomEntry) {
+    setAllEntries((prev) => ({ ...prev, [categoryId]: [...(prev[categoryId] ?? []), created] }));
     setIsAdding(false);
     setJustAddedId(created.id);
   }
 
-  function handleDelete(c: OACase) {
-    if (!window.confirm(t("oaCases.deleteConfirm", { title: c.title }))) return;
-    const wasCustom = isCustom(c.id);
-    const trashId = `oa-cases:${c.id}`;
+  function handleSave(updated: CustomEntry) {
+    setAllEntries((prev) => ({
+      ...prev,
+      [categoryId]: (prev[categoryId] ?? []).map((e) => (e.id === updated.id ? updated : e)),
+    }));
+    setEditingId(null);
+  }
 
-    if (wasCustom) {
-      setCustomCases((prev) => prev.filter((item) => item.id !== c.id));
-    } else {
-      setHiddenIds((prev) => [...prev, c.id]);
-    }
+  function handleDelete(entry: CustomEntry) {
+    if (!window.confirm(t("customCategory.deleteConfirm", { title: entry.title }))) return;
+    const trashId = `custom:${entry.id}`;
+
+    setAllEntries((prev) => ({
+      ...prev,
+      [categoryId]: (prev[categoryId] ?? []).filter((e) => e.id !== entry.id),
+    }));
 
     addToTrash({
       trashId,
-      category: "oa-cases",
-      itemId: c.id,
-      wasCustom,
+      category: "custom",
+      itemId: entry.id,
+      sectionId: categoryId,
+      categoryTitle: category?.title,
+      wasCustom: true,
       deletedAt: Date.now(),
-      title: c.title,
-      snapshot: c,
+      title: entry.title,
+      snapshot: entry,
     });
 
-    showToast(t("oaCases.deletedToast", { title: c.title }), {
+    showToast(t("customCategory.deletedToast", { title: entry.title }), {
       label: t("common.undo"),
       onClick: () => {
-        if (wasCustom) {
-          setCustomCases((prev) => [...prev, c]);
-        } else {
-          setHiddenIds((prev) => prev.filter((id) => id !== c.id));
-        }
+        setAllEntries((prev) => ({
+          ...prev,
+          [categoryId]: [...(prev[categoryId] ?? []), entry],
+        }));
         removeFromTrash(trashId);
       },
     });
   }
 
+  if (!category) {
+    return (
+      <div className="mx-auto max-w-3xl px-8 py-12 text-center">
+        <p className="text-[15px] text-(--color-ink-muted)">{t("customCategory.notFound")}</p>
+        <Link
+          to="/"
+          className="mt-3 inline-block text-[14px] font-medium text-(--color-primary) hover:underline"
+        >
+          {t("customCategory.backHome")}
+        </Link>
+      </div>
+    );
+  }
+
   const q = query.trim().toLowerCase();
   const filtered = q
-    ? cases.filter((c) =>
-        [c.title, c.payer, c.summary, c.resolution, ...c.tags].join(" ").toLowerCase().includes(q),
+    ? entries.filter((e) =>
+        [e.title, e.notes ?? "", ...e.tags].join(" ").toLowerCase().includes(q),
       )
-    : cases;
+    : entries;
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-12">
       <div className="mb-6">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-          OA Cases
+          {category.title}
         </h1>
-        <p className="mt-1 text-[15px] text-(--color-ink-muted)">{t("oaCases.subtitle")}</p>
       </div>
 
       <div className="relative mb-6">
@@ -103,42 +109,44 @@ export default function OACases() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("oaCases.searchPlaceholder")}
+          placeholder={t("customCategory.searchPlaceholder")}
           className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) py-2.5 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
         />
       </div>
 
       <div className="flex flex-col gap-4">
         {filtered.length === 0 && (
-          <p className="text-center text-[14px] text-(--color-ink-faint)">{t("oaCases.noMatches")}</p>
+          <p className="text-center text-[14px] text-(--color-ink-faint)">
+            {t("customCategory.noMatches")}
+          </p>
         )}
-        {filtered.map((c) =>
-          editingId === c.id ? (
-            <OACaseForm
-              key={c.id}
-              initial={c}
+        {filtered.map((entry) =>
+          editingId === entry.id ? (
+            <CustomEntryForm
+              key={entry.id}
+              initial={entry}
               onSave={handleSave}
               onCancel={() => setEditingId(null)}
             />
           ) : (
             <article
-              key={c.id}
-              id={c.id}
+              key={entry.id}
+              id={entry.id}
               className={[
                 "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)",
-                c.id === justAddedId ? "fade-in-up" : "",
+                entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
               <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <button
-                  onClick={() => setEditingId(c.id)}
+                  onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
                   className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                 >
                   <Pencil size={14} />
                 </button>
                 <button
-                  onClick={() => handleDelete(c)}
+                  onClick={() => handleDelete(entry)}
                   aria-label={t("common.delete")}
                   className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
                 >
@@ -146,29 +154,13 @@ export default function OACases() {
                 </button>
               </div>
 
-              <div className="mb-2 flex flex-wrap items-center gap-2 pr-12">
-                <h2 className="text-[18px] font-bold text-(--color-ink)">{c.title}</h2>
-                {c.payer && (
-                  <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
-                    {c.payer}
-                  </span>
-                )}
-              </div>
+              <h2 className="mb-2 pr-12 text-[18px] font-bold text-(--color-ink)">{entry.title}</h2>
 
-              {c.summary && <p className="text-[14px] text-(--color-ink-secondary)">{c.summary}</p>}
+              {entry.notes && <p className="text-[14px] text-(--color-ink-secondary)">{entry.notes}</p>}
 
-              {c.resolution && (
-                <div className="mt-3 rounded-(--radius-md) bg-(--color-canvas-soft) p-3.5">
-                  <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
-                    {t("oaCases.resolutionLabel")}
-                  </p>
-                  <p className="text-[14px] text-(--color-ink)">{c.resolution}</p>
-                </div>
-              )}
-
-              {c.tags.length > 0 && (
+              {entry.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {c.tags.map((tag) => (
+                  {entry.tags.map((tag) => (
                     <span
                       key={tag}
                       className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted)"
@@ -183,7 +175,7 @@ export default function OACases() {
         )}
 
         {isAdding ? (
-          <OACaseForm onSave={handleCreate} onCancel={() => setIsAdding(false)} />
+          <CustomEntryForm onSave={handleCreate} onCancel={() => setIsAdding(false)} />
         ) : (
           !query.trim() && (
             <button
@@ -191,7 +183,7 @@ export default function OACases() {
               className="flex min-h-[100px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
             >
               <Plus size={16} />
-              {t("oaCases.addNew")}
+              {t("customCategory.addNew")}
             </button>
           )
         )}

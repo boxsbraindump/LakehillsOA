@@ -1,41 +1,37 @@
 import { useState } from "react";
-import type { OACase } from "../lib/types";
+import type { CustomEntry } from "../lib/types";
 import { slugify } from "../lib/slugify";
 import { useLanguage } from "./LanguageProvider";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
 
-export default function OACaseForm({
+export default function CustomEntryForm({
   initial,
   onSave,
   onCancel,
 }: {
-  initial?: OACase;
-  onSave: (entry: OACase) => void;
+  initial?: CustomEntry;
+  onSave: (entry: CustomEntry) => void;
   onCancel: () => void;
 }) {
   const { t } = useLanguage();
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [payer, setPayer] = useState(initial?.payer ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
-  const [summary, setSummary] = useState(initial?.summary ?? "");
-  const [resolution, setResolution] = useState(initial?.resolution ?? "");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
 
     onSave({
-      id: initial?.id ?? slugify(title, "case"),
+      id: initial?.id ?? slugify(title, "entry"),
       title: title.trim(),
-      payer: payer.trim(),
+      notes: notes.trim() || undefined,
       tags: tags
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean),
-      summary: summary.trim(),
-      resolution: resolution.trim(),
     });
   }
 
@@ -45,55 +41,33 @@ export default function OACaseForm({
       className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)"
     >
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.title")}
+        {t("customEntryForm.title")}
       </label>
       <input
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder={t("oaCaseForm.titlePlaceholder")}
+        placeholder={t("customEntryForm.titlePlaceholder")}
         className={`${inputClass} mb-3`}
       />
 
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.payer")}
-      </label>
-      <input
-        value={payer}
-        onChange={(e) => setPayer(e.target.value)}
-        placeholder={t("oaCaseForm.payerPlaceholder")}
-        className={`${inputClass} mb-3`}
-      />
-
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.summary")}
+        {t("customEntryForm.notes")}
       </label>
       <textarea
-        value={summary}
-        onChange={(e) => setSummary(e.target.value)}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
         rows={2}
-        placeholder={t("oaCaseForm.summaryPlaceholder")}
+        placeholder={t("customEntryForm.notesPlaceholder")}
         className={`${inputClass} mb-3`}
       />
 
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.resolution")}
-      </label>
-      <textarea
-        value={resolution}
-        onChange={(e) => setResolution(e.target.value)}
-        rows={3}
-        placeholder={t("oaCaseForm.resolutionPlaceholder")}
-        className={`${inputClass} mb-3`}
-      />
-
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.tags")}
+        {t("customEntryForm.tags")}
       </label>
       <input
         value={tags}
         onChange={(e) => setTags(e.target.value)}
-        placeholder="denial, prior authorization"
         className={inputClass}
       />
 

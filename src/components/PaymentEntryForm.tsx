@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
-import type { PaymentEntry, PaymentPortal } from "../lib/types";
+import type { Payer, PaymentEntry, PaymentPortal } from "../lib/types";
 import { slugify } from "../lib/slugify";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { useLanguage } from "./LanguageProvider";
+
+const CUSTOM_PAYER_VALUE = "__custom__";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -15,11 +19,25 @@ export default function PaymentEntryForm({
   onSave: (entry: PaymentEntry) => void;
   onCancel: () => void;
 }) {
+  const { t } = useLanguage();
+  const [payers] = useSyncedStorage<Payer[]>("lh-payers", []);
+  const matchingPayer = payers.find((p) => p.name === initial?.payer);
+  const [selectedPayerValue, setSelectedPayerValue] = useState(
+    matchingPayer ? matchingPayer.id : CUSTOM_PAYER_VALUE,
+  );
   const [payer, setPayer] = useState(initial?.payer ?? "");
   const [portals, setPortals] = useState<PaymentPortal[]>(
     initial?.portals ?? [{ name: "", url: "" }],
   );
   const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  function handlePayerSelect(value: string) {
+    setSelectedPayerValue(value);
+    if (value !== CUSTOM_PAYER_VALUE) {
+      const found = payers.find((p) => p.id === value);
+      if (found) setPayer(found.name);
+    }
+  }
 
   function updatePortal(index: number, field: keyof PaymentPortal, value: string) {
     setPortals((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
@@ -50,18 +68,34 @@ export default function PaymentEntryForm({
       className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)"
     >
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        保险公司 / Payer
+        {t("paymentEntryForm.payer")}
       </label>
-      <input
-        autoFocus
-        value={payer}
-        onChange={(e) => setPayer(e.target.value)}
-        placeholder="例如 Kaiser Permanente"
-        className={`${inputClass} mb-3`}
-      />
+      {payers.length > 0 && (
+        <select
+          value={selectedPayerValue}
+          onChange={(e) => handlePayerSelect(e.target.value)}
+          className={`${inputClass} mb-1.5`}
+        >
+          <option value={CUSTOM_PAYER_VALUE}>{t("paymentEntryForm.customPayer")}</option>
+          {payers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {(payers.length === 0 || selectedPayerValue === CUSTOM_PAYER_VALUE) && (
+        <input
+          autoFocus
+          value={payer}
+          onChange={(e) => setPayer(e.target.value)}
+          placeholder={t("paymentEntryForm.payerPlaceholder")}
+          className={`${inputClass} mb-3`}
+        />
+      )}
 
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        查询入口
+        {t("paymentEntryForm.portalsLabel")}
       </label>
       <div className="flex flex-col gap-2">
         {portals.map((portal, i) => (
@@ -69,7 +103,7 @@ export default function PaymentEntryForm({
             <input
               value={portal.name}
               onChange={(e) => updatePortal(i, "name", e.target.value)}
-              placeholder="平台名称，如 Availity"
+              placeholder={t("paymentEntryForm.portalNamePlaceholder")}
               className={`${inputClass} flex-1`}
             />
             <input
@@ -96,17 +130,17 @@ export default function PaymentEntryForm({
         className="mt-2 flex items-center gap-1 text-[13px] font-medium text-(--color-primary)"
       >
         <Plus size={14} />
-        添加一个入口
+        {t("paymentEntryForm.addPortal")}
       </button>
 
       <label className="mt-3 mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        备注（可选）
+        {t("paymentEntryForm.notes")}
       </label>
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         rows={2}
-        placeholder="到账周期、注意事项…"
+        placeholder={t("paymentEntryForm.notesPlaceholder")}
         className={inputClass}
       />
 
@@ -116,13 +150,13 @@ export default function PaymentEntryForm({
           onClick={onCancel}
           className="rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
         >
-          取消
+          {t("common.cancel")}
         </button>
         <button
           type="submit"
           className="rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
         >
-          保存
+          {t("common.save")}
         </button>
       </div>
     </form>

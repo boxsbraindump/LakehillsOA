@@ -14,6 +14,7 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
+import { useLanguage } from "../components/LanguageProvider";
 import ChecklistItemForm from "../components/ChecklistItemForm";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
@@ -63,6 +64,7 @@ export default function Checklist() {
   );
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { t, lang } = useLanguage();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [addingSectionId, setAddingSectionId] = useState<string | null>(null);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
@@ -165,7 +167,7 @@ export default function Checklist() {
   }
 
   function handleDeleteItem(sectionId: string, item: ChecklistItem) {
-    if (!window.confirm(`删除「${item.label}」？`)) return;
+    if (!window.confirm(t("checklist.deleteItemConfirm", { label: item.label }))) return;
     const wasCustom = isCustomItem(sectionId, item.id);
     const trashId = `checklist:${item.id}`;
 
@@ -189,8 +191,8 @@ export default function Checklist() {
       snapshot: item,
     });
 
-    showToast(`已删除「${item.label}」`, {
-      label: "撤销",
+    showToast(t("checklist.deletedItemToast", { label: item.label }), {
+      label: t("common.undo"),
       onClick: () => {
         if (wasCustom) {
           setCustomItems((prev) => ({
@@ -216,7 +218,11 @@ export default function Checklist() {
   }
 
   function handleDeleteSection(section: { id: string; title: string; items: ChecklistItem[] }) {
-    if (!window.confirm(`删除整个 Section「${section.title}」？其中的 ${section.items.length} 个事项也会一并删除。`))
+    if (
+      !window.confirm(
+        t("checklist.deleteSectionConfirm", { title: section.title, count: section.items.length }),
+      )
+    )
       return;
     const wasCustom = isCustomSection(section.id);
     const trashId = `checklist-section:${section.id}`;
@@ -238,8 +244,8 @@ export default function Checklist() {
       snapshot: { id: section.id, title: section.title, items: section.items },
     });
 
-    showToast(`已删除 Section「${section.title}」`, {
-      label: "撤销",
+    showToast(t("checklist.deletedSectionToast", { title: section.title }), {
+      label: t("common.undo"),
       onClick: () => {
         if (wasCustom) {
           setCustomSections((prev) => [...prev, { id: section.id, title: section.title }]);
@@ -280,14 +286,14 @@ export default function Checklist() {
     <div className="mx-auto max-w-3xl px-8 py-12">
       <div className="mb-4 flex items-start justify-between gap-4">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-          前台工作 Checklist
+          {t("checklist.title")}
         </h1>
         <button
           onClick={resetSelectedDay}
           className="flex shrink-0 items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
         >
           <RotateCcw size={14} />
-          重置当日进度
+          {t("checklist.resetDay")}
         </button>
       </div>
 
@@ -296,14 +302,14 @@ export default function Checklist() {
         <input
           value={noteQuery}
           onChange={(e) => setNoteQuery(e.target.value)}
-          placeholder="搜索所有日期的备注，比如患者姓名…"
+          placeholder={t("checklist.searchPlaceholder")}
           className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) py-2.5 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
         />
         {noteQuery.trim() && (
           <div className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
             {noteMatches.length === 0 ? (
               <p className="px-4 py-6 text-center text-[14px] text-(--color-ink-faint)">
-                没有找到匹配的备注
+                {t("checklist.noNoteMatches")}
               </p>
             ) : (
               <ul className="max-h-96 overflow-y-auto py-1.5">
@@ -317,7 +323,7 @@ export default function Checklist() {
                         {match.itemLabel}
                       </span>
                       <span className="text-[13px] text-(--color-ink-muted)">
-                        {formatDisplayDate(match.date)} · {match.note}
+                        {formatDisplayDate(match.date, lang)} · {match.note}
                       </span>
                     </button>
                   </li>
@@ -332,7 +338,7 @@ export default function Checklist() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setSelectedDate((d) => shiftDateKey(d, -1))}
-            aria-label="前一天"
+            aria-label={t("checklist.prevDay")}
             className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
           >
             <ChevronLeft size={16} />
@@ -345,7 +351,7 @@ export default function Checklist() {
           />
           <button
             onClick={() => setSelectedDate((d) => shiftDateKey(d, 1))}
-            aria-label="后一天"
+            aria-label={t("checklist.nextDay")}
             className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
           >
             <ChevronRight size={16} />
@@ -355,12 +361,12 @@ export default function Checklist() {
               onClick={() => setSelectedDate(todayKey())}
               className="rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
             >
-              今天
+              {t("checklist.today")}
             </button>
           )}
         </div>
         <p className="text-[13px] text-(--color-ink-muted)">
-          {formatDisplayDate(selectedDate)} · {done} / {total} 已完成
+          {formatDisplayDate(selectedDate, lang)} · {t("checklist.completedCount", { done, total })}
         </p>
       </div>
 
@@ -378,7 +384,7 @@ export default function Checklist() {
               <h2 className="text-[18px] font-bold text-(--color-ink)">{section.title}</h2>
               <button
                 onClick={() => handleDeleteSection(section)}
-                aria-label="删除 Section"
+                aria-label={t("checklist.deleteSectionAria")}
                 className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover/section:opacity-100 hover:text-red-500"
               >
                 <Trash2 size={14} />
@@ -453,7 +459,7 @@ export default function Checklist() {
 
                       <button
                         onClick={() => setEditingItemId(item.id)}
-                        aria-label="编辑"
+                        aria-label={t("common.edit")}
                         className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-(--color-primary)"
                       >
                         <Pencil size={13} />
@@ -461,7 +467,7 @@ export default function Checklist() {
 
                       <button
                         onClick={() => handleDeleteItem(section.id, item)}
-                        aria-label="删除"
+                        aria-label={t("common.delete")}
                         className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
                       >
                         <Trash2 size={13} />
@@ -485,7 +491,7 @@ export default function Checklist() {
                         autoFocus
                         value={note}
                         onChange={(e) => setNote(item.id, e.target.value)}
-                        placeholder="写点备注…"
+                        placeholder={t("checklist.notePlaceholder")}
                         rows={2}
                         className="mt-2 ml-[30px] w-[calc(100%-30px)] rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2.5 py-2 text-[13px] text-(--color-ink) outline-none focus:shadow-(--shadow-level-1)"
                       />
@@ -510,7 +516,7 @@ export default function Checklist() {
                 className="mt-2 flex items-center gap-1 text-[13px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:text-(--color-primary) active:scale-[0.97]"
               >
                 <Plus size={14} />
-                添加事项
+                {t("checklist.addItem")}
               </button>
             )}
           </section>
@@ -525,13 +531,13 @@ export default function Checklist() {
             className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)"
           >
             <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-              Section 名称
+              {t("checklist.sectionNameLabel")}
             </label>
             <input
               autoFocus
               value={newSectionTitle}
               onChange={(e) => setNewSectionTitle(e.target.value)}
-              placeholder="例如 夜间检查"
+              placeholder={t("checklist.sectionNamePlaceholder")}
               className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
             />
             <div className="mt-3 flex justify-end gap-2">
@@ -543,13 +549,13 @@ export default function Checklist() {
                 }}
                 className="rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
               >
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
               >
-                保存
+                {t("common.save")}
               </button>
             </div>
           </form>
@@ -559,7 +565,7 @@ export default function Checklist() {
             className="flex min-h-[64px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
           >
             <Plus size={16} />
-            添加新 Section
+            {t("checklist.addSection")}
           </button>
         )}
       </div>

@@ -5,11 +5,13 @@ import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
+import { useLanguage } from "../components/LanguageProvider";
 import PaymentEntryForm from "../components/PaymentEntryForm";
 import type { PaymentEntry } from "../lib/types";
 
 export default function Payments() {
   useHashHighlight();
+  const { t } = useLanguage();
   const [overrides, setOverrides] = useSyncedStorage<Record<string, PaymentEntry>>(
     "lh-payments-overrides",
     {},
@@ -50,7 +52,7 @@ export default function Payments() {
   }
 
   function handleDelete(entry: PaymentEntry) {
-    if (!window.confirm(`删除「${entry.payer}」？`)) return;
+    if (!window.confirm(t("payments.deleteConfirm", { payer: entry.payer }))) return;
     const wasCustom = isCustom(entry.id);
     const trashId = `payments:${entry.id}`;
 
@@ -70,8 +72,8 @@ export default function Payments() {
       snapshot: entry,
     });
 
-    showToast(`已删除「${entry.payer}」`, {
-      label: "撤销",
+    showToast(t("payments.deletedToast", { payer: entry.payer }), {
+      label: t("common.undo"),
       onClick: () => {
         if (wasCustom) {
           setCustomEntries((prev) => [...prev, entry]);
@@ -87,11 +89,9 @@ export default function Payments() {
     <div className="mx-auto max-w-3xl px-8 py-12">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-          Where to Find Payments
+          {t("payments.title")}
         </h1>
-        <p className="mt-1 text-[15px] text-(--color-ink-muted)">
-          按保险公司查对应的付款查询入口
-        </p>
+        <p className="mt-1 text-[15px] text-(--color-ink-muted)">{t("payments.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -115,14 +115,14 @@ export default function Payments() {
               <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
-                  aria-label="编辑"
+                  aria-label={t("common.edit")}
                   className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                 >
                   <Pencil size={14} />
                 </button>
                 <button
                   onClick={() => handleDelete(entry)}
-                  aria-label="删除"
+                  aria-label={t("common.delete")}
                   className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
                 >
                   <Trash2 size={14} />
@@ -166,7 +166,7 @@ export default function Payments() {
             className="flex min-h-[120px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
           >
             <Plus size={16} />
-            添加新条目
+            {t("payments.addNew")}
           </button>
         )}
       </div>

@@ -1,0 +1,152 @@
+import { useState } from "react";
+import { LogOut, Plus, Trash2 } from "lucide-react";
+import { useAuth } from "../components/AuthProvider";
+import { useLanguage } from "../components/LanguageProvider";
+import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { slugify } from "../lib/slugify";
+import type { Payer } from "../lib/types";
+
+const inputClass =
+  "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
+
+export default function Settings() {
+  const { email, logout } = useAuth();
+  const { t, lang, setLang } = useLanguage();
+  const [payers, setPayers] = useSyncedStorage<Payer[]>("lh-payers", []);
+  const [newName, setNewName] = useState("");
+  const [newPayerId, setNewPayerId] = useState("");
+
+  function handleAddPayer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setPayers((prev) => [
+      ...prev,
+      { id: slugify(newName, "payer"), name: newName.trim(), payerId: newPayerId.trim() },
+    ]);
+    setNewName("");
+    setNewPayerId("");
+  }
+
+  function handleDeletePayer(payer: Payer) {
+    if (!window.confirm(t("payers.deleteConfirm", { name: payer.name }))) return;
+    setPayers((prev) => prev.filter((p) => p.id !== payer.id));
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-8 py-12">
+      <div className="mb-8">
+        <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
+          {t("settings.title")}
+        </h1>
+      </div>
+
+      <section className="mb-6 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)">
+        <h2 className="mb-3 text-[16px] font-bold text-(--color-ink)">{t("settings.account")}</h2>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("settings.signedInAs")}
+            </p>
+            <p className="truncate text-[14px] text-(--color-ink)">{email}</p>
+          </div>
+          <button
+            onClick={logout}
+            className="flex shrink-0 items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+          >
+            <LogOut size={14} />
+            {t("profileMenu.logout")}
+          </button>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)">
+        <h2 className="mb-3 text-[16px] font-bold text-(--color-ink)">{t("settings.language")}</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setLang("zh")}
+            className={[
+              "rounded-(--radius-md) border px-3 py-1.5 text-[13px] font-medium",
+              lang === "zh"
+                ? "border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary)"
+                : "border-(--color-hairline) text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
+            ].join(" ")}
+          >
+            {t("settings.languageZh")}
+          </button>
+          <button
+            onClick={() => setLang("en")}
+            className={[
+              "rounded-(--radius-md) border px-3 py-1.5 text-[13px] font-medium",
+              lang === "en"
+                ? "border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary)"
+                : "border-(--color-hairline) text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
+            ].join(" ")}
+          >
+            {t("settings.languageEn")}
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)">
+        <h2 className="text-[16px] font-bold text-(--color-ink)">{t("settings.payers")}</h2>
+        <p className="mt-1 mb-4 text-[13px] text-(--color-ink-muted)">{t("settings.payersHint")}</p>
+
+        {payers.length === 0 ? (
+          <p className="mb-4 text-[13px] text-(--color-ink-faint)">{t("payers.empty")}</p>
+        ) : (
+          <ul className="mb-4 flex flex-col divide-y divide-(--color-hairline)">
+            {payers.map((payer) => (
+              <li key={payer.id} className="group flex items-center justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] text-(--color-ink)">{payer.name}</p>
+                  {payer.payerId && (
+                    <p className="text-[12px] text-(--color-ink-faint)">{payer.payerId}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleDeletePayer(payer)}
+                  aria-label={t("common.delete")}
+                  className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form onSubmit={handleAddPayer} className="flex items-end gap-2">
+          <div className="flex-1">
+            <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("payers.name")}
+            </label>
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={t("payers.namePlaceholder")}
+              className={inputClass}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("payers.payerId")}
+            </label>
+            <input
+              value={newPayerId}
+              onChange={(e) => setNewPayerId(e.target.value)}
+              placeholder={t("payers.payerIdPlaceholder")}
+              className={inputClass}
+            />
+          </div>
+          <button
+            type="submit"
+            className="flex shrink-0 items-center gap-1 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+          >
+            <Plus size={14} />
+            {t("payers.addNew")}
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}

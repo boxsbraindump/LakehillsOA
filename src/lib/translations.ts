@@ -1,0 +1,208 @@
+export type Lang = "zh" | "en";
+
+export const translations = {
+  "sidebar.checklist": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
+  "sidebar.oaCases": { zh: "OA Cases", en: "OA Cases" },
+  "sidebar.payments": { zh: "Where to Find Payments", en: "Where to Find Payments" },
+  "sidebar.trash": { zh: "垃圾桶", en: "Trash" },
+  "sidebar.addCategory": { zh: "添加分类", en: "Add category" },
+  "sidebar.categoryNamePlaceholder": { zh: "例如 查保险", en: "e.g. Check insurance" },
+  "sidebar.deleteCategoryConfirm": {
+    zh: "删除分类「{title}」？其中的 {count} 条记录也会一并删除。",
+    en: 'Delete the category "{title}"? Its {count} entries will be deleted too.',
+  },
+  "sidebar.deletedCategoryToast": { zh: "已删除分类「{title}」", en: 'Deleted category "{title}"' },
+
+  "profileMenu.settings": { zh: "设置", en: "Settings" },
+  "profileMenu.logout": { zh: "退出登录", en: "Log out" },
+
+  "login.subtitle": { zh: "用 Google 账号登录继续", en: "Sign in with Google to continue" },
+  "login.checkingSession": { zh: "正在检查登录状态…", en: "Checking sign-in status…" },
+  "login.verifying": { zh: "正在验证…", en: "Verifying…" },
+  "login.error.not_allowed": {
+    zh: "此邮箱未获授权，请联系管理员添加",
+    en: "This email isn't authorized — ask an admin to add it",
+  },
+  "login.error.invalid_token": {
+    zh: "登录验证失败，请重试",
+    en: "Sign-in verification failed — please try again",
+  },
+  "login.error.network_error": {
+    zh: "无法连接服务器，请检查网络后重试",
+    en: "Couldn't reach the server — check your connection and try again",
+  },
+  "login.error.generic": { zh: "登录失败，请重试", en: "Sign-in failed — please try again" },
+
+  "home.heading": { zh: "有什么想查的？", en: "What are you looking for?" },
+  "home.subtitle": {
+    zh: "搜索前台 checklist、OA 理赔案例，或付款查询位置",
+    en: "Search the front-desk checklist, OA claim cases, or payment lookup info",
+  },
+  "home.searchPlaceholder": {
+    zh: "试试「copay」「授权」「ERA」…",
+    en: "Try “copay”, “authorization”, “ERA”…",
+  },
+
+  "search.noResults": {
+    zh: "没有找到匹配结果，换个关键词试试",
+    en: "No matching results — try a different keyword",
+  },
+  "category.checklist": { zh: "前台 Checklist", en: "Front Desk Checklist" },
+  "category.oaCases": { zh: "OA Cases", en: "OA Cases" },
+  "category.payments": { zh: "Payments", en: "Payments" },
+  "category.custom": { zh: "自定义", en: "Custom" },
+
+  "checklist.title": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
+  "checklist.resetDay": { zh: "重置当日进度", en: "Reset today's progress" },
+  "checklist.searchPlaceholder": {
+    zh: "搜索所有日期的备注，比如患者姓名…",
+    en: "Search notes across all dates, e.g. a patient's name…",
+  },
+  "checklist.noNoteMatches": { zh: "没有找到匹配的备注", en: "No matching notes found" },
+  "checklist.prevDay": { zh: "前一天", en: "Previous day" },
+  "checklist.nextDay": { zh: "后一天", en: "Next day" },
+  "checklist.today": { zh: "今天", en: "Today" },
+  "checklist.completedCount": { zh: "{done} / {total} 已完成", en: "{done} / {total} done" },
+  "checklist.addItem": { zh: "添加事项", en: "Add item" },
+  "checklist.addSection": { zh: "添加新 Section", en: "Add new section" },
+  "checklist.sectionNameLabel": { zh: "Section 名称", en: "Section name" },
+  "checklist.sectionNamePlaceholder": { zh: "例如 夜间检查", en: "e.g. Night check" },
+  "checklist.deleteSectionAria": { zh: "删除 Section", en: "Delete section" },
+  "checklist.deleteItemConfirm": { zh: "删除「{label}」？", en: 'Delete "{label}"?' },
+  "checklist.deleteSectionConfirm": {
+    zh: "删除整个 Section「{title}」？其中的 {count} 个事项也会一并删除。",
+    en: 'Delete the whole section "{title}"? Its {count} items will be deleted too.',
+  },
+  "checklist.deletedItemToast": { zh: "已删除「{label}」", en: 'Deleted "{label}"' },
+  "checklist.deletedSectionToast": {
+    zh: "已删除 Section「{title}」",
+    en: 'Deleted section "{title}"',
+  },
+  "checklist.notePlaceholder": { zh: "写点备注…", en: "Write a note…" },
+
+  "common.cancel": { zh: "取消", en: "Cancel" },
+  "common.save": { zh: "保存", en: "Save" },
+  "common.edit": { zh: "编辑", en: "Edit" },
+  "common.delete": { zh: "删除", en: "Delete" },
+  "common.undo": { zh: "撤销", en: "Undo" },
+
+  "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
+  "checklistItemForm.detailPlaceholder": {
+    zh: "补充说明（可选）",
+    en: "Additional detail (optional)",
+  },
+
+  "oaCases.title": { zh: "OA Cases", en: "OA Cases" },
+  "oaCases.subtitle": {
+    zh: "遇到奇怪的理赔情况时，先搜一下这里有没有类似案例",
+    en: "When something unusual comes up with a claim, search here first for a similar case",
+  },
+  "oaCases.searchPlaceholder": {
+    zh: "按标题、保险公司、标签搜索…",
+    en: "Search by title, payer, or tag…",
+  },
+  "oaCases.noMatches": { zh: "没有匹配的案例", en: "No matching cases" },
+  "oaCases.resolutionLabel": { zh: "处理方式", en: "Resolution" },
+  "oaCases.addNew": { zh: "添加新案例", en: "Add new case" },
+  "oaCases.deleteConfirm": { zh: "删除「{title}」？", en: 'Delete "{title}"?' },
+  "oaCases.deletedToast": { zh: "已删除「{title}」", en: 'Deleted "{title}"' },
+
+  "oaCaseForm.title": { zh: "标题", en: "Title" },
+  "oaCaseForm.titlePlaceholder": {
+    zh: "例如 有二次保险但 claim 仍被 deny",
+    en: "e.g. Secondary insurance but claim still denied",
+  },
+  "oaCaseForm.payer": { zh: "保险公司 / Payer", en: "Payer" },
+  "oaCaseForm.payerPlaceholder": { zh: "例如 Blue Shield", en: "e.g. Blue Shield" },
+  "oaCaseForm.summary": { zh: "情况说明", en: "Summary" },
+  "oaCaseForm.summaryPlaceholder": { zh: "发生了什么", en: "What happened" },
+  "oaCaseForm.resolution": { zh: "处理方式", en: "Resolution" },
+  "oaCaseForm.resolutionPlaceholder": { zh: "怎么解决的", en: "How it was resolved" },
+  "oaCaseForm.tags": { zh: "标签（逗号分隔，可选）", en: "Tags (comma-separated, optional)" },
+
+  "customCategory.searchPlaceholder": { zh: "按标题、标签、备注搜索…", en: "Search by title, tag, or note…" },
+  "customCategory.noMatches": { zh: "没有匹配的记录", en: "No matching entries" },
+  "customCategory.addNew": { zh: "添加新记录", en: "Add new entry" },
+  "customCategory.deleteConfirm": { zh: "删除「{title}」？", en: 'Delete "{title}"?' },
+  "customCategory.deletedToast": { zh: "已删除「{title}」", en: 'Deleted "{title}"' },
+  "customCategory.notFound": { zh: "这个分类不存在或已被删除", en: "This category doesn't exist or was deleted" },
+  "customCategory.backHome": { zh: "返回首页", en: "Back to home" },
+
+  "customEntryForm.title": { zh: "标题", en: "Title" },
+  "customEntryForm.titlePlaceholder": { zh: "例如 Aetna", en: "e.g. Aetna" },
+  "customEntryForm.notes": { zh: "备注（可选）", en: "Notes (optional)" },
+  "customEntryForm.notesPlaceholder": {
+    zh: "例如 隶属于 Premera，走 Premera 网络查询",
+    en: "e.g. Underwritten by Premera — look it up under Premera's network",
+  },
+  "customEntryForm.tags": { zh: "标签（逗号分隔，可选）", en: "Tags (comma-separated, optional)" },
+
+  "payments.title": { zh: "Where to Find Payments", en: "Where to Find Payments" },
+  "payments.subtitle": {
+    zh: "按保险公司查对应的付款查询入口",
+    en: "Look up the payment portal for each payer",
+  },
+  "payments.addNew": { zh: "添加新条目", en: "Add new entry" },
+  "payments.deleteConfirm": { zh: "删除「{payer}」？", en: 'Delete "{payer}"?' },
+  "payments.deletedToast": { zh: "已删除「{payer}」", en: 'Deleted "{payer}"' },
+
+  "paymentEntryForm.payer": { zh: "保险公司 / Payer", en: "Payer" },
+  "paymentEntryForm.payerPlaceholder": {
+    zh: "例如 Kaiser Permanente",
+    en: "e.g. Kaiser Permanente",
+  },
+  "paymentEntryForm.selectExisting": {
+    zh: "选择已有保险公司…",
+    en: "Select an existing payer…",
+  },
+  "paymentEntryForm.customPayer": { zh: "其他（手动输入）", en: "Other (type manually)" },
+  "paymentEntryForm.portalsLabel": { zh: "查询入口", en: "Portals" },
+  "paymentEntryForm.portalNamePlaceholder": {
+    zh: "平台名称，如 Availity",
+    en: "Portal name, e.g. Availity",
+  },
+  "paymentEntryForm.addPortal": { zh: "添加一个入口", en: "Add a portal" },
+  "paymentEntryForm.notes": { zh: "备注（可选）", en: "Notes (optional)" },
+  "paymentEntryForm.notesPlaceholder": {
+    zh: "到账周期、注意事项…",
+    en: "Payout timing, things to watch for…",
+  },
+
+  "trash.title": { zh: "垃圾桶", en: "Trash" },
+  "trash.subtitle": {
+    zh: "删除的内容会在这里保留 {days} 天，之后自动清除",
+    en: "Deleted items stay here for {days} days, then are cleared automatically",
+  },
+  "trash.empty": { zh: "垃圾桶是空的", en: "Trash is empty" },
+  "trash.wholeSection": { zh: "· 整个 Section", en: "· Whole section" },
+  "trash.daysLeft": { zh: "剩余 {days} 天", en: "{days} days left" },
+  "trash.restore": { zh: "恢复", en: "Restore" },
+  "trash.purgeNowAria": { zh: "彻底删除", en: "Delete permanently" },
+  "trash.purgeConfirm": {
+    zh: "彻底删除「{title}」？此操作无法撤销。",
+    en: 'Permanently delete "{title}"? This can\'t be undone.',
+  },
+  "trash.restoredToast": { zh: "已恢复「{title}」", en: 'Restored "{title}"' },
+
+  "settings.title": { zh: "设置", en: "Settings" },
+  "settings.account": { zh: "账号", en: "Account" },
+  "settings.signedInAs": { zh: "已登录", en: "Signed in as" },
+  "settings.language": { zh: "语言", en: "Language" },
+  "settings.languageZh": { zh: "中文", en: "中文" },
+  "settings.languageEn": { zh: "English", en: "English" },
+  "settings.payers": { zh: "保险公司目录", en: "Payer directory" },
+  "settings.payersHint": {
+    zh: "在 Payments 页面添加条目时可以从这里选择",
+    en: "These show up as choices when adding an entry on the Payments page",
+  },
+
+  "payers.addNew": { zh: "添加保险公司", en: "Add payer" },
+  "payers.name": { zh: "名称", en: "Name" },
+  "payers.payerId": { zh: "Payer ID", en: "Payer ID" },
+  "payers.namePlaceholder": { zh: "例如 Kaiser Permanente", en: "e.g. Kaiser Permanente" },
+  "payers.payerIdPlaceholder": { zh: "例如 91051", en: "e.g. 91051" },
+  "payers.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
+  "payers.empty": { zh: "还没有添加保险公司", en: "No payers added yet" },
+} as const;
+
+export type TranslationKey = keyof typeof translations;

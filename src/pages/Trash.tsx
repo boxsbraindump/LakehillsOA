@@ -2,19 +2,23 @@ import { Trash2, RotateCcw } from "lucide-react";
 import { useTrash } from "../hooks/useTrash";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useToast } from "../components/ToastProvider";
+import { useLanguage } from "../components/LanguageProvider";
 import { daysRemaining, TRASH_RETENTION_DAYS } from "../lib/trash";
-import { CATEGORY_LABEL, CATEGORY_DOT } from "../lib/searchIndex";
+import { categoryLabel, CATEGORY_DOT } from "../lib/searchIndex";
 import type {
   TrashEntry,
   OACase,
   PaymentEntry,
   ChecklistItem,
   ChecklistSectionMeta,
+  CustomCategory,
+  CustomEntry,
 } from "../lib/types";
 
 export default function Trash() {
   const { trash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
+  const { t, lang } = useLanguage();
 
   const [, setChecklistHidden] = useSyncedStorage<string[]>("lh-checklist-hidden-items", []);
   const [, setChecklistCustom] = useSyncedStorage<Record<string, ChecklistItem[]>>(
@@ -33,6 +37,11 @@ export default function Trash() {
   const [, setOACasesCustom] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
   const [, setPaymentsHidden] = useSyncedStorage<string[]>("lh-payments-hidden", []);
   const [, setPaymentsCustom] = useSyncedStorage<PaymentEntry[]>("lh-payments-custom", []);
+  const [, setCustomCategories] = useSyncedStorage<CustomCategory[]>("lh-custom-categories", []);
+  const [, setCustomEntries] = useSyncedStorage<Record<string, CustomEntry[]>>(
+    "lh-custom-entries",
+    {},
+  );
 
   function handleRestore(entry: TrashEntry) {
     if (entry.category === "checklist" && entry.entryType === "section") {
@@ -58,19 +67,30 @@ export default function Trash() {
       } else {
         setOACasesHidden((prev) => prev.filter((id) => id !== entry.itemId));
       }
-    } else {
+    } else if (entry.category === "payments") {
       if (entry.wasCustom) {
         setPaymentsCustom((prev) => [...prev, entry.snapshot as PaymentEntry]);
       } else {
         setPaymentsHidden((prev) => prev.filter((id) => id !== entry.itemId));
       }
+    } else if (entry.category === "custom" && entry.entryType === "section") {
+      const { category, entries } = entry.snapshot as { category: CustomCategory; entries: CustomEntry[] };
+      setCustomCategories((prev) => [...prev, category]);
+      setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
+    } else if (entry.category === "custom") {
+      const categoryId = entry.sectionId;
+      if (!categoryId) return;
+      setCustomEntries((prev) => ({
+        ...prev,
+        [categoryId]: [...(prev[categoryId] ?? []), entry.snapshot as CustomEntry],
+      }));
     }
     removeFromTrash(entry.trashId);
-    showToast(`已恢复「${entry.title}」`);
+    showToast(t("trash.restoredToast", { title: entry.title }));
   }
 
   function handlePurgeNow(entry: TrashEntry) {
-    if (!window.confirm(`彻底删除「${entry.title}」？此操作无法撤销。`)) return;
+    if (!window.confirm(t("trash.purgeConfirm", { title: entry.title }))) return;
     removeFromTrash(entry.trashId);
   }
 
@@ -80,15 +100,15 @@ export default function Trash() {
     <div className="mx-auto max-w-3xl px-8 py-12">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-          垃圾桶
+          {t("trash.title")}
         </h1>
         <p className="mt-1 text-[15px] text-(--color-ink-muted)">
-          删除的内容会在这里保留 {TRASH_RETENTION_DAYS} 天，之后自动清除
+          {t("trash.subtitle", { days: TRASH_RETENTION_DAYS })}
         </p>
       </div>
 
       {sorted.length === 0 ? (
-        <p className="py-12 text-center text-[14px] text-(--color-ink-faint)">垃圾桶是空的</p>
+        <p className="py-12 text-center text-[14px] text-(--color-ink-faint)">{t("trash.empty")}</p>
       ) : (
         <div className="flex flex-col gap-3">
           {sorted.map((entry) => (
@@ -106,9 +126,11 @@ export default function Trash() {
                   {entry.title}
                 </p>
                 <p className="text-[12px] text-(--color-ink-faint)">
-                  {CATEGORY_LABEL[entry.category]}
-                  {entry.entryType === "section" ? " · 整个 Section" : ""} · 剩余{" "}
-                  {daysRemaining(entry)} 天
+                  {entry.category === "custom"
+                    ? (entry.categoryTitle ?? categoryLabel(entry.category, lang))
+                    : categoryLabel(entry.category, lang)}
+                  {entry.entryType === "section" ? ` ${t("trash.wholeSection")}` : ""} ·{" "}
+                  {t("trash.daysLeft", { days: daysRemaining(entry) })}
                 </p>
               </div>
               <button
@@ -116,11 +138,11 @@ export default function Trash() {
                 className="flex shrink-0 items-center gap-1 rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
               >
                 <RotateCcw size={13} />
-                恢复
+                {t("trash.restore")}
               </button>
               <button
                 onClick={() => handlePurgeNow(entry)}
-                aria-label="彻底删除"
+                aria-label={t("trash.purgeNowAria")}
                 className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:text-red-500"
               >
                 <Trash2 size={14} />

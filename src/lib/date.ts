@@ -17,10 +17,10 @@ export function shiftDateKey(dateKey: string, days: number) {
   return formatDateKey(date);
 }
 
-export function formatDisplayDate(dateKey: string) {
+export function formatDisplayDate(dateKey: string, lang: "zh" | "en" = "zh") {
   const [y, m, d] = dateKey.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString("zh-CN", {
+  return date.toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
