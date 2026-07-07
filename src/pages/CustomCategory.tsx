@@ -8,10 +8,15 @@ import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import CustomEntryForm from "../components/CustomEntryForm";
 import { todayKey, formatDisplayDate } from "../lib/date";
+import {
+  CUSTOM_CATEGORY_DELETIONS_KEY,
+  filterDeletedCustomCategories,
+} from "../lib/customCategories";
 import type {
   CustomCategory as CustomCategoryType,
   CustomCategoryTemplate,
   CustomEntry,
+  DeletedCustomCategory,
 } from "../lib/types";
 
 interface ChecklistItemState {
@@ -54,6 +59,10 @@ export default function CustomCategory() {
     "lh-custom-checklist-state",
     {},
   );
+  const [deletedCategories] = useSyncedStorage<DeletedCustomCategory[]>(
+    CUSTOM_CATEGORY_DELETIONS_KEY,
+    [],
+  );
   const { addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const { lang } = useLanguage();
@@ -63,7 +72,9 @@ export default function CustomCategory() {
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
 
-  const category = categories.find((c) => c.id === categoryId);
+  const category = filterDeletedCustomCategories(categories, deletedCategories).find(
+    (c) => c.id === categoryId,
+  );
   const template = getTemplate(category);
   const entries = allEntries[categoryId] ?? [];
   const dayState = checklistState[categoryId]?.[selectedDate] ?? {};

@@ -56,6 +56,12 @@ export interface CustomCategory {
   template?: CustomCategoryTemplate;
 }
 
+export interface DeletedCustomCategory {
+  id: string;
+  title: string;
+  deletedAt: number;
+}
+
 export interface CustomEntry {
   id: string;
   title: string;

@@ -22,12 +22,18 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "./ToastProvider";
 import { slugify } from "../lib/slugify";
+import {
+  CUSTOM_CATEGORY_DELETIONS_KEY,
+  filterDeletedCustomCategories,
+  normalizeCategoryTitle,
+} from "../lib/customCategories";
 import ProfileMenu from "./ProfileMenu";
 import type {
   CustomCategory,
   CustomCategoryIcon,
   CustomCategoryTemplate,
   CustomEntry,
+  DeletedCustomCategory,
 } from "../lib/types";
 
 const NAV_ITEMS = [
@@ -90,6 +96,10 @@ export default function Sidebar() {
     "lh-custom-entries",
     {},
   );
+  const [deletedCategories, setDeletedCategories] = useSyncedStorage<DeletedCustomCategory[]>(
+    CUSTOM_CATEGORY_DELETIONS_KEY,
+    [],
+  );
 
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -117,8 +127,17 @@ export default function Sidebar() {
     e.preventDefault();
     if (!newCategoryTitle.trim()) return;
     const id = slugify(newCategoryTitle, "category");
+    const normalizedTitle = normalizeCategoryTitle(newCategoryTitle);
+    const sameTitleIds = new Set(
+      customCategories
+        .filter((category) => normalizeCategoryTitle(category.title) === normalizedTitle)
+        .map((category) => category.id),
+    );
+    setDeletedCategories((prev) =>
+      prev.filter((deleted) => normalizeCategoryTitle(deleted.title) !== normalizedTitle),
+    );
     setCustomCategories((prev) => [
-      ...prev,
+      ...prev.filter((category) => normalizeCategoryTitle(category.title) !== normalizedTitle),
       {
         id,
         title: newCategoryTitle.trim(),
@@ -126,6 +145,13 @@ export default function Sidebar() {
         template: newCategoryTemplate,
       },
     ]);
+    if (sameTitleIds.size > 0) {
+      setCustomEntries((prev) => {
+        const next = { ...prev };
+        for (const oldId of sameTitleIds) delete next[oldId];
+        return next;
+      });
+    }
     setIsAddingCategory(false);
     setNewCategoryTitle("");
     setNewCategoryIcon("folder");
@@ -133,17 +159,33 @@ export default function Sidebar() {
   }
 
   function handleDeleteCategory(category: CustomCategory) {
-    const entries = customEntries[category.id] ?? [];
+    const normalizedTitle = normalizeCategoryTitle(category.title);
+    const categoriesToDelete = customCategories.filter(
+      (c) => c.id === category.id || normalizeCategoryTitle(c.title) === normalizedTitle,
+    );
+    const idsToDelete = new Set(categoriesToDelete.map((c) => c.id));
+    const entries = categoriesToDelete.flatMap((c) => customEntries[c.id] ?? []);
     if (!window.confirm(t("sidebar.deleteCategoryConfirm", { title: category.title, count: entries.length })))
       return;
 
     const trashId = `custom-category:${category.id}`;
-    setCustomCategories((prev) => prev.filter((c) => c.id !== category.id));
+    setCustomCategories((prev) => prev.filter((c) => !idsToDelete.has(c.id)));
     setCustomEntries((prev) => {
       const next = { ...prev };
-      delete next[category.id];
+      for (const id of idsToDelete) delete next[id];
       return next;
     });
+    setDeletedCategories((prev) => [
+      ...prev.filter(
+        (deleted) =>
+          !idsToDelete.has(deleted.id) && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
+      ),
+      ...categoriesToDelete.map((deleted) => ({
+        id: deleted.id,
+        title: deleted.title,
+        deletedAt: Date.now(),
+      })),
+    ]);
 
     addToTrash({
       trashId,
@@ -162,6 +204,12 @@ export default function Sidebar() {
       onClick: () => {
         setCustomCategories((prev) => [...prev, category]);
         setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
+        setDeletedCategories((prev) =>
+          prev.filter(
+            (deleted) =>
+              deleted.id !== category.id && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
+          ),
+        );
         removeFromTrash(trashId);
       },
     });
@@ -198,7 +246,7 @@ export default function Sidebar() {
       </nav>
 
       <nav className="mt-2 flex flex-col gap-0.5">
-        {customCategories.map((category) => {
+        {filterDeletedCustomCategories(customCategories, deletedCategories).map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
             return (

@@ -5,6 +5,10 @@ import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { daysRemaining, TRASH_RETENTION_DAYS } from "../lib/trash";
 import { categoryLabel, CATEGORY_DOT } from "../lib/searchIndex";
+import {
+  CUSTOM_CATEGORY_DELETIONS_KEY,
+  normalizeCategoryTitle,
+} from "../lib/customCategories";
 import type {
   TrashEntry,
   OACase,
@@ -13,6 +17,7 @@ import type {
   ChecklistSectionMeta,
   CustomCategory,
   CustomEntry,
+  DeletedCustomCategory,
 } from "../lib/types";
 
 export default function Trash() {
@@ -41,6 +46,10 @@ export default function Trash() {
   const [, setCustomEntries] = useSyncedStorage<Record<string, CustomEntry[]>>(
     "lh-custom-entries",
     {},
+  );
+  const [, setDeletedCategories] = useSyncedStorage<DeletedCustomCategory[]>(
+    CUSTOM_CATEGORY_DELETIONS_KEY,
+    [],
   );
 
   function handleRestore(entry: TrashEntry) {
@@ -77,6 +86,13 @@ export default function Trash() {
       const { category, entries } = entry.snapshot as { category: CustomCategory; entries: CustomEntry[] };
       setCustomCategories((prev) => [...prev, category]);
       setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
+      setDeletedCategories((prev) =>
+        prev.filter(
+          (deleted) =>
+            deleted.id !== category.id &&
+            normalizeCategoryTitle(deleted.title) !== normalizeCategoryTitle(category.title),
+        ),
+      );
     } else if (entry.category === "custom") {
       const categoryId = entry.sectionId;
       if (!categoryId) return;
