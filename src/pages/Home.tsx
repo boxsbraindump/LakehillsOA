@@ -10,12 +10,12 @@ import { useLanguage } from "../components/LanguageProvider";
 import type { SearchDoc } from "../lib/types";
 
 const QUICK_CHIP_IDS = [
-  "opening-voicemail",
   "case-secondary-denial",
   "kaiser-permanente",
-  "day-copay",
+  "aetna",
   "case-auth-expired",
   "medicare",
+  "blue-shield",
 ];
 
 type QuickChip = Pick<SearchDoc, "id" | "category" | "categoryTitle" | "path" | "title">;

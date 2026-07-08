@@ -3,49 +3,70 @@ import { checklistSections } from "../data/checklist";
 import { oaCases } from "../data/oaCases";
 import { paymentEntries } from "../data/payments";
 import { translations, type Lang } from "./translations";
-import type { SearchDoc, CustomCategory, CustomEntry } from "./types";
+import type {
+  ChecklistSection,
+  CustomCategory,
+  CustomEntry,
+  OACase,
+  PaymentEntry,
+  SearchDoc,
+} from "./types";
 
-/**
- * Seed-data-only docs (checklist/OA cases/payments as shipped with the app). Known gap: this
- * does NOT include user-added/edited items in those three categories, since they live in
- * synced storage rather than these static imports — left as-is for now, only custom
- * categories (built entirely from synced storage) are made reactively searchable below.
- */
 export function buildSeedSearchDocs(): SearchDoc[] {
   return [
-    ...checklistSections.flatMap((section) =>
-      section.items.map(
-        (item): SearchDoc => ({
-          id: item.id,
-          category: "checklist",
-          path: `/checklist#${item.id}`,
-          title: item.label,
-          snippet: `前台工作 Checklist · ${section.title}`,
-          keywords: [section.title, item.detail ?? ""],
-        }),
-      ),
-    ),
-    ...oaCases.map(
-      (c): SearchDoc => ({
-        id: c.id,
-        category: "oa-cases",
-        path: `/oa-cases#${c.id}`,
-        title: c.title,
-        snippet: c.summary,
-        keywords: [c.payer, ...c.tags],
-      }),
-    ),
-    ...paymentEntries.map(
-      (p): SearchDoc => ({
+    ...buildChecklistSearchDocs(checklistSections),
+    ...buildOACaseSearchDocs(oaCases),
+    ...buildPaymentSearchDocs(paymentEntries),
+  ];
+}
+
+export function buildChecklistSearchDocs(
+  sections: ChecklistSection[],
+  dateByItemId: Record<string, string> = {},
+): SearchDoc[] {
+  return sections.flatMap((section) =>
+    section.items.map((item): SearchDoc => {
+      const date = dateByItemId[item.id];
+      const query = date ? `?date=${encodeURIComponent(date)}` : "";
+      return {
+        id: item.id,
+        category: "checklist",
+        path: `/checklist${query}#${item.id}`,
+        title: item.label,
+        snippet: `Checklist · ${section.title}`,
+        keywords: [section.title, item.detail ?? ""],
+      };
+    }),
+  );
+}
+
+export function buildOACaseSearchDocs(cases: OACase[]): SearchDoc[] {
+  return cases.map(
+    (c): SearchDoc => ({
+      id: c.id,
+      category: "oa-cases",
+      path: `/oa-cases#${c.id}`,
+      title: c.title,
+      snippet: c.summary,
+      keywords: [c.payer, c.resolution, ...c.tags],
+    }),
+  );
+}
+
+export function buildPaymentSearchDocs(entries: PaymentEntry[]): SearchDoc[] {
+  return entries.map(
+    (p): SearchDoc => {
+      const portalText = p.portals.flatMap((portal) => [portal.name, portal.url]);
+      return {
         id: p.id,
         category: "payments",
         path: `/payments#${p.id}`,
         title: p.payer,
         snippet: p.portals.map((portal) => portal.name).join(" · "),
-        keywords: [p.notes ?? "", ...p.portals.map((portal) => portal.name)],
-      }),
-    ),
-  ];
+        keywords: [p.notes ?? "", ...portalText],
+      };
+    },
+  );
 }
 
 export function buildCustomSearchDocs(

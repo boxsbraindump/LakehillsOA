@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Check,
   StickyNote,
@@ -41,8 +42,9 @@ interface NoteMatch {
 
 export default function Checklist() {
   useHashHighlight();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useSyncedStorage<ChecklistState>("lh-checklist-state", {});
-  const [selectedDate, setSelectedDate] = useState(todayKey());
+  const [selectedDate, setSelectedDate] = useState(searchParams.get("date") ?? todayKey());
   const [noteQuery, setNoteQuery] = useState("");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [customItems, setCustomItems] = useSyncedStorage<Record<string, ChecklistItem[]>>(
@@ -73,6 +75,16 @@ export default function Checklist() {
   );
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionTitle, setEditingSectionTitle] = useState("");
+
+  useEffect(() => {
+    const routeDate = searchParams.get("date");
+    if (routeDate && routeDate !== selectedDate) setSelectedDate(routeDate);
+  }, [searchParams, selectedDate]);
+
+  function selectDate(date: string) {
+    setSelectedDate(date);
+    setSearchParams(date === todayKey() ? {} : { date }, { replace: true });
+  }
 
   const sectionMetas = customSections.map((s) => ({
     id: s.id,
@@ -238,7 +250,7 @@ export default function Checklist() {
   }
 
   function jumpToMatch(match: NoteMatch) {
-    setSelectedDate(match.date);
+    selectDate(match.date);
     setOpenNoteId(match.itemId);
     setNoteQuery("");
     requestAnimationFrame(() => {
@@ -487,7 +499,7 @@ export default function Checklist() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => setSelectedDate((d) => shiftDateKey(d, -1))}
+            onClick={() => selectDate(shiftDateKey(selectedDate, -1))}
             aria-label={t("checklist.prevDay")}
             className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
           >
@@ -496,11 +508,11 @@ export default function Checklist() {
           <input
             type="date"
             value={selectedDate}
-            onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+            onChange={(e) => e.target.value && selectDate(e.target.value)}
             className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:shadow-(--shadow-level-1)"
           />
           <button
-            onClick={() => setSelectedDate((d) => shiftDateKey(d, 1))}
+            onClick={() => selectDate(shiftDateKey(selectedDate, 1))}
             aria-label={t("checklist.nextDay")}
             className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
           >
@@ -508,7 +520,7 @@ export default function Checklist() {
           </button>
           {!isToday && (
             <button
-              onClick={() => setSelectedDate(todayKey())}
+              onClick={() => selectDate(todayKey())}
               className="rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
             >
               {t("checklist.today")}

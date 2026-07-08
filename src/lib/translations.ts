@@ -18,6 +18,11 @@ export const translations = {
 
   "profileMenu.settings": { zh: "设置", en: "Settings" },
   "profileMenu.logout": { zh: "退出登录", en: "Log out" },
+  "syncStatus.local": { zh: "本地保存", en: "Saved locally" },
+  "syncStatus.syncing": { zh: "正在同步", en: "Syncing" },
+  "syncStatus.synced": { zh: "已同步", en: "Synced" },
+  "syncStatus.offline": { zh: "无法同步，已保存在本机", en: "Offline, saved locally" },
+  "syncStatus.unauthorized": { zh: "登录已失效", en: "Sign-in expired" },
 
   "login.subtitle": { zh: "用 Google 账号登录继续", en: "Sign in with Google to continue" },
   "login.checkingSession": { zh: "正在检查登录状态…", en: "Checking sign-in status…" },

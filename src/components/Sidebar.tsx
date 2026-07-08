@@ -31,6 +31,7 @@ import {
   normalizeCategoryTitle,
 } from "../lib/customCategories";
 import ProfileMenu from "./ProfileMenu";
+import SyncStatusBadge from "./SyncStatusBadge";
 import type {
   CustomCategory,
   CustomCategoryIcon,
@@ -455,7 +456,8 @@ export default function Sidebar() {
       </nav>
 
       {syncEnabled && (
-        <div className="mt-2 border-t border-(--color-sidebar-border) pt-2 md:mt-2">
+        <div className="mt-2 space-y-1.5 border-t border-(--color-sidebar-border) pt-2 md:mt-2">
+          <SyncStatusBadge />
           <ProfileMenu />
         </div>
       )}
