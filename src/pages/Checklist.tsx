@@ -20,6 +20,7 @@ import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import ChecklistItemForm from "../components/ChecklistItemForm";
+import EmptyState from "../components/EmptyState";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
 import type { ChecklistItem, ChecklistSectionMeta } from "../lib/types";
@@ -335,6 +336,21 @@ export default function Checklist() {
     setJustAddedSectionId(id);
   }
 
+  function startFirstItem() {
+    const existingSection = customSections[0];
+    const title = t("checklist.defaultSectionTitle");
+    const sectionId = existingSection?.id ?? slugify(title, "section");
+
+    if (!existingSection) {
+      setCustomSections((prev) =>
+        prev.some((section) => section.id === sectionId) ? prev : [...prev, { id: sectionId, title }],
+      );
+    }
+
+    addSectionsToDay(selectedDate, [sectionId]);
+    setAddingSectionId(sectionId);
+  }
+
   function startEditingSection(section: { id: string; title: string }) {
     setEditingSectionId(section.id);
     setEditingSectionTitle(section.title);
@@ -436,8 +452,8 @@ export default function Checklist() {
   })();
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-12">
-      <div className="mb-4 flex items-start justify-between gap-4">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+      <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           {t("checklist.title")}
         </h1>
@@ -497,7 +513,7 @@ export default function Checklist() {
       </div>
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => selectDate(shiftDateKey(selectedDate, -1))}
             aria-label={t("checklist.prevDay")}
@@ -545,7 +561,7 @@ export default function Checklist() {
             key={section.id}
             id={section.id}
             className={[
-              "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)",
+              "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
               section.id === justAddedSectionId ? "fade-in-up" : "",
             ].join(" ")}
           >
@@ -586,7 +602,7 @@ export default function Checklist() {
                   <h2 className="min-w-0 text-[18px] font-bold text-(--color-ink)">
                     {section.title}
                   </h2>
-                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/section:opacity-100">
+                  <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/section:opacity-100">
                     <button
                       onClick={() => startEditingSection(section)}
                       aria-label={t("checklist.editSectionAria")}
@@ -675,7 +691,7 @@ export default function Checklist() {
                       <button
                         onClick={() => setEditingItemId(item.id)}
                         aria-label={t("common.edit")}
-                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-(--color-primary)"
+                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Pencil size={13} />
                       </button>
@@ -683,7 +699,7 @@ export default function Checklist() {
                       <button
                         onClick={() => handleDeleteItem(section.id, item)}
                         aria-label={t("common.delete")}
-                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -743,13 +759,22 @@ export default function Checklist() {
           </section>
         ))}
 
+        {displayedSections.length === 0 && !isAddingSection && (
+          <EmptyState
+            title={t("checklist.emptyTitle")}
+            description={t("checklist.emptyDescription")}
+            actionLabel={t("empty.addFirst")}
+            onAction={startFirstItem}
+          />
+        )}
+
         {isAddingSection ? (
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleCreateSection(newSectionTitle);
             }}
-            className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)"
+            className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6"
           >
             <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
               {t("checklist.sectionNameLabel")}
@@ -781,13 +806,15 @@ export default function Checklist() {
             </div>
           </form>
         ) : (
-          <button
-            onClick={() => setIsAddingSection(true)}
-            className="flex min-h-[64px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
-          >
-            <Plus size={16} />
-            {t("checklist.addSection")}
-          </button>
+          displayedSections.length > 0 && (
+            <button
+              onClick={() => setIsAddingSection(true)}
+              className="flex min-h-[64px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
+            >
+              <Plus size={16} />
+              {t("checklist.addSection")}
+            </button>
+          )
         )}
       </div>
     </div>

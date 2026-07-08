@@ -293,6 +293,28 @@ export const translations = {
   "platforms.urlPlaceholder": { zh: "https://...", en: "https://..." },
   "platforms.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
   "platforms.empty": { zh: "还没有添加平台", en: "No platforms added yet" },
+  "empty.addFirst": { zh: "添加第一条", en: "Add first item" },
+  "checklist.defaultSectionTitle": { zh: "Checklist", en: "Checklist" },
+  "checklist.emptyTitle": { zh: "这一天还没有 Checklist", en: "This day has no checklist yet" },
+  "checklist.emptyDescription": {
+    zh: "可以从第一条开始，也可以复制前一天的内容。",
+    en: "Start with the first item, or copy the previous day's checklist.",
+  },
+  "oaCases.emptyTitle": { zh: "还没有 OA 案例", en: "No OA cases yet" },
+  "oaCases.emptyDescription": {
+    zh: "把常见理赔情况记录下来，之后前台搜索会更快。",
+    en: "Save claim situations here so the front desk can search them later.",
+  },
+  "customCategory.emptyTitle": { zh: "这个分类还没有内容", en: "This category is empty" },
+  "customCategory.emptyDescription": {
+    zh: "添加第一条后，它也会进入首页搜索。",
+    en: "Once you add the first entry, it will show up in home search too.",
+  },
+  "payments.emptyTitle": { zh: "还没有付款查询入口", en: "No payment portals yet" },
+  "payments.emptyDescription": {
+    zh: "添加保险公司对应的平台和链接，之后查询会更快。",
+    en: "Add the payer's portal and link so future lookups are faster.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

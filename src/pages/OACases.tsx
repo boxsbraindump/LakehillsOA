@@ -8,6 +8,7 @@ import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import OACaseForm from "../components/OACaseForm";
+import EmptyState from "../components/EmptyState";
 import type { OACase } from "../lib/types";
 
 export default function OACases() {
@@ -92,7 +93,7 @@ export default function OACases() {
     : cases;
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           OA Cases
@@ -120,8 +121,16 @@ export default function OACases() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {filtered.length === 0 && (
+        {query.trim() && filtered.length === 0 && (
           <p className="text-center text-[14px] text-(--color-ink-faint)">{t("oaCases.noMatches")}</p>
+        )}
+        {!query.trim() && cases.length === 0 && !isAdding && (
+          <EmptyState
+            title={t("oaCases.emptyTitle")}
+            description={t("oaCases.emptyDescription")}
+            actionLabel={t("empty.addFirst")}
+            onAction={() => setIsAdding(true)}
+          />
         )}
         {filtered.map((c) =>
           editingId === c.id ? (
@@ -136,11 +145,11 @@ export default function OACases() {
               key={c.id}
               id={c.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)",
+                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
                 c.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(c.id)}
                   aria-label={t("common.edit")}
@@ -158,7 +167,7 @@ export default function OACases() {
               </div>
 
               <div className="mb-2 flex flex-wrap items-center gap-2 pr-12">
-                <h2 className="text-[18px] font-bold text-(--color-ink)">{c.title}</h2>
+                <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{c.title}</h2>
                 {c.payer && (
                   <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
                     {c.payer}
@@ -166,14 +175,14 @@ export default function OACases() {
                 )}
               </div>
 
-              {c.summary && <p className="text-[14px] text-(--color-ink-secondary)">{c.summary}</p>}
+              {c.summary && <p className="text-[14px] leading-relaxed text-(--color-ink-secondary)">{c.summary}</p>}
 
               {c.resolution && (
                 <div className="mt-3 rounded-(--radius-md) bg-(--color-canvas-soft) p-3.5">
                   <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
                     {t("oaCases.resolutionLabel")}
                   </p>
-                  <p className="text-[14px] text-(--color-ink)">{c.resolution}</p>
+                  <p className="text-[14px] leading-relaxed text-(--color-ink)">{c.resolution}</p>
                 </div>
               )}
 
@@ -196,7 +205,7 @@ export default function OACases() {
         {isAdding ? (
           <OACaseForm onSave={handleCreate} onCancel={() => setIsAdding(false)} />
         ) : (
-          !query.trim() && (
+          !query.trim() && cases.length > 0 && (
             <button
               onClick={() => setIsAdding(true)}
               className="flex min-h-[100px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"

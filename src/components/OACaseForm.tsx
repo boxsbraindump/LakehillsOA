@@ -59,7 +59,7 @@ export default function OACaseForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)"
+      className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6"
     >
       <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
         {t("oaCaseForm.title")}

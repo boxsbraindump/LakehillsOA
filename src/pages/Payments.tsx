@@ -8,6 +8,7 @@ import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import PaymentEntryForm from "../components/PaymentEntryForm";
+import EmptyState from "../components/EmptyState";
 import type { PaymentEntry } from "../lib/types";
 
 export default function Payments() {
@@ -102,7 +103,7 @@ export default function Payments() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           {t("payments.title")}
@@ -130,29 +131,39 @@ export default function Payments() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {filtered.length === 0 && (
+        {query.trim() && filtered.length === 0 && (
           <p className="text-center text-[14px] text-(--color-ink-faint) sm:col-span-2">
             {t("payments.noMatches")}
           </p>
         )}
+        {!query.trim() && entries.length === 0 && !isAdding && (
+          <EmptyState
+            title={t("payments.emptyTitle")}
+            description={t("payments.emptyDescription")}
+            actionLabel={t("empty.addFirst")}
+            onAction={() => setIsAdding(true)}
+            className="sm:col-span-2"
+          />
+        )}
         {filtered.map((entry) =>
           editingId === entry.id ? (
-            <PaymentEntryForm
-              key={entry.id}
-              initial={entry}
-              onSave={handleSave}
-              onCancel={() => setEditingId(null)}
-            />
+            <div key={entry.id} className="sm:col-span-2">
+              <PaymentEntryForm
+                initial={entry}
+                onSave={handleSave}
+                onCancel={() => setEditingId(null)}
+              />
+            </div>
           ) : (
             <section
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)",
+                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
@@ -169,17 +180,17 @@ export default function Payments() {
                 </button>
               </div>
 
-              <h2 className="mb-3 pr-12 text-[18px] font-bold text-(--color-ink)">
+              <h2 className="mb-2 pr-12 text-[18px] leading-tight font-bold text-(--color-ink)">
                 {entry.payer}
               </h2>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {entry.portals.map((portal, i) => (
                   <a
                     key={i}
                     href={portal.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[14px] text-(--color-ink-secondary)"
+                    className="flex items-center gap-1.5 text-[14px] leading-relaxed text-(--color-ink-secondary)"
                   >
                     <span className="text-(--color-ink-muted)">{portal.name}:</span>
                     <span className="inline-flex items-center gap-1 font-medium text-(--color-primary) hover:underline">
@@ -190,7 +201,7 @@ export default function Payments() {
                 ))}
               </div>
               {entry.notes && (
-                <div className="mt-4 rounded-(--radius-md) border border-(--color-accent-sky)/30 bg-(--color-accent-sky)/8 p-3.5 text-[13px] text-(--color-ink-secondary)">
+                <div className="mt-3 rounded-(--radius-md) border border-(--color-accent-sky)/30 bg-(--color-accent-sky)/8 p-3.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
                   {entry.notes}
                 </div>
               )}
@@ -199,9 +210,11 @@ export default function Payments() {
         )}
 
         {isAdding ? (
-          <PaymentEntryForm onSave={handleCreate} onCancel={() => setIsAdding(false)} />
+          <div className="sm:col-span-2">
+            <PaymentEntryForm onSave={handleCreate} onCancel={() => setIsAdding(false)} />
+          </div>
         ) : (
-          !query.trim() && (
+          !query.trim() && entries.length > 0 && (
             <button
               onClick={() => setIsAdding(true)}
               className="flex min-h-[120px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"

@@ -8,6 +8,7 @@ import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import CustomEntryForm from "../components/CustomEntryForm";
+import EmptyState from "../components/EmptyState";
 import { todayKey, formatDisplayDate } from "../lib/date";
 import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
@@ -203,7 +204,7 @@ export default function CustomCategory() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           {category.title}
@@ -253,26 +254,36 @@ export default function CustomCategory() {
       )}
 
       <div className={template === "payments" ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "flex flex-col gap-4"}>
-        {filtered.length === 0 && (
+        {query.trim() && filtered.length === 0 && (
           <p className={template === "payments" ? "text-center text-[14px] text-(--color-ink-faint) sm:col-span-2" : "text-center text-[14px] text-(--color-ink-faint)"}>
             {t("customCategory.noMatches")}
           </p>
         )}
+        {!query.trim() && entries.length === 0 && !isAdding && (
+          <EmptyState
+            title={t("customCategory.emptyTitle")}
+            description={t("customCategory.emptyDescription")}
+            actionLabel={t("empty.addFirst")}
+            onAction={() => setIsAdding(true)}
+            className={template === "payments" ? "sm:col-span-2" : ""}
+          />
+        )}
         {filtered.map((entry) =>
           editingId === entry.id ? (
-            <CustomEntryForm
-              key={entry.id}
-              template={template}
-              initial={entry}
-              onSave={handleSave}
-              onCancel={() => setEditingId(null)}
-            />
+            <div key={entry.id} className={template === "payments" ? "sm:col-span-2" : ""}>
+              <CustomEntryForm
+                template={template}
+                initial={entry}
+                onSave={handleSave}
+                onCancel={() => setEditingId(null)}
+              />
+            </div>
           ) : template === "checklist" ? (
             <article
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1)",
+                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
@@ -303,7 +314,7 @@ export default function CustomCategory() {
                 <div className="min-w-0 flex-1">
                   <h2
                     className={[
-                      "text-[15px] font-medium",
+                      "text-[15px] leading-snug font-semibold",
                       dayState[entry.id]?.checked
                         ? "text-(--color-ink-faint) line-through"
                         : "text-(--color-ink)",
@@ -312,7 +323,7 @@ export default function CustomCategory() {
                     {entry.title}
                   </h2>
                   {(entry.detail || entry.notes) && (
-                    <p className="mt-1 text-[13px] text-(--color-ink-muted)">
+                    <p className="mt-1 text-[13px] leading-relaxed text-(--color-ink-muted)">
                       {entry.detail ?? entry.notes}
                     </p>
                   )}
@@ -330,7 +341,7 @@ export default function CustomCategory() {
                 </button>
               </div>
 
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
@@ -363,11 +374,11 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)",
+                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
@@ -384,8 +395,8 @@ export default function CustomCategory() {
                 </button>
               </div>
 
-              <h2 className="mb-3 pr-12 text-[18px] font-bold text-(--color-ink)">{entry.title}</h2>
-              <div className="flex flex-col gap-2">
+              <h2 className="mb-2 pr-12 text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
+              <div className="flex flex-col gap-2.5">
                 {(entry.portals ?? []).map((portal, i) =>
                   portal.url ? (
                     <a
@@ -393,7 +404,7 @@ export default function CustomCategory() {
                       href={portal.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-1.5 text-[14px] text-(--color-ink-secondary)"
+                      className="flex items-center gap-1.5 text-[14px] leading-relaxed text-(--color-ink-secondary)"
                     >
                       <span className="text-(--color-ink-muted)">{portal.name}:</span>
                       <span className="inline-flex items-center gap-1 font-medium text-(--color-primary) hover:underline">
@@ -402,14 +413,14 @@ export default function CustomCategory() {
                       </span>
                     </a>
                   ) : (
-                    <span key={i} className="text-[14px] text-(--color-ink-secondary)">
+                    <span key={i} className="text-[14px] leading-relaxed text-(--color-ink-secondary)">
                       {portal.name}
                     </span>
                   ),
                 )}
               </div>
               {entry.notes && (
-                <div className="mt-4 rounded-(--radius-md) border border-(--color-accent-sky)/30 bg-(--color-accent-sky)/8 p-3.5 text-[13px] text-(--color-ink-secondary)">
+                <div className="mt-3 rounded-(--radius-md) border border-(--color-accent-sky)/30 bg-(--color-accent-sky)/8 p-3.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
                   {entry.notes}
                 </div>
               )}
@@ -419,11 +430,11 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)",
+                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
@@ -441,7 +452,7 @@ export default function CustomCategory() {
               </div>
 
               <div className="mb-2 flex flex-wrap items-center gap-2 pr-12">
-                <h2 className="text-[18px] font-bold text-(--color-ink)">{entry.title}</h2>
+                <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
                 {entry.payer && (
                   <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
                     {entry.payer}
@@ -450,7 +461,7 @@ export default function CustomCategory() {
               </div>
 
               {(entry.summary || entry.notes) && (
-                <p className="text-[14px] text-(--color-ink-secondary)">
+                <p className="text-[14px] leading-relaxed text-(--color-ink-secondary)">
                   {entry.summary ?? entry.notes}
                 </p>
               )}
@@ -460,7 +471,7 @@ export default function CustomCategory() {
                   <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
                     {t("oaCases.resolutionLabel")}
                   </p>
-                  <p className="text-[14px] text-(--color-ink)">{entry.resolution}</p>
+                  <p className="text-[14px] leading-relaxed text-(--color-ink)">{entry.resolution}</p>
                 </div>
               )}
 
@@ -481,13 +492,15 @@ export default function CustomCategory() {
         )}
 
         {isAdding ? (
-          <CustomEntryForm
-            template={template}
-            onSave={handleCreate}
-            onCancel={() => setIsAdding(false)}
-          />
+          <div className={template === "payments" ? "sm:col-span-2" : ""}>
+            <CustomEntryForm
+              template={template}
+              onSave={handleCreate}
+              onCancel={() => setIsAdding(false)}
+            />
+          </div>
         ) : (
-          !query.trim() && (
+          !query.trim() && entries.length > 0 && (
             <button
               onClick={() => setIsAdding(true)}
               className={[

@@ -108,7 +108,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-8 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           {t("settings.title")}
@@ -116,9 +116,9 @@ export default function Settings() {
       </div>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)">
+        <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
           <h2 className="mb-3 text-[16px] font-bold text-(--color-ink)">{t("settings.account")}</h2>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="min-w-0">
               <p className="text-[12px] font-semibold text-(--color-ink-faint)">
                 {t("settings.signedInAs")}
@@ -135,7 +135,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)">
+        <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
           <h2 className="mb-3 text-[16px] font-bold text-(--color-ink)">
             {t("settings.preferences")}
           </h2>
@@ -169,7 +169,7 @@ export default function Settings() {
         </section>
       </div>
 
-      <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-6 shadow-(--shadow-level-1)">
+      <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
         <h2 className="text-[16px] font-bold text-(--color-ink)">
           {t("settings.workspaceData")}
         </h2>
@@ -184,13 +184,13 @@ export default function Settings() {
             ) : (
               <ul className="mb-4 flex max-h-[520px] flex-col divide-y divide-(--color-hairline) overflow-y-auto pr-2">
                 {payers.map((payer) => (
-                  <li key={payer.id} className="group grid grid-cols-[minmax(0,1fr)_104px_24px] items-center gap-3 py-2">
+                  <li key={payer.id} className="group grid grid-cols-[minmax(0,1fr)_80px_28px] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_104px_28px] sm:gap-3">
                     <p className="truncate text-[14px] text-(--color-ink)">{payer.name}</p>
                     <p className="truncate text-[12px] text-(--color-ink-faint)">{payer.payerId}</p>
                     <button
                       onClick={() => handleDeletePayer(payer)}
                       aria-label={t("common.delete")}
-                      className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+                      className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -254,7 +254,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleDeletePlatform(platform)}
                         aria-label={t("common.delete")}
-                        className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+                        className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>

@@ -109,6 +109,14 @@ body::before {
   box-sizing: border-box;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .ring-highlight {
   animation: ring-highlight-pulse 2.2s ease-out;
   border-radius: var(--radius-lg);

@@ -250,7 +250,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex shrink-0 flex-col border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:w-64 md:border-r md:border-b-0 md:py-4">
+    <aside className="flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:w-64 md:border-r md:border-b-0 md:overflow-visible md:py-4">
       <NavLink
         to="/"
         className="flex items-center gap-2 rounded-(--radius-md) px-2 py-1.5 text-[15px] font-semibold text-(--color-ink) hover:bg-(--color-sidebar-hover)"
@@ -265,7 +265,7 @@ export default function Sidebar() {
         Lake Hills Acupuncture · Internal
       </div>
 
-      <nav className="flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
+      <nav className="no-scrollbar flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
         {NAV_ITEMS.map(({ to, key, category, icon: Icon, dot }) => (
           <NavLink
             key={to}
@@ -291,7 +291,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <nav className="mt-2 flex flex-col gap-0.5">
+      <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
         {filterDeletedCustomCategories(customCategories, deletedCategories).map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
@@ -322,7 +322,7 @@ export default function Sidebar() {
             );
           }
           return (
-            <div key={category.id} className="group/cat flex items-center">
+            <div key={category.id} className="group/cat flex shrink-0 items-center md:shrink">
               <NavLink
                 to={`/custom/${category.id}`}
                 onClick={() =>
@@ -446,7 +446,7 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <nav className="mt-auto flex gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:flex-col md:overflow-visible md:border-t">
+      <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-auto md:flex-col md:overflow-visible md:border-t">
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
           <NavLink key={to} to={to} className={navLinkClass}>
             <Icon size={16} strokeWidth={2} className="shrink-0" />
