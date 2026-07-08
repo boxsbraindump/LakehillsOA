@@ -27,19 +27,61 @@ export const translations = {
   "login.subtitle": { zh: "用 Google 账号登录继续", en: "Sign in with Google to continue" },
   "login.checkingSession": { zh: "正在检查登录状态…", en: "Checking sign-in status…" },
   "login.verifying": { zh: "正在验证…", en: "Verifying…" },
-  "login.error.not_allowed": {
-    zh: "此邮箱未获授权，请联系管理员添加",
-    en: "This email isn't authorized — ask an admin to add it",
+  "login.error.not_allowed.title": { zh: "这个邮箱还没有访问权限", en: "This email is not allowed yet" },
+  "login.error.not_allowed.body": {
+    zh: "Google 登录成功了，但系统白名单里没有这个邮箱。",
+    en: "Google sign-in worked, but this email is not on the app allowlist.",
   },
-  "login.error.invalid_token": {
-    zh: "登录验证失败，请重试",
-    en: "Sign-in verification failed — please try again",
+  "login.error.not_allowed.action": {
+    zh: "请让管理员把这个邮箱加入 ALLOWED_EMAILS，然后重新登录。",
+    en: "Ask an admin to add this email to ALLOWED_EMAILS, then sign in again.",
   },
-  "login.error.network_error": {
-    zh: "无法连接服务器，请检查网络后重试",
-    en: "Couldn't reach the server — check your connection and try again",
+  "login.error.invalid_token.title": { zh: "Google 登录验证没有通过", en: "Google sign-in could not be verified" },
+  "login.error.invalid_token.body": {
+    zh: "可能是 Google 弹窗过期、浏览器拦截，或这个邮箱还不是可用于 Google 登录的账号。",
+    en: "The Google popup may have expired, the browser may have blocked it, or this email may not be a Google Account.",
   },
-  "login.error.generic": { zh: "登录失败，请重试", en: "Sign-in failed — please try again" },
+  "login.error.invalid_token.action": {
+    zh: "请刷新页面重试；如果是公司邮箱，请确认它已经注册成 Google Account。",
+    en: "Refresh and try again. If it is a work email, confirm it has been registered as a Google Account.",
+  },
+  "login.error.network_error.title": { zh: "连接不到同步服务器", en: "Cannot reach the sync server" },
+  "login.error.network_error.body": {
+    zh: "Google 可能已经登录成功，但公司网络、浏览器隐私设置或 Cloudflare Worker 连接失败。",
+    en: "Google may have signed in, but the company network, browser privacy settings, or Cloudflare Worker connection failed.",
+  },
+  "login.error.network_error.action": {
+    zh: "请换一个网络或手机热点试一次；如果手机热点可以，公司网络可能拦截了 workers.dev。",
+    en: "Try another network or a phone hotspot. If that works, the company network may be blocking workers.dev.",
+  },
+  "login.error.sync_not_configured.title": { zh: "云同步还没有配置完成", en: "Cloud sync is not configured" },
+  "login.error.sync_not_configured.body": {
+    zh: "前端缺少 API 地址或 Google Client ID，所以无法完成云端登录。",
+    en: "The frontend is missing the API URL or Google Client ID, so cloud sign-in cannot finish.",
+  },
+  "login.error.sync_not_configured.action": {
+    zh: "请检查 GitHub Secrets 里的 VITE_API_BASE 和 VITE_GOOGLE_CLIENT_ID。",
+    en: "Check the GitHub Secrets for VITE_API_BASE and VITE_GOOGLE_CLIENT_ID.",
+  },
+  "login.error.google_popup.title": { zh: "Google 登录窗口没有完成", en: "Google sign-in popup did not finish" },
+  "login.error.google_popup.body": {
+    zh: "常见原因是弹窗被拦截、第三方 cookie 被禁用，或 OAuth 还在 Testing mode 但邮箱不是 test user。",
+    en: "Common causes are popup blocking, third-party cookies being disabled, or the OAuth app still being in Testing mode without this email as a test user.",
+  },
+  "login.error.google_popup.action": {
+    zh: "请允许弹窗和第三方 cookie；如果还不行，请在 Google Console 的 Test users 里加入这个邮箱。",
+    en: "Allow popups and third-party cookies. If it still fails, add this email under Google Console Test users.",
+  },
+  "login.error.generic.title": { zh: "登录失败", en: "Sign-in failed" },
+  "login.error.generic.body": {
+    zh: "系统没有收到明确的错误原因。",
+    en: "The app did not receive a specific error reason.",
+  },
+  "login.error.generic.action": {
+    zh: "请刷新页面重试；如果仍然失败，把下面的错误代码发给管理员。",
+    en: "Refresh and try again. If it still fails, send the error code below to an admin.",
+  },
+  "login.error.code": { zh: "错误代码：{code}", en: "Error code: {code}" },
 
   "home.heading": { zh: "有什么想查的？", en: "What are you looking for?" },
   "home.subtitle": {

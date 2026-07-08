@@ -1,16 +1,67 @@
 import { useState, type ReactNode } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { Sparkles, Loader2 } from "lucide-react";
+import { AlertCircle, Sparkles, Loader2 } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { googleClientId } from "../lib/syncApi";
 import type { TranslationKey } from "../lib/translations";
 
-const ERROR_KEYS: Record<string, TranslationKey> = {
-  not_allowed: "login.error.not_allowed",
-  invalid_token: "login.error.invalid_token",
-  network_error: "login.error.network_error",
+const ERROR_CONTENT: Record<
+  string,
+  { title: TranslationKey; body: TranslationKey; action: TranslationKey }
+> = {
+  not_allowed: {
+    title: "login.error.not_allowed.title",
+    body: "login.error.not_allowed.body",
+    action: "login.error.not_allowed.action",
+  },
+  invalid_token: {
+    title: "login.error.invalid_token.title",
+    body: "login.error.invalid_token.body",
+    action: "login.error.invalid_token.action",
+  },
+  network_error: {
+    title: "login.error.network_error.title",
+    body: "login.error.network_error.body",
+    action: "login.error.network_error.action",
+  },
+  sync_not_configured: {
+    title: "login.error.sync_not_configured.title",
+    body: "login.error.sync_not_configured.body",
+    action: "login.error.sync_not_configured.action",
+  },
+  google_popup: {
+    title: "login.error.google_popup.title",
+    body: "login.error.google_popup.body",
+    action: "login.error.google_popup.action",
+  },
+  generic: {
+    title: "login.error.generic.title",
+    body: "login.error.generic.body",
+    action: "login.error.generic.action",
+  },
 };
+
+function LoginErrorBox({ code }: { code: string }) {
+  const { t } = useLanguage();
+  const content = ERROR_CONTENT[code] ?? ERROR_CONTENT.generic;
+
+  return (
+    <div className="mt-4 rounded-(--radius-md) border border-red-200 bg-red-50/80 p-3.5 text-[13px] text-red-700">
+      <div className="flex items-start gap-2">
+        <AlertCircle size={15} className="mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <p className="font-semibold">{t(content.title)}</p>
+          <p className="mt-1 leading-relaxed">{t(content.body)}</p>
+          <p className="mt-2 leading-relaxed text-red-800">{t(content.action)}</p>
+          <p className="mt-2 text-[11px] font-medium text-red-500">
+            {t("login.error.code", { code })}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function GateShell({ children }: { children: ReactNode }) {
   return (
@@ -63,7 +114,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
             setIsVerifying(false);
             if (!result.ok) setError(result.error);
           }}
-          onError={() => setError("invalid_token")}
+          onError={() => setError("google_popup")}
         />
       </GoogleOAuthProvider>
 
@@ -74,11 +125,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {error && (
-        <p className="mt-3 text-[13px] text-red-500">
-          {t(ERROR_KEYS[error] ?? "login.error.generic")}
-        </p>
-      )}
+      {error && <LoginErrorBox code={error} />}
     </GateShell>
   );
 }
