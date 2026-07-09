@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../components/AuthProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import SignInPanel from "../components/SignInPanel";
@@ -133,6 +133,7 @@ function WorkspacePreview() {
 export default function PublicHome({ isChecking: checkingOverride }: { isChecking?: boolean }) {
   const { t, lang, setLang } = useLanguage();
   const { syncEnabled, isAuthenticated, isChecking } = useAuth();
+  const navigate = useNavigate();
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const canOpenWorkspace = !syncEnabled || isAuthenticated;
   const signInChecking = checkingOverride ?? isChecking;
@@ -148,6 +149,11 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
 
   function openSignIn() {
     setIsSignInOpen(true);
+  }
+
+  function enterWorkspace() {
+    setIsSignInOpen(false);
+    navigate("/", { replace: true });
   }
 
   return (
@@ -362,7 +368,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
             </div>
           ) : (
             <div data-reveal-item>
-              <SignInPanel isChecking={signInChecking} />
+              <SignInPanel isChecking={signInChecking} onSignedIn={enterWorkspace} />
             </div>
           )}
         </section>
@@ -391,7 +397,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
             >
               <X size={16} />
             </button>
-            <SignInPanel isChecking={signInChecking} />
+            <SignInPanel isChecking={signInChecking} onSignedIn={enterWorkspace} />
           </div>
         </div>
       )}

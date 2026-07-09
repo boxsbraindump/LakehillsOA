@@ -63,7 +63,12 @@ function LoginErrorBox({ code }: { code: string }) {
   );
 }
 
-export default function SignInPanel({ isChecking = false }: { isChecking?: boolean }) {
+interface SignInPanelProps {
+  isChecking?: boolean;
+  onSignedIn?: () => void;
+}
+
+export default function SignInPanel({ isChecking = false, onSignedIn }: SignInPanelProps) {
   const { t } = useLanguage();
   const { loginWithGoogle } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +106,11 @@ export default function SignInPanel({ isChecking = false }: { isChecking?: boole
                   setIsVerifying(true);
                   const result = await loginWithGoogle(response.credential);
                   setIsVerifying(false);
-                  if (!result.ok) setError(result.error);
+                  if (!result.ok) {
+                    setError(result.error);
+                    return;
+                  }
+                  onSignedIn?.();
                 }}
                 onError={() => setError("google_popup")}
               />
