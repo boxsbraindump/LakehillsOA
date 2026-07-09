@@ -146,6 +146,15 @@ body::before {
   animation: search-result-enter 0.16s ease-out both;
 }
 
+.landing-search-caret {
+  animation: landing-caret 1.15s steps(1, end) infinite;
+}
+
+.landing-sync-pulse {
+  animation: landing-sync-pulse 2.2s ease-out infinite;
+  box-shadow: 0 0 0 0 rgba(40, 175, 165, 0.28);
+}
+
 .click-spark-layer {
   position: fixed;
   inset: 0;
@@ -229,6 +238,27 @@ body::before {
   }
 }
 
+@keyframes landing-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  46%,
+  100% {
+    opacity: 0.18;
+  }
+}
+
+@keyframes landing-sync-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(40, 175, 165, 0.28);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(40, 175, 165, 0);
+  }
+}
+
 @keyframes click-spark-line {
   0% {
     opacity: 0;
@@ -246,6 +276,8 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .fade-in-up,
   .search-result-enter,
+  .landing-search-caret,
+  .landing-sync-pulse,
   .click-spark i {
     animation: none;
   }

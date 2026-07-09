@@ -13,15 +13,22 @@ import Settings from "./pages/Settings.tsx";
 import { AuthProvider } from "./components/AuthProvider.tsx";
 import LoginGate from "./components/LoginGate.tsx";
 import { LanguageProvider } from "./components/LanguageProvider.tsx";
+import PublicHome from "./pages/PublicHome.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <LanguageProvider>
       <AuthProvider>
-        <LoginGate>
-          <HashRouter>
-            <Routes>
-              <Route element={<App />}>
+        <HashRouter>
+          <Routes>
+            <Route path="welcome" element={<PublicHome />} />
+            <Route
+              element={
+                <LoginGate>
+                  <App />
+                </LoginGate>
+              }
+            >
                 <Route index element={<Home />} />
                 <Route path="checklist" element={<Checklist />} />
                 <Route path="oa-cases" element={<OACases />} />
@@ -29,10 +36,9 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="custom/:categoryId" element={<CustomCategory />} />
                 <Route path="trash" element={<Trash />} />
                 <Route path="settings" element={<Settings />} />
-              </Route>
-            </Routes>
-          </HashRouter>
-        </LoginGate>
+            </Route>
+          </Routes>
+        </HashRouter>
       </AuthProvider>
     </LanguageProvider>
   </StrictMode>,

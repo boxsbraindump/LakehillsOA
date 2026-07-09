@@ -315,6 +315,150 @@ export const translations = {
     zh: "添加保险公司对应的平台和链接，之后查询会更快。",
     en: "Add the payer's portal and link so future lookups are faster.",
   },
+  "publicHome.navFeatures": { zh: "功能", en: "Features" },
+  "publicHome.navWorkflow": { zh: "工作方式", en: "How it works" },
+  "publicHome.navAccess": { zh: "登录", en: "Access" },
+  "publicHome.signIn": { zh: "登录工作区", en: "Sign in" },
+  "publicHome.openWorkspace": { zh: "进入工作区", en: "Open workspace" },
+  "publicHome.learnMore": { zh: "了解如何使用", en: "See how it works" },
+  "publicHome.heroCopy": {
+    zh: "把前台 Checklist、理赔案例和付款查询入口放在一个清楚、可搜索的团队工作区里。",
+    en: "Keep front desk checklists, claim cases, and payment portals in one clear, searchable team workspace.",
+  },
+  "publicHome.previewLabel": { zh: "一个地方，随时查到", en: "One place, easy to find" },
+  "publicHome.previewTitle": { zh: "前台需要的资料，不再散落", en: "Front desk knowledge, no longer scattered" },
+  "publicHome.previewSearch": { zh: "搜索", en: "Search" },
+  "publicHome.previewChecklist": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
+  "publicHome.previewCase": { zh: "OA Cases", en: "OA Cases" },
+  "publicHome.previewPayment": { zh: "付款查询", en: "Payment Lookups" },
+  "publicHome.previewPlaceholder": { zh: "搜索保险公司、备注或处理方式…", en: "Search payers, notes, or resolutions…" },
+  "publicHome.previewResult": {
+    zh: "查看保险公司情况说明和之前记录的处理方式。",
+    en: "Review payer context and the resolution your team recorded.",
+  },
+  "publicHome.previewPortal": {
+    zh: "快速打开团队保存的查询平台和付款入口。",
+    en: "Open the portals and payment resources saved by your team.",
+  },
+  "publicHome.previewSynced": { zh: "已同步最新资料", en: "Workspace up to date" },
+  "publicHome.previewShared": { zh: "团队共享", en: "Shared with the team" },
+  "publicHome.capabilitiesLabel": { zh: "工作区能力", en: "Workspace capabilities" },
+  "publicHome.capabilitySync": { zh: "本地优先，自动云同步", en: "Local first with cloud sync" },
+  "publicHome.capabilitySearch": { zh: "跨分类统一搜索", en: "Search across categories" },
+  "publicHome.capabilityShared": { zh: "团队维护同一套资料", en: "One shared team workspace" },
+  "publicHome.capabilityBilingual": { zh: "中英文即时切换", en: "Instant Chinese and English" },
+  "publicHome.featuresLabel": { zh: "为日常工作设计", en: "Designed for daily work" },
+  "publicHome.featuresTitle": { zh: "简单，但不是临时拼起来的", en: "Simple, without feeling makeshift" },
+  "publicHome.featuresCopy": {
+    zh: "它保留了笔记工具的灵活，也把诊所前台每天重复使用的流程整理成固定入口。",
+    en: "It keeps the flexibility of a notes tool while giving recurring front desk work a dependable structure.",
+  },
+  "publicHome.featureSearchTitle": { zh: "所有资料都能搜索", en: "Search across everything" },
+  "publicHome.featureSearchBody": {
+    zh: "从理赔案例到同事留下的备注，可以从首页一起查找。",
+    en: "Find claim cases, payment resources, and notes from one search.",
+  },
+  "publicHome.featureDailyTitle": { zh: "每天的 Checklist", en: "A checklist for each day" },
+  "publicHome.featureDailyBody": {
+    zh: "从空白开始，或复制之前的清单，再根据当天情况调整。",
+    en: "Start empty or copy an earlier checklist, then adjust it for the day.",
+  },
+  "publicHome.featureSharedTitle": { zh: "全团队共享", en: "Shared by the whole team" },
+  "publicHome.featureSharedBody": {
+    zh: "登录只是访问门禁，团队看到和维护的是同一套资料。",
+    en: "Sign-in controls access while everyone works from the same shared knowledge.",
+  },
+  "publicHome.featureFlexibleTitle": { zh: "可以继续扩展", en: "Flexible as work changes" },
+  "publicHome.featureFlexibleBody": {
+    zh: "用现有模板添加分类，不需要每次重新设计资料格式。",
+    en: "Add categories from familiar templates without rebuilding the structure each time.",
+  },
+  "publicHome.workflowTitle": {
+    zh: "从开店到理赔查询，都有合适的位置",
+    en: "A clear place for every front desk routine",
+  },
+  "publicHome.workflowCopy": {
+    zh: "不是把所有内容塞进同一种笔记。每一种工作都有更适合它的结构，同时仍然可以从首页一起搜索。",
+    en: "Not every task belongs in the same kind of note. Each routine gets the right structure while remaining searchable from home.",
+  },
+  "publicHome.workflowChecklistTitle": { zh: "每日工作", en: "Daily operations" },
+  "publicHome.workflowChecklistBody": {
+    zh: "为当天建立空白 Checklist，逐项完成，也可以复制之前的清单快速开始。",
+    en: "Start each day with a clean checklist, or copy an earlier one and adjust it.",
+  },
+  "publicHome.workflowChecklistDetail": {
+    zh: "适合开店、当天任务、打烊与交接事项",
+    en: "For opening, daily tasks, closing, and handoffs",
+  },
+  "publicHome.workflowCasesTitle": { zh: "理赔经验", en: "Claim knowledge" },
+  "publicHome.workflowCasesBody": {
+    zh: "记录保险公司情况、问题说明和处理方式，让相似案例不必重新摸索。",
+    en: "Record payer context, the issue, and the resolution so the next case starts with an answer.",
+  },
+  "publicHome.workflowCasesDetail": {
+    zh: "适合 OA Cases、查保险和团队经验整理",
+    en: "For OA cases, benefit checks, and team guidance",
+  },
+  "publicHome.workflowPaymentsTitle": { zh: "查询入口", en: "Portal directory" },
+  "publicHome.workflowPaymentsBody": {
+    zh: "把保险公司、平台名称与链接放在一起，需要时直接找到正确入口。",
+    en: "Keep payers, platform names, and links together so the right portal is always close.",
+  },
+  "publicHome.workflowPaymentsDetail": {
+    zh: "适合付款、资格与保险平台的快速访问",
+    en: "For payment, eligibility, and insurance portals",
+  },
+  "publicHome.knowledgeTitle": {
+    zh: "让团队记住，而不是只靠某个人记住",
+    en: "Let the workspace remember for the whole team",
+  },
+  "publicHome.knowledgeCopy": {
+    zh: "同事处理过一次的问题，可以变成下一位同事马上能找到的答案。资料会留在共享工作区，而不是散落在聊天和个人笔记里。",
+    en: "A problem solved once becomes an answer the next teammate can find. Knowledge stays in the shared workspace instead of scattered chats and personal notes.",
+  },
+  "publicHome.knowledgeSync": {
+    zh: "修改会在后台同步，网络不可用时仍可先在本地工作。",
+    en: "Changes sync in the background while local work remains available offline.",
+  },
+  "publicHome.knowledgeAccess": {
+    zh: "Google 登录只负责访问门禁，不会把团队资料按个人拆开。",
+    en: "Google sign-in controls access without splitting shared data by person.",
+  },
+  "publicHome.knowledgeRecall": {
+    zh: "标题、备注、标签和处理方式都可以成为之后的搜索线索。",
+    en: "Titles, notes, tags, and resolutions all become useful search clues.",
+  },
+  "publicHome.knowledgeExampleTitle": { zh: "Secondary denial", en: "Secondary denial" },
+  "publicHome.knowledgeExampleMeta": { zh: "OA Case · 团队资料", en: "OA Case · Team knowledge" },
+  "publicHome.knowledgeSituation": { zh: "情况说明", en: "Situation" },
+  "publicHome.knowledgeSituationBody": {
+    zh: "Primary 已付款，但 secondary claim 因信息不一致被拒。",
+    en: "Primary paid, but the secondary claim was denied because the information did not match.",
+  },
+  "publicHome.knowledgeResolution": { zh: "处理方式", en: "Resolution" },
+  "publicHome.knowledgeResolutionBody": {
+    zh: "核对 primary EOB 与 member ID，再通过正确平台重新提交。",
+    en: "Confirm the primary EOB and member ID, then resubmit through the correct portal.",
+  },
+  "publicHome.accessLabel": { zh: "安全访问", en: "Secure access" },
+  "publicHome.accessTitle": { zh: "准备好后，登录进入工作区", en: "Sign in when you are ready to work" },
+  "publicHome.accessCopy": {
+    zh: "使用获准的 Google 账号登录。工作区内容只向诊所团队开放。",
+    en: "Use an approved Google account. Workspace content remains available only to the clinic team.",
+  },
+  "publicHome.accessNote": {
+    zh: "只有获准的 Google 账号可以进入团队工作区。",
+    en: "Only approved Google accounts can enter the team workspace.",
+  },
+  "publicHome.readyTitle": { zh: "工作区已经准备好了", en: "Your workspace is ready" },
+  "publicHome.readyBody": {
+    zh: "当前浏览器已通过访问验证，可以直接继续工作。",
+    en: "This browser already has access, so you can continue directly.",
+  },
+  "publicHome.footer": {
+    zh: "Lake Hills Acupuncture 内部工作区",
+    en: "Internal workspace for Lake Hills Acupuncture",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
