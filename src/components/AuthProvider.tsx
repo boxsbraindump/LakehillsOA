@@ -10,11 +10,13 @@ import {
   syncEnabled,
   getAuthToken,
   getAuthEmail,
+  getWorkspaceMeta,
   clearAuthToken,
   verifySession,
   loginWithGoogle,
   logoutRemote,
   setUnauthorizedHandler,
+  type WorkspaceMeta,
 } from "../lib/syncApi";
 
 interface AuthContextValue {
@@ -22,6 +24,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isChecking: boolean;
   email: string | null;
+  workspace: WorkspaceMeta | null;
   loginWithGoogle: (idToken: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   logout: () => void;
 }
@@ -38,12 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(!syncEnabled);
   const [isChecking, setIsChecking] = useState(syncEnabled);
   const [email, setEmail] = useState<string | null>(() => getAuthEmail());
+  const [workspace, setWorkspace] = useState<WorkspaceMeta | null>(() => getWorkspaceMeta());
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
       clearAuthToken();
       setIsAuthenticated(false);
       setEmail(null);
+      setWorkspace(null);
     });
   }, []);
 
@@ -55,12 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     let cancelled = false;
-    verifySession(existing).then((ok) => {
+    verifySession(existing).then((result) => {
       if (cancelled) return;
-      setIsAuthenticated(ok);
-      if (!ok) {
+      setIsAuthenticated(result.ok);
+      if (result.ok) {
+        setEmail(result.email);
+        setWorkspace(result.workspace);
+      } else {
         clearAuthToken();
         setEmail(null);
+        setWorkspace(null);
       }
       setIsChecking(false);
     });
@@ -74,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (result.ok) {
       setIsAuthenticated(true);
       setEmail(result.email);
+      setWorkspace(result.workspace);
       return { ok: true as const };
     }
     return { ok: false as const, error: result.error };
@@ -84,11 +94,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAuthToken();
     setIsAuthenticated(false);
     setEmail(null);
+    setWorkspace(null);
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ syncEnabled, isAuthenticated, isChecking, email, loginWithGoogle: login, logout }}
+      value={{
+        syncEnabled,
+        isAuthenticated,
+        isChecking,
+        email,
+        workspace,
+        loginWithGoogle: login,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

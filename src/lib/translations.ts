@@ -93,6 +93,43 @@ export const translations = {
     en: "Try “copay”, “authorization”, “ERA”…",
   },
 
+  "workspaceOnboarding.workspaceFallback": { zh: "新的工作区", en: "New workspace" },
+  "workspaceOnboarding.privateLabel": { zh: "独立资料空间", en: "Separate data space" },
+  "workspaceOnboarding.label": { zh: "开始设置", en: "Workspace setup" },
+  "workspaceOnboarding.title": {
+    zh: "选择一个模板开始",
+    en: "Choose a template to start",
+  },
+  "workspaceOnboarding.body": {
+    zh: "这个工作区是独立的，不会显示 Lake Hills 的资料。之后可以从空白开始，或选择适合行政工作的模板。",
+    en: "This workspace is separate and does not show Lake Hills data. Start blank or choose a template designed for admin operations.",
+  },
+  "workspaceOnboarding.templateChecklist": { zh: "Checklist", en: "Checklist" },
+  "workspaceOnboarding.templateChecklistBody": {
+    zh: "适合每日流程、开店打烊、follow-up 或重复任务。",
+    en: "For daily routines, opening and closing, follow-ups, and repeated tasks.",
+  },
+  "workspaceOnboarding.templateCards": { zh: "Case / SOP Cards", en: "Case / SOP Cards" },
+  "workspaceOnboarding.templateCardsBody": {
+    zh: "适合记录问题、情况说明、处理方式和团队经验。",
+    en: "For issues, situations, resolutions, and team know-how.",
+  },
+  "workspaceOnboarding.templateLinks": { zh: "Link Directory", en: "Link Directory" },
+  "workspaceOnboarding.templateLinksBody": {
+    zh: "适合保存入口链接、平台、用途说明和注意事项。",
+    en: "For portal links, platforms, descriptions, and notes.",
+  },
+  "workspaceOnboarding.templateBlank": { zh: "Blank Cards", en: "Blank Cards" },
+  "workspaceOnboarding.templateBlankBody": {
+    zh: "适合从简单的标题、备注和标签开始。",
+    en: "For starting with simple titles, notes, and tags.",
+  },
+  "workspaceOnboarding.templateComingSoon": { zh: "下一步接入", en: "Next step" },
+  "workspaceOnboarding.safetyNote": {
+    zh: "安全说明：Lake Hills 仍然是私有工作区。只有在后端明确开启公开注册后，新邮箱才会进入这个独立设置流程。",
+    en: "Safety note: Lake Hills stays private. New emails only enter this separate setup flow after public signups are intentionally enabled on the backend.",
+  },
+
   "search.noResults": {
     zh: "没有找到匹配结果，换个关键词试试",
     en: "No matching results — try a different keyword",

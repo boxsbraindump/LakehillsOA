@@ -2,9 +2,16 @@ const API_BASE = import.meta.env.VITE_API_BASE as string | undefined;
 export const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 const TOKEN_KEY = "lh-auth-token";
 const EMAIL_KEY = "lh-auth-email";
+const WORKSPACE_KEY = "lh-auth-workspace";
 const SYNC_STATUS_EVENT = "lh-sync-status-change";
 
 export const syncEnabled = Boolean(API_BASE && googleClientId);
+
+export interface WorkspaceMeta {
+  id: string;
+  name: string;
+  isPrimary: boolean;
+}
 
 export type SyncStatus = "local" | "syncing" | "synced" | "offline" | "unauthorized";
 
@@ -58,10 +65,21 @@ export function getAuthEmail(): string | null {
   }
 }
 
-function setSession(token: string, email: string) {
+export function getWorkspaceMeta(): WorkspaceMeta | null {
+  try {
+    const raw = window.localStorage.getItem(WORKSPACE_KEY);
+    return raw ? (JSON.parse(raw) as WorkspaceMeta) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setSession(token: string, email: string, workspace?: WorkspaceMeta) {
   try {
     window.localStorage.setItem(TOKEN_KEY, token);
     window.localStorage.setItem(EMAIL_KEY, email);
+    if (workspace) window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    cachedStatePromise = null;
   } catch {
     // Session will still work for this page load; it just won't persist.
   }
@@ -71,6 +89,8 @@ export function clearAuthToken() {
   try {
     window.localStorage.removeItem(TOKEN_KEY);
     window.localStorage.removeItem(EMAIL_KEY);
+    window.localStorage.removeItem(WORKSPACE_KEY);
+    cachedStatePromise = null;
   } catch {
     // ignore
   }
@@ -82,24 +102,30 @@ function statusFromResponse(res: Response): SyncStatus {
   return "offline";
 }
 
-export async function verifySession(token: string): Promise<boolean> {
-  if (!API_BASE) return false;
+export async function verifySession(
+  token: string,
+): Promise<{ ok: true; email: string; workspace: WorkspaceMeta } | { ok: false }> {
+  if (!API_BASE) return { ok: false };
   try {
     setSyncStatus("syncing");
-    const res = await fetch(`${API_BASE}/api/state`, {
+    const res = await fetch(`${API_BASE}/api/auth/session`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setSyncStatus(statusFromResponse(res));
-    return res.ok;
+    if (!res.ok) return { ok: false };
+    const body = (await res.json()) as { email?: string; workspace?: WorkspaceMeta };
+    if (!body.email || !body.workspace) return { ok: false };
+    setSession(token, body.email, body.workspace);
+    return { ok: true, email: body.email, workspace: body.workspace };
   } catch {
     setSyncStatus("offline");
-    return false;
+    return { ok: false };
   }
 }
 
 export async function loginWithGoogle(
   idToken: string,
-): Promise<{ ok: true; email: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; email: string; workspace: WorkspaceMeta } | { ok: false; error: string }> {
   if (!API_BASE) return { ok: false, error: "sync_not_configured" };
   try {
     setSyncStatus("syncing");
@@ -108,14 +134,19 @@ export async function loginWithGoogle(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ credential: idToken }),
     });
-    const body = (await res.json()) as { token?: string; email?: string; error?: string };
-    if (!res.ok || !body.token || !body.email) {
+    const body = (await res.json()) as {
+      token?: string;
+      email?: string;
+      workspace?: WorkspaceMeta;
+      error?: string;
+    };
+    if (!res.ok || !body.token || !body.email || !body.workspace) {
       setSyncStatus(statusFromResponse(res));
       return { ok: false, error: body.error ?? "unknown_error" };
     }
-    setSession(body.token, body.email);
+    setSession(body.token, body.email, body.workspace);
     setSyncStatus("synced");
-    return { ok: true, email: body.email };
+    return { ok: true, email: body.email, workspace: body.workspace };
   } catch {
     setSyncStatus("offline");
     return { ok: false, error: "network_error" };

@@ -19,6 +19,7 @@ instead" — before it can sign in here.
 3. **APIs & Services → Credentials → Create Credentials → OAuth client ID**, type "Web application"
 4. Under **Authorized JavaScript origins**, add:
    - `https://boxsbraindump.github.io` (the live site)
+   - `http://127.0.0.1:5185` (local dev)
    - `http://localhost:5185` (local dev)
 5. Copy the generated **Client ID** (looks like `xxxxx.apps.googleusercontent.com`) — you'll need it twice below.
 
@@ -72,6 +73,23 @@ npx wrangler secret put ALLOWED_EMAILS
 ```
 
 No code change or redeploy of the app needed — takes effect on the next login attempt.
+
+## Workspace boundary and public signup safety
+
+By default, Lake Hills stays private:
+
+- Emails in `ALLOWED_EMAILS` enter the primary `lake-hills` workspace.
+- The primary workspace continues to use the existing `kv_store` table, so current Lake Hills data is preserved.
+- Unknown emails are still blocked unless public signups are intentionally enabled.
+
+If you later want to test public signups, set a Worker variable:
+
+```toml
+[vars]
+PUBLIC_SIGNUPS = "true"
+```
+
+Then deploy the Worker again. Unknown Google accounts will sign in to their own separate workspace and see the template selector instead of Lake Hills data.
 
 ## Local dev
 

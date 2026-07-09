@@ -5,12 +5,20 @@ export interface Env {
   GOOGLE_CLIENT_ID: string;
   /** Comma-separated list of allowed emails, e.g. "alice@gmail.com,bob@hotmail.com" */
   ALLOWED_EMAILS: string;
+  /** Optional. Keep false by default so Lake Hills stays private until public trials are intentional. */
+  PUBLIC_SIGNUPS?: string;
+  /** Optional. Existing Lake Hills data remains in the legacy kv_store under this primary workspace. */
+  PRIMARY_WORKSPACE_ID?: string;
+  PRIMARY_WORKSPACE_NAME?: string;
 }
 
 const SESSION_TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+const DEFAULT_PRIMARY_WORKSPACE_ID = "lake-hills";
+const DEFAULT_PRIMARY_WORKSPACE_NAME = "Lake Hills OA";
 
 const ALLOWED_ORIGINS = [
   "https://boxsbraindump.github.io",
+  "http://127.0.0.1:5185",
   "http://localhost:5185",
   "http://localhost:5173",
 ];
@@ -48,6 +56,75 @@ async function getSessionEmail(request: Request, env: Env): Promise<string | nul
   return row.email;
 }
 
+interface WorkspaceInfo {
+  id: string;
+  name: string;
+  isPrimary: boolean;
+}
+
+function normalizedAllowedEmails(env: Env) {
+  return env.ALLOWED_EMAILS.split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function primaryWorkspace(env: Env): WorkspaceInfo {
+  return {
+    id: env.PRIMARY_WORKSPACE_ID?.trim() || DEFAULT_PRIMARY_WORKSPACE_ID,
+    name: env.PRIMARY_WORKSPACE_NAME?.trim() || DEFAULT_PRIMARY_WORKSPACE_NAME,
+    isPrimary: true,
+  };
+}
+
+function personalWorkspace(email: string): WorkspaceInfo {
+  const slug = email
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return {
+    id: `personal-${slug || crypto.randomUUID()}`,
+    name: "My Admin Workspace",
+    isPrimary: false,
+  };
+}
+
+function workspaceForEmail(email: string, env: Env): WorkspaceInfo {
+  const allowed = normalizedAllowedEmails(env);
+  if (allowed.includes(email.toLowerCase())) return primaryWorkspace(env);
+  return personalWorkspace(email);
+}
+
+async function ensureWorkspaceTables(env: Env) {
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS workspaces (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )`,
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS workspace_kv_store (
+        workspace_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (workspace_id, key)
+      )`,
+    ),
+  ]);
+}
+
+async function ensureWorkspace(env: Env, workspace: WorkspaceInfo) {
+  await env.DB.prepare(
+    `INSERT INTO workspaces (id, name, created_at) VALUES (?1, ?2, ?3)
+     ON CONFLICT(id) DO UPDATE SET name = excluded.name`,
+  )
+    .bind(workspace.id, workspace.name, Date.now())
+    .run();
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const headers = corsHeaders(request.headers.get("Origin"));
@@ -55,6 +132,8 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { headers });
     }
+
+    await ensureWorkspaceTables(env);
 
     const url = new URL(request.url);
 
@@ -65,12 +144,14 @@ export default {
       const email = await verifyGoogleIdToken(body.credential, env.GOOGLE_CLIENT_ID);
       if (!email) return json({ error: "invalid_token" }, headers, 401);
 
-      const allowed = env.ALLOWED_EMAILS.split(",")
-        .map((e) => e.trim().toLowerCase())
-        .filter(Boolean);
+      const allowed = normalizedAllowedEmails(env);
+      const publicSignupsEnabled = env.PUBLIC_SIGNUPS === "true";
       if (!allowed.includes(email)) {
-        return json({ error: "not_allowed" }, headers, 403);
+        if (!publicSignupsEnabled) return json({ error: "not_allowed" }, headers, 403);
       }
+
+      const workspace = workspaceForEmail(email, env);
+      await ensureWorkspace(env, workspace);
 
       const token = crypto.randomUUID();
       const now = Date.now();
@@ -80,7 +161,15 @@ export default {
         .bind(token, email, now, now + SESSION_TTL_MS)
         .run();
 
-      return json({ token, email }, headers);
+      return json({ token, email, workspace }, headers);
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/auth/session") {
+      const email = await getSessionEmail(request, env);
+      if (!email) return json({ error: "unauthorized" }, headers, 401);
+      const workspace = workspaceForEmail(email, env);
+      await ensureWorkspace(env, workspace);
+      return json({ email, workspace }, headers);
     }
 
     if (request.method === "DELETE" && url.pathname === "/api/auth/session") {
@@ -95,12 +184,16 @@ export default {
     if (!email) {
       return json({ error: "unauthorized" }, headers, 401);
     }
+    const workspace = workspaceForEmail(email, env);
+    await ensureWorkspace(env, workspace);
 
     if (request.method === "GET" && url.pathname === "/api/state") {
-      const { results } = await env.DB.prepare("SELECT key, value FROM kv_store").all<{
-        key: string;
-        value: string;
-      }>();
+      const query = workspace.isPrimary
+        ? env.DB.prepare("SELECT key, value FROM kv_store")
+        : env.DB.prepare("SELECT key, value FROM workspace_kv_store WHERE workspace_id = ?1").bind(
+            workspace.id,
+          );
+      const { results } = await query.all<{ key: string; value: string }>();
       const state: Record<string, unknown> = {};
       for (const row of results) {
         try {
@@ -117,12 +210,23 @@ export default {
       const key = decodeURIComponent(putMatch[1]);
       const body = await request.json<{ value: unknown }>();
 
-      await env.DB.prepare(
-        `INSERT INTO kv_store (key, value, updated_at) VALUES (?1, ?2, ?3)
-         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
-      )
-        .bind(key, JSON.stringify(body.value ?? null), Date.now())
-        .run();
+      if (workspace.isPrimary) {
+        await env.DB.prepare(
+          `INSERT INTO kv_store (key, value, updated_at) VALUES (?1, ?2, ?3)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+        )
+          .bind(key, JSON.stringify(body.value ?? null), Date.now())
+          .run();
+      } else {
+        await env.DB.prepare(
+          `INSERT INTO workspace_kv_store (workspace_id, key, value, updated_at)
+           VALUES (?1, ?2, ?3, ?4)
+           ON CONFLICT(workspace_id, key) DO UPDATE
+           SET value = excluded.value, updated_at = excluded.updated_at`,
+        )
+          .bind(workspace.id, key, JSON.stringify(body.value ?? null), Date.now())
+          .run();
+      }
 
       return json({ ok: true }, headers);
     }
