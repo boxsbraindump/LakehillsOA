@@ -27,6 +27,15 @@ function BrandMark() {
   );
 }
 
+function scrollToSection(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  target.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
+}
+
 function WorkspacePreview() {
   const { t } = useLanguage();
 
@@ -136,15 +145,27 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
 
           <div className="flex items-center gap-2 sm:gap-4">
             <nav className="hidden items-center gap-5 text-[13px] font-medium text-(--color-ink-muted) sm:flex">
-              <a href="#features" className="transition-colors hover:text-(--color-ink)">
+              <button
+                type="button"
+                onClick={() => scrollToSection("features")}
+                className="transition-colors hover:text-(--color-ink)"
+              >
                 {t("publicHome.navFeatures")}
-              </a>
-              <a href="#workflow" className="transition-colors hover:text-(--color-ink)">
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection("workflow")}
+                className="transition-colors hover:text-(--color-ink)"
+              >
                 {t("publicHome.navWorkflow")}
-              </a>
-              <a href="#access" className="transition-colors hover:text-(--color-ink)">
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection("access")}
+                className="transition-colors hover:text-(--color-ink)"
+              >
                 {t("publicHome.navAccess")}
-              </a>
+              </button>
             </nav>
             <div
               className="flex items-center rounded-(--radius-sm) border border-(--color-hairline) bg-(--color-canvas-soft) p-0.5"
@@ -178,13 +199,14 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
                 <ArrowRight size={13} />
               </Link>
             ) : (
-              <a
-                href="#access"
+              <button
+                type="button"
+                onClick={() => scrollToSection("access")}
                 className="hidden items-center gap-1.5 rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-(--color-primary-active) sm:flex"
               >
                 {t("publicHome.signIn")}
                 <ArrowRight size={13} />
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -221,20 +243,22 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
                   <ArrowRight size={16} />
                 </Link>
               ) : (
-                <a
-                  href="#access"
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("access")}
                   className="inline-flex items-center gap-2 rounded-(--radius-md) bg-(--color-primary) px-4 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(40,175,165,0.2)] transition-colors hover:bg-(--color-primary-active)"
                 >
                   {t("publicHome.signIn")}
                   <ArrowRight size={16} />
-                </a>
+                </button>
               )}
-              <a
-                href="#features"
+              <button
+                type="button"
+                onClick={() => scrollToSection("features")}
                 className="inline-flex items-center rounded-(--radius-md) border border-(--color-hairline) bg-white px-4 py-3 text-[14px] font-semibold text-(--color-ink-secondary) transition-colors hover:bg-(--color-canvas-tint)"
               >
                 {t("publicHome.learnMore")}
-              </a>
+              </button>
             </div>
           </div>
 
@@ -245,7 +269,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
 
         <CapabilityStrip />
 
-        <section id="features" data-landing-reveal className="bg-white">
+        <section id="features" data-landing-reveal className="scroll-mt-16 bg-white">
           <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[0.9fr_1.5fr] lg:gap-20 lg:py-20">
             <div data-reveal-item>
               <h2 className="mt-3 text-[32px] font-bold leading-tight text-(--color-ink)">
@@ -286,7 +310,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
         <section
           id="access"
           data-landing-reveal
-          className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_400px] lg:items-center lg:gap-20 lg:py-24"
+          className="mx-auto grid max-w-6xl scroll-mt-16 gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_400px] lg:items-center lg:gap-20 lg:py-24"
         >
           <div data-reveal-item className="max-w-xl">
             <h2 className="mt-3 text-[32px] font-bold leading-tight text-(--color-ink)">

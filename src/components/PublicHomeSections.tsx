@@ -70,7 +70,11 @@ export function WorkflowSection() {
   ] as const;
 
   return (
-    <section id="workflow" data-landing-reveal className="bg-(--color-canvas-soft)">
+    <section
+      id="workflow"
+      data-landing-reveal
+      className="scroll-mt-16 bg-(--color-canvas-soft)"
+    >
       <div className="mx-auto max-w-6xl px-5 py-18 sm:px-8 lg:py-24">
         <div className="max-w-2xl" data-reveal-item>
           <h2 className="text-[34px] font-bold leading-tight text-(--color-ink) sm:text-[40px]">
