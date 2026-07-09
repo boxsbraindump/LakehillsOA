@@ -88,23 +88,27 @@ export default function SignInPanel({ isChecking = false }: { isChecking?: boole
         </div>
       ) : (
         <>
-          <GoogleOAuthProvider clientId={googleClientId!}>
-            <GoogleLogin
-              width="100%"
-              onSuccess={async (response) => {
-                setError(null);
-                if (!response.credential) {
-                  setError("invalid_token");
-                  return;
-                }
-                setIsVerifying(true);
-                const result = await loginWithGoogle(response.credential);
-                setIsVerifying(false);
-                if (!result.ok) setError(result.error);
-              }}
-              onError={() => setError("google_popup")}
-            />
-          </GoogleOAuthProvider>
+          {googleClientId ? (
+            <GoogleOAuthProvider clientId={googleClientId}>
+              <GoogleLogin
+                width="100%"
+                onSuccess={async (response) => {
+                  setError(null);
+                  if (!response.credential) {
+                    setError("invalid_token");
+                    return;
+                  }
+                  setIsVerifying(true);
+                  const result = await loginWithGoogle(response.credential);
+                  setIsVerifying(false);
+                  if (!result.ok) setError(result.error);
+                }}
+                onError={() => setError("google_popup")}
+              />
+            </GoogleOAuthProvider>
+          ) : (
+            <LoginErrorBox code="sync_not_configured" />
+          )}
 
           {isVerifying && (
             <div className="mt-3 flex items-center gap-1.5 text-(--color-ink-faint)">

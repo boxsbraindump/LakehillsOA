@@ -7,7 +7,9 @@ import {
   Search,
   Sparkles,
   WalletCards,
+  X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../components/AuthProvider";
 import { useLanguage } from "../components/LanguageProvider";
@@ -131,7 +133,22 @@ function WorkspacePreview() {
 export default function PublicHome({ isChecking: checkingOverride }: { isChecking?: boolean }) {
   const { t, lang, setLang } = useLanguage();
   const { syncEnabled, isAuthenticated, isChecking } = useAuth();
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const canOpenWorkspace = !syncEnabled || isAuthenticated;
+  const signInChecking = checkingOverride ?? isChecking;
+
+  useEffect(() => {
+    if (!isSignInOpen) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsSignInOpen(false);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSignInOpen]);
+
+  function openSignIn() {
+    setIsSignInOpen(true);
+  }
 
   return (
     <LandingMotion>
@@ -201,7 +218,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
             ) : (
               <button
                 type="button"
-                onClick={() => scrollToSection("access")}
+                onClick={openSignIn}
                 className="hidden items-center gap-1.5 rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-(--color-primary-active) sm:flex"
               >
                 {t("publicHome.signIn")}
@@ -245,7 +262,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
               ) : (
                 <button
                   type="button"
-                  onClick={() => scrollToSection("access")}
+                  onClick={openSignIn}
                   className="inline-flex items-center gap-2 rounded-(--radius-md) bg-(--color-primary) px-4 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(40,175,165,0.2)] transition-colors hover:bg-(--color-primary-active)"
                 >
                   {t("publicHome.signIn")}
@@ -345,7 +362,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
             </div>
           ) : (
             <div data-reveal-item>
-              <SignInPanel isChecking={checkingOverride ?? isChecking} />
+              <SignInPanel isChecking={signInChecking} />
             </div>
           )}
         </section>
@@ -357,6 +374,27 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
           <span>{t("publicHome.footer")}</span>
         </div>
       </footer>
+
+      {isSignInOpen && !canOpenWorkspace && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#10201e]/30 px-4 py-8 backdrop-blur-[2px]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("publicHome.signIn")}
+            className="relative w-full max-w-[430px]"
+          >
+            <button
+              type="button"
+              onClick={() => setIsSignInOpen(false)}
+              aria-label={t("common.cancel")}
+              className="absolute -right-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-(--color-hairline) bg-white text-(--color-ink-muted) shadow-(--shadow-level-1) transition-colors hover:text-(--color-ink)"
+            >
+              <X size={16} />
+            </button>
+            <SignInPanel isChecking={signInChecking} />
+          </div>
+        </div>
+      )}
       </div>
     </LandingMotion>
   );
