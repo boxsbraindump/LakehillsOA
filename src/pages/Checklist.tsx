@@ -57,6 +57,11 @@ interface DraggedSection {
 
 type DraggedChecklistEntity = DraggedItem | DraggedSection;
 
+interface DragOverTarget {
+  type: "item" | "section";
+  id: string;
+}
+
 export default function Checklist() {
   useHashHighlight();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,6 +98,7 @@ export default function Checklist() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionTitle, setEditingSectionTitle] = useState("");
   const [draggedEntity, setDraggedEntity] = useState<DraggedChecklistEntity | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<DragOverTarget | null>(null);
 
   useEffect(() => {
     const routeDate = searchParams.get("date");
@@ -357,6 +363,7 @@ export default function Checklist() {
       moveSection(draggedEntity.sectionId, sectionId);
     }
     setDraggedEntity(null);
+    setDragOverTarget(null);
   }
 
   function handleItemDrop(targetSectionId: string, beforeItemId: string) {
@@ -369,6 +376,7 @@ export default function Checklist() {
       moveSection(draggedEntity.sectionId, targetSectionId);
     }
     setDraggedEntity(null);
+    setDragOverTarget(null);
   }
 
   function isCustomSection(sectionId: string) {
@@ -687,16 +695,36 @@ export default function Checklist() {
               event.dataTransfer.effectAllowed = "move";
               setDraggedEntity({ type: "section", sectionId: section.id });
             }}
-            onDragEnd={() => setDraggedEntity(null)}
+            onDragEnd={() => {
+              setDraggedEntity(null);
+              setDragOverTarget(null);
+            }}
             onDragOver={(event) => {
-              if (draggedEntity) event.preventDefault();
+              if (!draggedEntity) return;
+              event.preventDefault();
+              if (
+                draggedEntity.type === "section" &&
+                draggedEntity.sectionId !== section.id
+              ) {
+                setDragOverTarget({ type: "section", id: section.id });
+              }
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setDragOverTarget((target) =>
+                  target?.type === "section" && target.id === section.id ? null : target,
+                );
+              }
             }}
             onDrop={(event) => {
               event.preventDefault();
               handleSectionDrop(section.id);
             }}
             className={[
-              "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
+              "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) transition-[transform,margin,box-shadow,border-color,opacity] duration-150 sm:p-6",
+              dragOverTarget?.type === "section" && dragOverTarget.id === section.id
+                ? "mt-3 translate-y-1 border-(--color-primary)/35 shadow-(--shadow-level-2) before:absolute before:-top-3 before:right-4 before:left-4 before:h-0.5 before:rounded-full before:bg-(--color-primary)"
+                : "",
               draggedEntity?.type === "section" && draggedEntity.sectionId === section.id
                 ? "opacity-60"
                 : "",
@@ -798,9 +826,27 @@ export default function Checklist() {
                         sourceSectionId: section.id,
                       });
                     }}
-                    onDragEnd={() => setDraggedEntity(null)}
+                    onDragEnd={() => {
+                      setDraggedEntity(null);
+                      setDragOverTarget(null);
+                    }}
                     onDragOver={(event) => {
-                      if (draggedEntity) event.preventDefault();
+                      if (!draggedEntity) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      if (
+                        draggedEntity.type === "item" &&
+                        draggedEntity.itemId !== item.id
+                      ) {
+                        setDragOverTarget({ type: "item", id: item.id });
+                      }
+                    }}
+                    onDragLeave={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        setDragOverTarget((target) =>
+                          target?.type === "item" && target.id === item.id ? null : target,
+                        );
+                      }
                     }}
                     onDrop={(event) => {
                       event.preventDefault();
@@ -808,7 +854,10 @@ export default function Checklist() {
                       handleItemDrop(section.id, item.id);
                     }}
                     className={[
-                      "group py-2.5",
+                      "group relative py-2.5 transition-[transform,padding,opacity] duration-150",
+                      dragOverTarget?.type === "item" && dragOverTarget.id === item.id
+                        ? "translate-y-2 pt-5 before:absolute before:top-1 before:right-0 before:left-0 before:h-0.5 before:rounded-full before:bg-(--color-primary)"
+                        : "",
                       draggedEntity?.type === "item" && draggedEntity.itemId === item.id
                         ? "opacity-50"
                         : "",
