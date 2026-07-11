@@ -13,6 +13,7 @@ import { todayKey, formatDisplayDate } from "../lib/date";
 import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
   filterDeletedCustomCategories,
+  normalizeCategoryTitle,
 } from "../lib/customCategories";
 import type {
   CustomCategory as CustomCategoryType,
@@ -29,6 +30,7 @@ interface ChecklistItemState {
 type CustomChecklistState = Record<string, Record<string, Record<string, ChecklistItemState>>>;
 
 function getTemplate(category?: CustomCategoryType): CustomCategoryTemplate {
+  if (category && normalizeCategoryTitle(category.title) === "查保险") return "payments";
   return category?.template ?? "oa-case";
 }
 

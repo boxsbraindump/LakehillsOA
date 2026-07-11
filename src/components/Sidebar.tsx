@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardCheck,
@@ -133,9 +133,7 @@ export default function Sidebar() {
   const [newCategoryTemplate, setNewCategoryTemplate] =
     useState<CustomCategoryTemplate>("checklist");
 
-  useEffect(() => {
-    setCustomCategories((prev) => normalizeCustomCategoryTemplates(prev));
-  }, [setCustomCategories]);
+  const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
 
   function startRename(category: CustomCategory) {
     setEditingCategoryId(category.id);
@@ -157,7 +155,7 @@ export default function Sidebar() {
     const id = slugify(newCategoryTitle, "category");
     const normalizedTitle = normalizeCategoryTitle(newCategoryTitle);
     const sameTitleIds = new Set(
-      customCategories
+      normalizedCustomCategories
         .filter((category) => normalizeCategoryTitle(category.title) === normalizedTitle)
         .map((category) => category.id),
     );
@@ -188,7 +186,7 @@ export default function Sidebar() {
 
   async function handleDeleteCategory(category: CustomCategory) {
     const normalizedTitle = normalizeCategoryTitle(category.title);
-    const categoriesToDelete = customCategories.filter(
+    const categoriesToDelete = normalizedCustomCategories.filter(
       (c) => c.id === category.id || normalizeCategoryTitle(c.title) === normalizedTitle,
     );
     const idsToDelete = new Set(categoriesToDelete.map((c) => c.id));
@@ -292,7 +290,7 @@ export default function Sidebar() {
       </nav>
 
       <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-        {filterDeletedCustomCategories(customCategories, deletedCategories).map((category) => {
+        {filterDeletedCustomCategories(normalizedCustomCategories, deletedCategories).map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
             return (

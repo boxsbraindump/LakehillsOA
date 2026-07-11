@@ -22,8 +22,14 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
 
   const setValue = useCallback(
     (next: SetStateAction<T>) => {
-      if (!hydrated.current) localEditBeforeHydration.current = true;
-      setStoredValue(next);
+      setStoredValue((prev) => {
+        const resolved =
+          typeof next === "function" ? (next as (previous: T) => T)(prev) : next;
+        if (JSON.stringify(resolved) !== JSON.stringify(prev) && !hydrated.current) {
+          localEditBeforeHydration.current = true;
+        }
+        return resolved;
+      });
     },
     [setStoredValue],
   );
