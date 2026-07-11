@@ -473,7 +473,9 @@ export default function CustomCategory() {
                   <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
                     {t("oaCases.resolutionLabel")}
                   </p>
-                  <p className="text-[14px] leading-relaxed text-(--color-ink)">{entry.resolution}</p>
+                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
+                    {entry.resolution}
+                  </p>
                 </div>
               )}
 

@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  GripVertical,
 } from "lucide-react";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useHashHighlight } from "../hooks/useHashHighlight";
@@ -34,12 +35,27 @@ type DayState = Record<string, ItemState>;
 /** Keyed by YYYY-MM-DD — checked/note state is per day; sections & items themselves are global. */
 type ChecklistState = Record<string, DayState>;
 
-interface NoteMatch {
+interface ChecklistMatch {
   date: string;
   itemId: string;
   itemLabel: string;
+  sectionTitle: string;
   note: string;
+  detail: string;
 }
+
+interface DraggedItem {
+  type: "item";
+  itemId: string;
+  sourceSectionId: string;
+}
+
+interface DraggedSection {
+  type: "section";
+  sectionId: string;
+}
+
+type DraggedChecklistEntity = DraggedItem | DraggedSection;
 
 export default function Checklist() {
   useHashHighlight();
@@ -76,6 +92,7 @@ export default function Checklist() {
   );
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionTitle, setEditingSectionTitle] = useState("");
+  const [draggedEntity, setDraggedEntity] = useState<DraggedChecklistEntity | null>(null);
 
   useEffect(() => {
     const routeDate = searchParams.get("date");
@@ -250,7 +267,7 @@ export default function Checklist() {
     );
   }
 
-  function jumpToMatch(match: NoteMatch) {
+  function jumpToMatch(match: ChecklistMatch) {
     selectDate(match.date);
     setOpenNoteId(match.itemId);
     setNoteQuery("");
@@ -260,6 +277,98 @@ export default function Checklist() {
       el?.classList.add("ring-highlight");
       setTimeout(() => el?.classList.remove("ring-highlight"), 2000);
     });
+  }
+
+  function findItem(itemId: string) {
+    for (const section of allSections) {
+      const item = section.items.find((candidate) => candidate.id === itemId);
+      if (item) return { item, section };
+    }
+    return null;
+  }
+
+  function moveItem(
+    itemId: string,
+    sourceSectionId: string,
+    targetSectionId: string,
+    beforeItemId?: string,
+  ) {
+    const found = findItem(itemId);
+    if (!found) return;
+
+    setCustomItems((prev) => {
+      const item = found.item;
+      const next = { ...prev };
+      next[sourceSectionId] = (next[sourceSectionId] ?? []).filter((candidate) => candidate.id !== itemId);
+      const targetItems = (targetSectionId === sourceSectionId ? next[sourceSectionId] : next[targetSectionId]) ?? [];
+      const withoutDragged = targetItems.filter((candidate) => candidate.id !== itemId);
+      const foundIndex = beforeItemId
+        ? withoutDragged.findIndex((candidate) => candidate.id === beforeItemId)
+        : -1;
+      const insertAt = foundIndex >= 0 ? foundIndex : withoutDragged.length;
+      next[targetSectionId] = [
+        ...withoutDragged.slice(0, insertAt),
+        item,
+        ...withoutDragged.slice(insertAt),
+      ];
+      return next;
+    });
+
+    setDayItemIds((prev) => {
+      const current = prev[selectedDate] ?? getDayItemIds(selectedDate);
+      return {
+        ...prev,
+        [selectedDate]: current.includes(itemId) ? current : [...current, itemId],
+      };
+    });
+
+    setDaySectionIds((prev) => {
+      const current = prev[selectedDate] ?? getDaySectionIds(selectedDate);
+      return {
+        ...prev,
+        [selectedDate]: Array.from(new Set([...current, targetSectionId])),
+      };
+    });
+  }
+
+  function moveSection(sectionId: string, beforeSectionId?: string) {
+    if (sectionId === beforeSectionId) return;
+    setCustomSections((prev) => {
+      const section = prev.find((candidate) => candidate.id === sectionId);
+      if (!section) return prev;
+      const withoutDragged = prev.filter((candidate) => candidate.id !== sectionId);
+      const foundIndex = beforeSectionId
+        ? withoutDragged.findIndex((candidate) => candidate.id === beforeSectionId)
+        : -1;
+      const insertAt = foundIndex >= 0 ? foundIndex : withoutDragged.length;
+      return [
+        ...withoutDragged.slice(0, insertAt),
+        section,
+        ...withoutDragged.slice(insertAt),
+      ];
+    });
+  }
+
+  function handleSectionDrop(sectionId: string) {
+    if (!draggedEntity) return;
+    if (draggedEntity.type === "item") {
+      moveItem(draggedEntity.itemId, draggedEntity.sourceSectionId, sectionId);
+    } else {
+      moveSection(draggedEntity.sectionId, sectionId);
+    }
+    setDraggedEntity(null);
+  }
+
+  function handleItemDrop(targetSectionId: string, beforeItemId: string) {
+    if (!draggedEntity) return;
+    if (draggedEntity.type === "item") {
+      if (draggedEntity.itemId !== beforeItemId) {
+        moveItem(draggedEntity.itemId, draggedEntity.sourceSectionId, targetSectionId, beforeItemId);
+      }
+    } else {
+      moveSection(draggedEntity.sectionId, targetSectionId);
+    }
+    setDraggedEntity(null);
   }
 
   function isCustomSection(sectionId: string) {
@@ -430,22 +539,29 @@ export default function Checklist() {
   );
   const isToday = selectedDate === todayKey();
 
-  const noteMatches: NoteMatch[] = (() => {
+  const checklistMatches: ChecklistMatch[] = (() => {
     const q = noteQuery.trim().toLowerCase();
     if (!q) return [];
-    const results: NoteMatch[] = [];
-    for (const [date, day] of Object.entries(state)) {
-      for (const [itemId, itemState] of Object.entries(day)) {
-        if (!itemState.note || !itemState.note.toLowerCase().includes(q)) continue;
-        let itemLabel = itemId;
-        for (const section of allSections) {
-          const found = section.items.find((i) => i.id === itemId);
-          if (found) {
-            itemLabel = found.label;
-            break;
-          }
-        }
-        results.push({ date, itemId, itemLabel, note: itemState.note });
+    const results: ChecklistMatch[] = [];
+    const dates = Array.from(
+      new Set([
+        ...Object.keys(state),
+        ...Object.keys(dayItemIds),
+        ...Object.keys(daySectionIds),
+      ]),
+    );
+    for (const date of dates) {
+      const day = state[date] ?? {};
+      const itemIds = Array.from(new Set([...getDayItemIds(date), ...Object.keys(day)]));
+      for (const itemId of itemIds) {
+        const found = findItem(itemId);
+        const itemLabel = found?.item.label ?? itemId;
+        const detail = found?.item.detail ?? "";
+        const note = day[itemId]?.note ?? "";
+        const sectionTitle = found?.section.title ?? "";
+        const haystack = [itemLabel, detail, note, sectionTitle].join(" ").toLowerCase();
+        if (!haystack.includes(q)) continue;
+        results.push({ date, itemId, itemLabel, sectionTitle, note, detail });
       }
     }
     return results.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
@@ -485,13 +601,13 @@ export default function Checklist() {
         )}
         {noteQuery.trim() && (
           <div className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)">
-            {noteMatches.length === 0 ? (
+            {checklistMatches.length === 0 ? (
               <p className="px-4 py-6 text-center text-[14px] text-(--color-ink-faint)">
                 {t("checklist.noNoteMatches")}
               </p>
             ) : (
               <ul className="max-h-96 overflow-y-auto py-1.5">
-                {noteMatches.map((match) => (
+                {checklistMatches.map((match) => (
                   <li key={`${match.date}-${match.itemId}`}>
                     <button
                       onClick={() => jumpToMatch(match)}
@@ -501,8 +617,14 @@ export default function Checklist() {
                         {match.itemLabel}
                       </span>
                       <span className="text-[13px] text-(--color-ink-muted)">
-                        {formatDisplayDate(match.date, lang)} · {match.note}
+                        {formatDisplayDate(match.date, lang)}
+                        {match.sectionTitle ? ` · ${match.sectionTitle}` : ""}
                       </span>
+                      {(match.note || match.detail) && (
+                        <span className="mt-0.5 line-clamp-2 text-[13px] text-(--color-ink-muted)">
+                          {match.note || match.detail}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}
@@ -560,8 +682,24 @@ export default function Checklist() {
           <section
             key={section.id}
             id={section.id}
+            draggable={editingSectionId !== section.id}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              setDraggedEntity({ type: "section", sectionId: section.id });
+            }}
+            onDragEnd={() => setDraggedEntity(null)}
+            onDragOver={(event) => {
+              if (draggedEntity) event.preventDefault();
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              handleSectionDrop(section.id);
+            }}
             className={[
               "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
+              draggedEntity?.type === "section" && draggedEntity.sectionId === section.id
+                ? "opacity-60"
+                : "",
               section.id === justAddedSectionId ? "fade-in-up" : "",
             ].join(" ")}
           >
@@ -599,9 +737,16 @@ export default function Checklist() {
                 </form>
               ) : (
                 <>
-                  <h2 className="min-w-0 text-[18px] font-bold text-(--color-ink)">
-                    {section.title}
-                  </h2>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <GripVertical
+                      size={15}
+                      className="shrink-0 cursor-grab text-(--color-ink-faint)"
+                      aria-hidden
+                    />
+                    <h2 className="min-w-0 text-[18px] font-bold text-(--color-ink)">
+                      {section.title}
+                    </h2>
+                  </div>
                   <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/section:opacity-100">
                     <button
                       onClick={() => startEditingSection(section)}
@@ -643,11 +788,39 @@ export default function Checklist() {
                   <li
                     key={item.id}
                     id={item.id}
-                    className={["group py-2.5", item.id === justAddedId ? "fade-in-up" : ""].join(
-                      " ",
-                    )}
+                    draggable={editingItemId !== item.id}
+                    onDragStart={(event) => {
+                      event.stopPropagation();
+                      event.dataTransfer.effectAllowed = "move";
+                      setDraggedEntity({
+                        type: "item",
+                        itemId: item.id,
+                        sourceSectionId: section.id,
+                      });
+                    }}
+                    onDragEnd={() => setDraggedEntity(null)}
+                    onDragOver={(event) => {
+                      if (draggedEntity) event.preventDefault();
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleItemDrop(section.id, item.id);
+                    }}
+                    className={[
+                      "group py-2.5",
+                      draggedEntity?.type === "item" && draggedEntity.itemId === item.id
+                        ? "opacity-50"
+                        : "",
+                      item.id === justAddedId ? "fade-in-up" : "",
+                    ].join(" ")}
                   >
                     <div className="flex items-start gap-3">
+                      <GripVertical
+                        size={14}
+                        className="mt-0.5 shrink-0 cursor-grab text-(--color-ink-faint) opacity-70"
+                        aria-hidden
+                      />
                       <button
                         role="checkbox"
                         aria-checked={checked}

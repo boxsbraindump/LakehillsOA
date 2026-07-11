@@ -175,14 +175,20 @@ export default function OACases() {
                 )}
               </div>
 
-              {c.summary && <p className="text-[14px] leading-relaxed text-(--color-ink-secondary)">{c.summary}</p>}
+              {c.summary && (
+                <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
+                  {c.summary}
+                </p>
+              )}
 
               {c.resolution && (
                 <div className="mt-3 rounded-(--radius-md) bg-(--color-canvas-soft) p-3.5">
                   <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
                     {t("oaCases.resolutionLabel")}
                   </p>
-                  <p className="text-[14px] leading-relaxed text-(--color-ink)">{c.resolution}</p>
+                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
+                    {c.resolution}
+                  </p>
                 </div>
               )}
 

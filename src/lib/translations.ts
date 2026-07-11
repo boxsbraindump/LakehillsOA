@@ -148,10 +148,10 @@ export const translations = {
     en: "This will clear all checks and notes for {date}.",
   },
   "checklist.searchPlaceholder": {
-    zh: "搜索所有日期的备注，比如患者姓名…",
-    en: "Search notes across all dates, e.g. a patient's name…",
+    zh: "搜索所有日期的事项、分支或备注…",
+    en: "Search items, sections, or notes across all dates…",
   },
-  "checklist.noNoteMatches": { zh: "没有找到匹配的备注", en: "No matching notes found" },
+  "checklist.noNoteMatches": { zh: "没有找到匹配的事项或备注", en: "No matching items or notes found" },
   "checklist.prevDay": { zh: "前一天", en: "Previous day" },
   "checklist.nextDay": { zh: "后一天", en: "Next day" },
   "checklist.today": { zh: "今天", en: "Today" },
