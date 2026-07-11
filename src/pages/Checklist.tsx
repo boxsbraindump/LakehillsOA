@@ -293,20 +293,42 @@ export default function Checklist() {
     return null;
   }
 
-  function moveItem(
-    itemId: string,
-    sourceSectionId: string,
-    targetSectionId: string,
-    beforeItemId?: string,
-  ) {
+  function isItemPlacedBefore(itemId: string, targetSectionId: string, beforeItemId?: string) {
+    const targetSection = allSections.find((section) => section.id === targetSectionId);
+    if (!targetSection) return false;
+
+    const itemIds = targetSection.items.map((item) => item.id);
+    const itemIndex = itemIds.indexOf(itemId);
+    if (itemIndex < 0) return false;
+
+    if (!beforeItemId) return itemIndex === itemIds.length - 1;
+
+    const targetIndex = itemIds.indexOf(beforeItemId);
+    return targetIndex >= 0 && itemIndex === targetIndex - 1;
+  }
+
+  function isSectionPlacedBefore(sectionId: string, beforeSectionId?: string) {
+    const sectionIds = customSections.map((section) => section.id);
+    const sectionIndex = sectionIds.indexOf(sectionId);
+    if (sectionIndex < 0) return false;
+
+    if (!beforeSectionId) return sectionIndex === sectionIds.length - 1;
+
+    const targetIndex = sectionIds.indexOf(beforeSectionId);
+    return targetIndex >= 0 && sectionIndex === targetIndex - 1;
+  }
+
+  function moveItem(itemId: string, targetSectionId: string, beforeItemId?: string) {
     const found = findItem(itemId);
     if (!found) return;
 
     setCustomItems((prev) => {
       const item = found.item;
       const next = { ...prev };
-      next[sourceSectionId] = (next[sourceSectionId] ?? []).filter((candidate) => candidate.id !== itemId);
-      const targetItems = (targetSectionId === sourceSectionId ? next[sourceSectionId] : next[targetSectionId]) ?? [];
+      Object.keys(next).forEach((sectionId) => {
+        next[sectionId] = (next[sectionId] ?? []).filter((candidate) => candidate.id !== itemId);
+      });
+      const targetItems = next[targetSectionId] ?? [];
       const withoutDragged = targetItems.filter((candidate) => candidate.id !== itemId);
       const foundIndex = beforeItemId
         ? withoutDragged.findIndex((candidate) => candidate.id === beforeItemId)
@@ -355,10 +377,27 @@ export default function Checklist() {
     });
   }
 
+  function previewItemMove(targetSectionId: string, beforeItemId?: string) {
+    if (!draggedEntity || draggedEntity.type !== "item") return;
+    if (draggedEntity.itemId === beforeItemId) return;
+    if (isItemPlacedBefore(draggedEntity.itemId, targetSectionId, beforeItemId)) return;
+
+    moveItem(draggedEntity.itemId, targetSectionId, beforeItemId);
+    setDraggedEntity({ ...draggedEntity, sourceSectionId: targetSectionId });
+  }
+
+  function previewSectionMove(beforeSectionId?: string) {
+    if (!draggedEntity || draggedEntity.type !== "section") return;
+    if (draggedEntity.sectionId === beforeSectionId) return;
+    if (isSectionPlacedBefore(draggedEntity.sectionId, beforeSectionId)) return;
+
+    moveSection(draggedEntity.sectionId, beforeSectionId);
+  }
+
   function handleSectionDrop(sectionId: string) {
     if (!draggedEntity) return;
     if (draggedEntity.type === "item") {
-      moveItem(draggedEntity.itemId, draggedEntity.sourceSectionId, sectionId);
+      moveItem(draggedEntity.itemId, sectionId);
     } else {
       moveSection(draggedEntity.sectionId, sectionId);
     }
@@ -370,7 +409,7 @@ export default function Checklist() {
     if (!draggedEntity) return;
     if (draggedEntity.type === "item") {
       if (draggedEntity.itemId !== beforeItemId) {
-        moveItem(draggedEntity.itemId, draggedEntity.sourceSectionId, targetSectionId, beforeItemId);
+        moveItem(draggedEntity.itemId, targetSectionId, beforeItemId);
       }
     } else {
       moveSection(draggedEntity.sectionId, targetSectionId);
@@ -707,6 +746,10 @@ export default function Checklist() {
                 draggedEntity.sectionId !== section.id
               ) {
                 setDragOverTarget({ type: "section", id: section.id });
+                previewSectionMove(section.id);
+              } else if (draggedEntity.type === "item") {
+                setDragOverTarget({ type: "section", id: section.id });
+                previewItemMove(section.id);
               }
             }}
             onDragLeave={(event) => {
@@ -721,12 +764,12 @@ export default function Checklist() {
               handleSectionDrop(section.id);
             }}
             className={[
-              "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) transition-[transform,margin,box-shadow,border-color,opacity] duration-150 sm:p-6",
+              "group/section relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) transition-[transform,margin,box-shadow,border-color] duration-150 sm:p-6",
               dragOverTarget?.type === "section" && dragOverTarget.id === section.id
                 ? "mt-3 translate-y-1 border-(--color-primary)/35 shadow-(--shadow-level-2) before:absolute before:-top-3 before:right-4 before:left-4 before:h-0.5 before:rounded-full before:bg-(--color-primary)"
                 : "",
               draggedEntity?.type === "section" && draggedEntity.sectionId === section.id
-                ? "opacity-60"
+                ? "scale-[0.995] border-(--color-primary)/35 shadow-(--shadow-level-2)"
                 : "",
               section.id === justAddedSectionId ? "fade-in-up" : "",
             ].join(" ")}
@@ -839,6 +882,10 @@ export default function Checklist() {
                         draggedEntity.itemId !== item.id
                       ) {
                         setDragOverTarget({ type: "item", id: item.id });
+                        previewItemMove(section.id, item.id);
+                      } else if (draggedEntity.type === "section") {
+                        setDragOverTarget({ type: "section", id: section.id });
+                        previewSectionMove(section.id);
                       }
                     }}
                     onDragLeave={(event) => {
@@ -854,12 +901,12 @@ export default function Checklist() {
                       handleItemDrop(section.id, item.id);
                     }}
                     className={[
-                      "group relative py-2.5 transition-[transform,padding,opacity] duration-150",
+                      "group relative py-2.5 transition-[transform,padding,box-shadow,border-color] duration-150",
                       dragOverTarget?.type === "item" && dragOverTarget.id === item.id
-                        ? "translate-y-2 pt-5 before:absolute before:top-1 before:right-0 before:left-0 before:h-0.5 before:rounded-full before:bg-(--color-primary)"
+                        ? "translate-y-1 pt-4 before:absolute before:top-1 before:right-0 before:left-0 before:h-0.5 before:rounded-full before:bg-(--color-primary)"
                         : "",
                       draggedEntity?.type === "item" && draggedEntity.itemId === item.id
-                        ? "opacity-50"
+                        ? "z-10 rounded-(--radius-md) bg-(--color-canvas) shadow-(--shadow-level-2) ring-1 ring-(--color-primary)/20"
                         : "",
                       item.id === justAddedId ? "fade-in-up" : "",
                     ].join(" ")}
