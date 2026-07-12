@@ -85,6 +85,34 @@ function setSession(token: string, email: string, workspace?: WorkspaceMeta) {
   }
 }
 
+function currentWorkspaceId() {
+  return getWorkspaceMeta()?.id;
+}
+
+function authHeaders(): HeadersInit {
+  const token = getAuthToken();
+  const workspaceId = currentWorkspaceId();
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(workspaceId ? { "X-Workspace-Id": workspaceId } : {}),
+  };
+}
+
+export function getScopedStorageKey(key: string) {
+  const workspace = getWorkspaceMeta();
+  if (!syncEnabled || !workspace || workspace.isPrimary) return key;
+  return `${workspace.id}:${key}`;
+}
+
+export function setCurrentWorkspace(workspace: WorkspaceMeta) {
+  try {
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    cachedStatePromise = null;
+  } catch {
+    // ignore
+  }
+}
+
 export function clearAuthToken() {
   try {
     window.localStorage.removeItem(TOKEN_KEY);
@@ -109,7 +137,7 @@ export async function verifySession(
   try {
     setSyncStatus("syncing");
     const res = await fetch(`${API_BASE}/api/auth/session`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: authHeaders(),
     });
     setSyncStatus(statusFromResponse(res));
     if (!res.ok) return { ok: false };
@@ -153,6 +181,21 @@ export async function loginWithGoogle(
   }
 }
 
+export async function fetchWorkspaces(): Promise<WorkspaceMeta[]> {
+  if (!API_BASE) return [];
+  try {
+    const res = await fetch(`${API_BASE}/api/workspaces`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) onUnauthorized?.();
+    if (!res.ok) return [];
+    const body = (await res.json()) as { workspaces?: WorkspaceMeta[] };
+    return body.workspaces ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export function logoutRemote(): Promise<void> {
   const token = getAuthToken();
   if (!API_BASE || !token) return Promise.resolve();
@@ -176,7 +219,7 @@ export function fetchAllRemoteState(): Promise<Record<string, unknown>> {
   if (!cachedStatePromise) {
     setSyncStatus("syncing");
     cachedStatePromise = fetch(`${API_BASE}/api/state`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: authHeaders(),
     })
       .then((res) => {
         if (res.status === 401) onUnauthorized?.();
@@ -202,7 +245,7 @@ export function pushRemoteValue(key: string, value: unknown): Promise<void> {
   return fetch(`${API_BASE}/api/state/${encodeURIComponent(key)}`, {
     method: "PUT",
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...authHeaders(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ value }),

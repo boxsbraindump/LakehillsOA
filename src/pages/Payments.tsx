@@ -9,11 +9,14 @@ import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import PaymentEntryForm from "../components/PaymentEntryForm";
 import EmptyState from "../components/EmptyState";
+import { useAuth } from "../components/AuthProvider";
 import type { PaymentEntry } from "../lib/types";
 
 export default function Payments() {
   useHashHighlight();
   const { t } = useLanguage();
+  const { syncEnabled, workspace } = useAuth();
+  const includeSeedData = !syncEnabled || !workspace || workspace.isPrimary;
   const [overrides, setOverrides] = useSyncedStorage<Record<string, PaymentEntry>>(
     "lh-payments-overrides",
     {},
@@ -32,7 +35,7 @@ export default function Payments() {
   const [query, setQuery] = useState("");
 
   const entries = [
-    ...seedEntries.map((entry) => overrides[entry.id] ?? entry),
+    ...(includeSeedData ? seedEntries.map((entry) => overrides[entry.id] ?? entry) : []),
     ...customEntries,
   ].filter((entry) => !hiddenIds.includes(entry.id));
   const q = query.trim().toLowerCase();

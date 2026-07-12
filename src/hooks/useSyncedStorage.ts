@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, type SetStateAction } from "react";
 import { useLocalStorage } from "./useLocalStorage";
-import { fetchAllRemoteState, pushRemoteValue, syncEnabled } from "../lib/syncApi";
+import {
+  fetchAllRemoteState,
+  getScopedStorageKey,
+  pushRemoteValue,
+  syncEnabled,
+} from "../lib/syncApi";
 
 /**
  * Same interface as useLocalStorage, but also syncs through the Worker/D1 backend when
@@ -10,11 +15,18 @@ import { fetchAllRemoteState, pushRemoteValue, syncEnabled } from "../lib/syncAp
  * simultaneous conflicting edits.
  */
 export function useSyncedStorage<T>(key: string, initialValue: T) {
-  const [value, setStoredValue] = useLocalStorage<T>(key, initialValue);
+  const storageKey = getScopedStorageKey(key);
+  const [value, setStoredValue] = useLocalStorage<T>(storageKey, initialValue);
   const hydrated = useRef(!syncEnabled);
   const localEditBeforeHydration = useRef(false);
   const latestValue = useRef(value);
   const skipNextPush = useRef(false);
+
+  useEffect(() => {
+    hydrated.current = !syncEnabled;
+    localEditBeforeHydration.current = false;
+    skipNextPush.current = false;
+  }, [storageKey]);
 
   useEffect(() => {
     latestValue.current = value;
@@ -53,7 +65,7 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
     return () => {
       cancelled = true;
     };
-  }, [key, setStoredValue]);
+  }, [key, setStoredValue, storageKey]);
 
   useEffect(() => {
     if (!hydrated.current) return;
@@ -65,7 +77,7 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
       pushRemoteValue(key, value);
     }, 600);
     return () => clearTimeout(timer);
-  }, [key, value]);
+  }, [key, storageKey, value]);
 
   return [value, setValue] as const;
 }

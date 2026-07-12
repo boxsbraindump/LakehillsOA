@@ -16,6 +16,8 @@ import {
   loginWithGoogle,
   logoutRemote,
   setUnauthorizedHandler,
+  fetchWorkspaces,
+  setCurrentWorkspace,
   type WorkspaceMeta,
 } from "../lib/syncApi";
 
@@ -25,7 +27,9 @@ interface AuthContextValue {
   isChecking: boolean;
   email: string | null;
   workspace: WorkspaceMeta | null;
+  workspaces: WorkspaceMeta[];
   loginWithGoogle: (idToken: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  switchWorkspace: (workspaceId: string) => void;
   logout: () => void;
 }
 
@@ -42,6 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(syncEnabled);
   const [email, setEmail] = useState<string | null>(() => getAuthEmail());
   const [workspace, setWorkspace] = useState<WorkspaceMeta | null>(() => getWorkspaceMeta());
+  const [workspaces, setWorkspaces] = useState<WorkspaceMeta[]>(() => {
+    const current = getWorkspaceMeta();
+    return current ? [current] : [];
+  });
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -66,10 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.ok) {
         setEmail(result.email);
         setWorkspace(result.workspace);
+        fetchWorkspaces().then((items) => {
+          if (!cancelled && items.length > 0) setWorkspaces(items);
+        });
       } else {
         clearAuthToken();
         setEmail(null);
         setWorkspace(null);
+        setWorkspaces([]);
       }
       setIsChecking(false);
     });
@@ -84,10 +96,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(true);
       setEmail(result.email);
       setWorkspace(result.workspace);
+      const items = await fetchWorkspaces();
+      setWorkspaces(items.length > 0 ? items : [result.workspace]);
       return { ok: true as const };
     }
     return { ok: false as const, error: result.error };
   }, []);
+
+  const switchWorkspace = useCallback(
+    (workspaceId: string) => {
+      const next = workspaces.find((item) => item.id === workspaceId);
+      if (!next || next.id === workspace?.id) return;
+      setCurrentWorkspace(next);
+      setWorkspace(next);
+    },
+    [workspace?.id, workspaces],
+  );
 
   const logout = useCallback(() => {
     void logoutRemote();
@@ -95,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     setEmail(null);
     setWorkspace(null);
+    setWorkspaces([]);
   }, []);
 
   return (
@@ -105,7 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isChecking,
         email,
         workspace,
+        workspaces,
         loginWithGoogle: login,
+        switchWorkspace,
         logout,
       }}
     >

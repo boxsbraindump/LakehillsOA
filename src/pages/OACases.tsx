@@ -9,11 +9,14 @@ import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import OACaseForm from "../components/OACaseForm";
 import EmptyState from "../components/EmptyState";
+import { useAuth } from "../components/AuthProvider";
 import type { OACase } from "../lib/types";
 
 export default function OACases() {
   useHashHighlight();
   const { t } = useLanguage();
+  const { syncEnabled, workspace } = useAuth();
+  const includeSeedData = !syncEnabled || !workspace || workspace.isPrimary;
   const [query, setQuery] = useState("");
   const [overrides, setOverrides] = useSyncedStorage<Record<string, OACase>>(
     "lh-oacases-overrides",
@@ -28,7 +31,10 @@ export default function OACases() {
   const [isAdding, setIsAdding] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
-  const cases = [...seedCases.map((c) => overrides[c.id] ?? c), ...customCases].filter(
+  const cases = [
+    ...(includeSeedData ? seedCases.map((c) => overrides[c.id] ?? c) : []),
+    ...customCases,
+  ].filter(
     (c) => !hiddenIds.includes(c.id),
   );
 

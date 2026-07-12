@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const LOCAL_STORAGE_CHANGE_EVENT = "lh-local-storage-change";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
+  const skipNextWrite = useRef(false);
+  const initialValueRef = useRef(initialValue);
   const [value, setValue] = useState<T>(() => {
     try {
       const stored = window.localStorage.getItem(key);
@@ -13,6 +15,20 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   });
 
   useEffect(() => {
+    skipNextWrite.current = true;
+    try {
+      const stored = window.localStorage.getItem(key);
+      setValue(stored !== null ? (JSON.parse(stored) as T) : initialValueRef.current);
+    } catch {
+      setValue(initialValueRef.current);
+    }
+  }, [key]);
+
+  useEffect(() => {
+    if (skipNextWrite.current) {
+      skipNextWrite.current = false;
+      return;
+    }
     try {
       const serialized = JSON.stringify(value);
       const previous = window.localStorage.getItem(key);

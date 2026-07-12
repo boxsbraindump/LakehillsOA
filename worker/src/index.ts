@@ -28,7 +28,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id",
     Vary: "Origin",
   };
 }
@@ -89,10 +89,23 @@ function personalWorkspace(email: string): WorkspaceInfo {
   };
 }
 
-function workspaceForEmail(email: string, env: Env): WorkspaceInfo {
+function defaultWorkspaceForEmail(email: string, env: Env): WorkspaceInfo {
   const allowed = normalizedAllowedEmails(env);
   if (allowed.includes(email.toLowerCase())) return primaryWorkspace(env);
   return personalWorkspace(email);
+}
+
+function workspacesForEmail(email: string, env: Env): WorkspaceInfo[] {
+  const allowed = normalizedAllowedEmails(env);
+  const workspaces = [personalWorkspace(email)];
+  if (allowed.includes(email.toLowerCase())) return [primaryWorkspace(env), ...workspaces];
+  return workspaces;
+}
+
+function requestedWorkspaceForEmail(request: Request, email: string, env: Env): WorkspaceInfo {
+  const requestedId = request.headers.get("X-Workspace-Id");
+  const workspaces = workspacesForEmail(email, env);
+  return workspaces.find((workspace) => workspace.id === requestedId) ?? defaultWorkspaceForEmail(email, env);
 }
 
 async function ensureWorkspaceTables(env: Env) {
@@ -125,6 +138,12 @@ async function ensureWorkspace(env: Env, workspace: WorkspaceInfo) {
     .run();
 }
 
+async function ensureWorkspaces(env: Env, workspaces: WorkspaceInfo[]) {
+  for (const workspace of workspaces) {
+    await ensureWorkspace(env, workspace);
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const headers = corsHeaders(request.headers.get("Origin"));
@@ -150,8 +169,8 @@ export default {
         if (!publicSignupsEnabled) return json({ error: "not_allowed" }, headers, 403);
       }
 
-      const workspace = workspaceForEmail(email, env);
-      await ensureWorkspace(env, workspace);
+      const workspace = defaultWorkspaceForEmail(email, env);
+      await ensureWorkspaces(env, workspacesForEmail(email, env));
 
       const token = crypto.randomUUID();
       const now = Date.now();
@@ -167,9 +186,17 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/auth/session") {
       const email = await getSessionEmail(request, env);
       if (!email) return json({ error: "unauthorized" }, headers, 401);
-      const workspace = workspaceForEmail(email, env);
-      await ensureWorkspace(env, workspace);
+      const workspace = requestedWorkspaceForEmail(request, email, env);
+      await ensureWorkspaces(env, workspacesForEmail(email, env));
       return json({ email, workspace }, headers);
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/workspaces") {
+      const email = await getSessionEmail(request, env);
+      if (!email) return json({ error: "unauthorized" }, headers, 401);
+      const workspaces = workspacesForEmail(email, env);
+      await ensureWorkspaces(env, workspaces);
+      return json({ workspaces }, headers);
     }
 
     if (request.method === "DELETE" && url.pathname === "/api/auth/session") {
@@ -184,7 +211,7 @@ export default {
     if (!email) {
       return json({ error: "unauthorized" }, headers, 401);
     }
-    const workspace = workspaceForEmail(email, env);
+    const workspace = requestedWorkspaceForEmail(request, email, env);
     await ensureWorkspace(env, workspace);
 
     if (request.method === "GET" && url.pathname === "/api/state") {

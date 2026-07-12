@@ -88,6 +88,14 @@ const TEMPLATE_LABEL_KEY: Record<
   "oa-case": "template.oaCase",
   payments: "template.payments",
 };
+const PERSONAL_TEMPLATE_LABEL_KEY: Record<
+  CustomCategoryTemplate,
+  "template.checklist" | "template.knowledgeCard" | "template.linkDirectory"
+> = {
+  checklist: "template.checklist",
+  "oa-case": "template.knowledgeCard",
+  payments: "template.linkDirectory",
+};
 
 function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
   return [
@@ -103,7 +111,7 @@ const inlineInputClass =
   "w-full rounded-(--radius-xs) border border-(--color-sidebar-border) bg-white/80 px-2 py-1 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary) focus:shadow-(--shadow-level-1)";
 
 export default function Sidebar() {
-  const { syncEnabled } = useAuth();
+  const { syncEnabled, workspace } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -134,6 +142,8 @@ export default function Sidebar() {
     useState<CustomCategoryTemplate>("checklist");
 
   const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
+  const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
+  const templateLabels = isPersonalWorkspace ? PERSONAL_TEMPLATE_LABEL_KEY : TEMPLATE_LABEL_KEY;
 
   function startRename(category: CustomCategory) {
     setEditingCategoryId(category.id);
@@ -256,38 +266,40 @@ export default function Sidebar() {
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
           <Sparkles size={15} strokeWidth={2.25} />
         </span>
-        Lake Hills OA
+        {workspace?.name ?? "Lake Hills OA"}
       </NavLink>
 
       <div className="hidden px-2 pb-4 text-[12px] text-(--color-ink-muted) md:block">
-        Lake Hills Acupuncture · Internal
+        {isPersonalWorkspace ? t("workspace.personalSubtitle") : "Lake Hills Acupuncture · Internal"}
       </div>
 
-      <nav className="no-scrollbar flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-        {NAV_ITEMS.map(({ to, key, category, icon: Icon, dot }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={() =>
-              trackUsage({
-                id: category,
-                category,
-                path: to,
-                title: t(key),
-              })
-            }
-            className={navLinkClass}
-          >
-            <Icon size={16} strokeWidth={2} className="shrink-0" />
-            <span className="truncate">{t(key)}</span>
-            <span
-              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
-              style={{ backgroundColor: dot }}
-              aria-hidden
-            />
-          </NavLink>
-        ))}
-      </nav>
+      {!isPersonalWorkspace && (
+        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
+          {NAV_ITEMS.map(({ to, key, category, icon: Icon, dot }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() =>
+                trackUsage({
+                  id: category,
+                  category,
+                  path: to,
+                  title: t(key),
+                })
+              }
+              className={navLinkClass}
+            >
+              <Icon size={16} strokeWidth={2} className="shrink-0" />
+              <span className="truncate">{t(key)}</span>
+              <span
+                className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
+                style={{ backgroundColor: dot }}
+                aria-hidden
+              />
+            </NavLink>
+          ))}
+        </nav>
+      )}
 
       <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
         {filterDeletedCustomCategories(normalizedCustomCategories, deletedCategories).map((category) => {
@@ -388,7 +400,7 @@ export default function Sidebar() {
                     ].join(" ")}
                   >
                     <Icon size={14} />
-                    <span className="truncate">{t(TEMPLATE_LABEL_KEY[template])}</span>
+                    <span className="truncate">{t(templateLabels[template])}</span>
                   </button>
                 );
               })}

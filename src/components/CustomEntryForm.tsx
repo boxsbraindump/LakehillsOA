@@ -11,6 +11,7 @@ import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { defaultPlatforms } from "../data/platforms";
 import PortalFields from "./PortalFields";
+import { useAuth } from "./AuthProvider";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
 
@@ -29,6 +30,8 @@ export default function CustomEntryForm({
   onCancel: () => void;
 }) {
   const { t } = useLanguage();
+  const { syncEnabled, workspace } = useAuth();
+  const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const [payers] = useSyncedStorage<Payer[]>("lh-payers", []);
   const [platforms] = useSyncedStorage<Platform[]>("lh-platforms", defaultPlatforms);
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -104,7 +107,7 @@ export default function CustomEntryForm({
     onSave({
       id: initial?.id ?? slugify(title, "case"),
       title: title.trim(),
-      payer: payer.trim(),
+      payer: isPersonalWorkspace ? undefined : payer.trim(),
       summary: summary.trim(),
       resolution: resolution.trim(),
       notes: summary.trim() || undefined,
@@ -159,30 +162,34 @@ export default function CustomEntryForm({
             className={`${inputClass} mb-3`}
           />
 
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("oaCaseForm.payer")}
-          </label>
-          {payers.length > 0 && (
-            <select
-              value={selectedCasePayerValue}
-              onChange={(e) => handleCasePayerSelect(e.target.value)}
-              className={`${inputClass} mb-1.5`}
-            >
-              <option value={CUSTOM_PAYER_VALUE}>{t("paymentEntryForm.customPayer")}</option>
-              {payers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
-          {(payers.length === 0 || selectedCasePayerValue === CUSTOM_PAYER_VALUE) && (
-            <input
-              value={payer}
-              onChange={(e) => setPayer(e.target.value)}
-              placeholder={t("oaCaseForm.payerPlaceholder")}
-              className={`${inputClass} mb-3`}
-            />
+          {!isPersonalWorkspace && (
+            <>
+              <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+                {t("oaCaseForm.payer")}
+              </label>
+              {payers.length > 0 && (
+                <select
+                  value={selectedCasePayerValue}
+                  onChange={(e) => handleCasePayerSelect(e.target.value)}
+                  className={`${inputClass} mb-1.5`}
+                >
+                  <option value={CUSTOM_PAYER_VALUE}>{t("paymentEntryForm.customPayer")}</option>
+                  {payers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {(payers.length === 0 || selectedCasePayerValue === CUSTOM_PAYER_VALUE) && (
+                <input
+                  value={payer}
+                  onChange={(e) => setPayer(e.target.value)}
+                  placeholder={t("oaCaseForm.payerPlaceholder")}
+                  className={`${inputClass} mb-3`}
+                />
+              )}
+            </>
           )}
 
           <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
@@ -222,9 +229,9 @@ export default function CustomEntryForm({
       {template === "payments" && (
         <>
           <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("paymentEntryForm.payer")}
+            {isPersonalWorkspace ? t("linkEntryForm.title") : t("paymentEntryForm.payer")}
           </label>
-          {payers.length > 0 && (
+          {!isPersonalWorkspace && payers.length > 0 && (
             <select
               value={selectedPaymentPayerValue}
               onChange={(e) => handlePaymentPayerSelect(e.target.value)}
@@ -238,12 +245,16 @@ export default function CustomEntryForm({
               ))}
             </select>
           )}
-          {(payers.length === 0 || selectedPaymentPayerValue === CUSTOM_PAYER_VALUE) && (
+          {(isPersonalWorkspace || payers.length === 0 || selectedPaymentPayerValue === CUSTOM_PAYER_VALUE) && (
             <input
               autoFocus
               value={paymentPayer}
               onChange={(e) => setPaymentPayer(e.target.value)}
-              placeholder={t("paymentEntryForm.payerPlaceholder")}
+              placeholder={
+                isPersonalWorkspace
+                  ? t("linkEntryForm.titlePlaceholder")
+                  : t("paymentEntryForm.payerPlaceholder")
+              }
               className={`${inputClass} mb-3`}
             />
           )}

@@ -15,8 +15,11 @@ export const translations = {
   "template.checklist": { zh: "Checklist", en: "Checklist" },
   "template.oaCase": { zh: "OA 案例", en: "OA Case" },
   "template.payments": { zh: "Payments", en: "Payments" },
+  "template.knowledgeCard": { zh: "资料卡片", en: "Knowledge card" },
+  "template.linkDirectory": { zh: "链接目录", en: "Link directory" },
 
   "profileMenu.settings": { zh: "设置", en: "Settings" },
+  "profileMenu.workspaces": { zh: "工作区", en: "Workspaces" },
   "profileMenu.logout": { zh: "退出登录", en: "Log out" },
   "syncStatus.local": { zh: "本地保存", en: "Saved locally" },
   "syncStatus.syncing": { zh: "正在同步", en: "Syncing" },
@@ -88,36 +91,44 @@ export const translations = {
     zh: "搜索前台 checklist、OA 理赔案例，或付款查询位置",
     en: "Search the front-desk checklist, OA claim cases, or payment lookup info",
   },
+  "home.personalSubtitle": {
+    zh: "搜索你的 checklist、资料卡片、链接和突然想到的事情",
+    en: "Search your checklists, notes, links, and quick admin thoughts",
+  },
   "home.searchPlaceholder": {
     zh: "试试「copay」「授权」「ERA」…",
     en: "Try “copay”, “authorization”, “ERA”…",
+  },
+  "home.personalSearchPlaceholder": {
+    zh: "试试「申请」「链接」「follow up」「灵感」…",
+    en: "Try “application”, “link”, “follow up”, “idea”…",
   },
 
   "workspaceOnboarding.workspaceFallback": { zh: "新的工作区", en: "New workspace" },
   "workspaceOnboarding.privateLabel": { zh: "独立资料空间", en: "Separate data space" },
   "workspaceOnboarding.label": { zh: "开始设置", en: "Workspace setup" },
   "workspaceOnboarding.title": {
-    zh: "选择一个模板开始",
-    en: "Choose a template to start",
+    zh: "创建你的 Personal Admin",
+    en: "Create your Personal Admin",
   },
   "workspaceOnboarding.body": {
-    zh: "这个工作区是独立的，不会显示 Lake Hills 的资料。之后可以从空白开始，或选择适合行政工作的模板。",
-    en: "This workspace is separate and does not show Lake Hills data. Start blank or choose a template designed for admin operations.",
+    zh: "这个工作区是独立的，不会显示 Lake Hills 的资料。它适合记录突然想到的事情、待办、链接和生活里的 admin 资料。",
+    en: "This workspace is separate from Lake Hills data. It is for quick thoughts, to-dos, links, and everyday admin notes.",
   },
   "workspaceOnboarding.templateChecklist": { zh: "Checklist", en: "Checklist" },
   "workspaceOnboarding.templateChecklistBody": {
     zh: "适合每日流程、开店打烊、follow-up 或重复任务。",
     en: "For daily routines, opening and closing, follow-ups, and repeated tasks.",
   },
-  "workspaceOnboarding.templateCards": { zh: "Case / SOP Cards", en: "Case / SOP Cards" },
+  "workspaceOnboarding.templateCards": { zh: "资料卡片", en: "Knowledge cards" },
   "workspaceOnboarding.templateCardsBody": {
-    zh: "适合记录问题、情况说明、处理方式和团队经验。",
-    en: "For issues, situations, resolutions, and team know-how.",
+    zh: "适合记录问题、背景、处理方式和之后可以复用的经验。",
+    en: "For issues, context, resolutions, and knowledge you can reuse later.",
   },
-  "workspaceOnboarding.templateLinks": { zh: "Link Directory", en: "Link Directory" },
+  "workspaceOnboarding.templateLinks": { zh: "链接目录", en: "Link Directory" },
   "workspaceOnboarding.templateLinksBody": {
-    zh: "适合保存入口链接、平台、用途说明和注意事项。",
-    en: "For portal links, platforms, descriptions, and notes.",
+    zh: "适合保存入口链接、用途说明和注意事项。",
+    en: "For useful links, descriptions, and notes.",
   },
   "workspaceOnboarding.templateBlank": { zh: "Blank Cards", en: "Blank Cards" },
   "workspaceOnboarding.templateBlankBody": {
@@ -125,6 +136,9 @@ export const translations = {
     en: "For starting with simple titles, notes, and tags.",
   },
   "workspaceOnboarding.templateComingSoon": { zh: "下一步接入", en: "Next step" },
+  "workspaceOnboarding.createWorkspace": { zh: "创建 Personal Admin", en: "Create Personal Admin" },
+  "workspaceOnboarding.startBlank": { zh: "从空白开始", en: "Start blank" },
+  "workspaceOnboarding.included": { zh: "将会创建", en: "Included templates" },
   "workspaceOnboarding.safetyNote": {
     zh: "安全说明：Lake Hills 仍然是私有工作区。只有在后端明确开启公开注册后，新邮箱才会进入这个独立设置流程。",
     en: "Safety note: Lake Hills stays private. New emails only enter this separate setup flow after public signups are intentionally enabled on the backend.",
@@ -138,6 +152,7 @@ export const translations = {
   "category.oaCases": { zh: "OA Cases", en: "OA Cases" },
   "category.payments": { zh: "Payments", en: "Payments" },
   "category.custom": { zh: "自定义", en: "Custom" },
+  "workspace.personalSubtitle": { zh: "Personal admin · Private", en: "Personal admin · Private" },
 
   "checklist.title": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
   "checklist.resetDay": { zh: "重置当日进度", en: "Reset today's progress" },
@@ -242,6 +257,8 @@ export const translations = {
     en: "e.g. Underwritten by Premera — look it up under Premera's network",
   },
   "customEntryForm.tags": { zh: "标签（逗号分隔，可选）", en: "Tags (comma-separated, optional)" },
+  "linkEntryForm.title": { zh: "名称", en: "Name" },
+  "linkEntryForm.titlePlaceholder": { zh: "例如 Job applications / DMV / 银行账户", en: "e.g. Job applications / DMV / bank account" },
 
   "payments.title": { zh: "Where to Find Payments", en: "Where to Find Payments" },
   "payments.subtitle": {

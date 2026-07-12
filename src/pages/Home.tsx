@@ -7,6 +7,7 @@ import { useUsageStats } from "../hooks/useUsageStats";
 import SearchResults from "../components/SearchResults";
 import SplitText from "../components/SplitText";
 import { useLanguage } from "../components/LanguageProvider";
+import { useAuth } from "../components/AuthProvider";
 import type { SearchDoc } from "../lib/types";
 
 const QUICK_CHIP_IDS = [
@@ -24,8 +25,10 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
+  const { syncEnabled, workspace } = useAuth();
   const { docs, fuse } = useSearchIndex();
   const { trackUsage, usageEntries } = useUsageStats();
+  const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
@@ -34,9 +37,9 @@ export default function Home() {
 
   const quickChips = useMemo(() => {
     const docsByPath = new Map(docs.map((doc) => [doc.path, doc]));
-    const fallbackDocs = QUICK_CHIP_IDS.map((id) => docs.find((doc) => doc.id === id)).filter(
-      Boolean,
-    );
+    const fallbackDocs = isPersonalWorkspace
+      ? []
+      : QUICK_CHIP_IDS.map((id) => docs.find((doc) => doc.id === id)).filter(Boolean);
     const chips: QuickChip[] = [];
     const seenPaths = new Set<string>();
 
@@ -55,7 +58,7 @@ export default function Home() {
     }
 
     return chips.slice(0, 6);
-  }, [docs, usageEntries]);
+  }, [docs, isPersonalWorkspace, usageEntries]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,7 +73,7 @@ export default function Home() {
       <div className="w-full max-w-3xl">
         <div className="mb-8 flex flex-col items-center text-center">
           <span className="inline-flex max-w-full items-center rounded-full border border-(--color-primary)/15 bg-white/78 px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-secondary) shadow-(--shadow-level-1)">
-            Lake Hills Acupuncture · Internal
+            {isPersonalWorkspace ? workspace?.name : "Lake Hills Acupuncture · Internal"}
           </span>
           <SplitText
             key={`h1-${lang}`}
@@ -88,7 +91,7 @@ export default function Home() {
           <SplitText
             key={`p-${lang}`}
             tag="p"
-            text={t("home.subtitle")}
+            text={isPersonalWorkspace ? t("home.personalSubtitle") : t("home.subtitle")}
             className="mt-3 text-[16px] text-(--color-ink-muted)"
             splitType="words"
             delay={50}
@@ -107,7 +110,9 @@ export default function Home() {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("home.searchPlaceholder")}
+              placeholder={
+                isPersonalWorkspace ? t("home.personalSearchPlaceholder") : t("home.searchPlaceholder")
+              }
               className="w-full bg-transparent px-3 py-4 text-[16px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint)"
             />
             {query && (

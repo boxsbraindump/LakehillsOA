@@ -3,6 +3,7 @@ import Fuse from "fuse.js";
 import { oaCases as seedCases } from "../data/oaCases";
 import { paymentEntries as seedPaymentEntries } from "../data/payments";
 import { useSyncedStorage } from "./useSyncedStorage";
+import { useAuth } from "../components/AuthProvider";
 import {
   buildChecklistSearchDocs,
   buildCustomSearchDocs,
@@ -37,6 +38,8 @@ function latestChecklistDateByItemId(dayItemIds: Record<string, string[]>) {
 
 /** Rebuilds the search index whenever synced workspace data changes. */
 export function useSearchIndex() {
+  const { syncEnabled, workspace } = useAuth();
+  const includeSeedData = !syncEnabled || !workspace || workspace.isPrimary;
   const [customCategories] = useSyncedStorage<CustomCategory[]>("lh-custom-categories", []);
   const [customEntries] = useSyncedStorage<Record<string, CustomEntry[]>>("lh-custom-entries", {});
   const [deletedCategories] = useSyncedStorage<DeletedCustomCategory[]>(
@@ -79,11 +82,13 @@ export function useSearchIndex() {
       items: checklistItems[section.id] ?? [],
     }));
     const visibleOACases = [
-      ...seedCases.map((item) => oaCaseOverrides[item.id] ?? item),
+      ...(includeSeedData ? seedCases.map((item) => oaCaseOverrides[item.id] ?? item) : []),
       ...customOACases,
     ].filter((item) => !hiddenOACaseIds.includes(item.id));
     const visiblePayments = [
-      ...seedPaymentEntries.map((item) => paymentOverrides[item.id] ?? item),
+      ...(includeSeedData
+        ? seedPaymentEntries.map((item) => paymentOverrides[item.id] ?? item)
+        : []),
       ...customPayments,
     ].filter((item) => !hiddenPaymentIds.includes(item.id));
 
@@ -108,6 +113,7 @@ export function useSearchIndex() {
     deletedCategories,
     hiddenOACaseIds,
     hiddenPaymentIds,
+    includeSeedData,
     oaCaseOverrides,
     paymentOverrides,
   ]);
