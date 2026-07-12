@@ -28,6 +28,96 @@ const STARTER_CATEGORIES: CustomCategory[] = [
   },
 ];
 
+const STARTER_ENTRIES: Record<string, CustomEntry[]> = {
+  "personal-checklist": [
+    {
+      id: "demo-checklist-quick-capture",
+      title: "Quick capture before it disappears",
+      detail: "Write the thought first. Sort it later when you have more energy.",
+      notes: "Examples: cancel subscription, send follow-up email, save job link.",
+      tags: [],
+    },
+    {
+      id: "demo-checklist-admin-reset",
+      title: "15-minute admin reset",
+      detail: "Open inbox, check bills, choose one small thing to finish today.",
+      notes: "Good for ADHD days when the list feels too big.",
+      tags: [],
+    },
+    {
+      id: "demo-checklist-follow-up",
+      title: "Follow up on pending applications",
+      detail: "Check saved links, update status, add next step.",
+      notes: "Keep the link in Link Hub so you do not have to search again.",
+      tags: [],
+    },
+  ],
+  "personal-notes": [
+    {
+      id: "demo-note-job-application",
+      title: "Job application tracker idea",
+      summary: "Use one card for each role. Save the job link, deadline, resume version, and next action.",
+      resolution: "Next time: add a checklist item to follow up 5 business days after applying.",
+      notes: "Good example of turning a random thought into a reusable workflow.",
+      tags: ["job", "admin", "follow-up"],
+    },
+    {
+      id: "demo-note-tax-document",
+      title: "Where I put tax documents",
+      summary: "I always forget where W-2, 1099, tuition, and donation receipts live.",
+      resolution: "Create a Link Hub card for each portal, then add notes about what document to download.",
+      notes: "This is more useful than a bookmark because the note explains why the link matters.",
+      tags: ["tax", "documents"],
+    },
+    {
+      id: "demo-note-health-admin",
+      title: "Health admin mini SOP",
+      summary: "When a bill or appointment reminder comes in, record the portal, account number hint, and next step.",
+      resolution: "Save portal links once. Use checklist for calls, follow-ups, and due dates.",
+      notes: "Keeps life admin from living in screenshots and scattered messages.",
+      tags: ["health", "life-admin"],
+    },
+  ],
+  "personal-links": [
+    {
+      id: "demo-link-job-board",
+      title: "Job application links",
+      notes: "Save the exact portal plus notes about which resume version or login method to use.",
+      tags: [],
+      portals: [
+        {
+          name: "LinkedIn saved jobs",
+          url: "https://www.linkedin.com/jobs/",
+        },
+      ],
+    },
+    {
+      id: "demo-link-money-admin",
+      title: "Money admin",
+      notes: "Bills, bank portals, subscription pages, and anything that should not disappear into bookmarks.",
+      tags: [],
+      portals: [
+        {
+          name: "Budget spreadsheet",
+          url: "https://docs.google.com/",
+        },
+      ],
+    },
+    {
+      id: "demo-link-documents",
+      title: "Important documents",
+      notes: "Put renewal links, document portals, and instructions here so future-you knows what the link is for.",
+      tags: [],
+      portals: [
+        {
+          name: "Document folder",
+          url: "https://drive.google.com/",
+        },
+      ],
+    },
+  ],
+};
+
 const TEMPLATE_OPTIONS = [
   {
     key: "workspaceOnboarding.templateChecklist",
@@ -69,9 +159,12 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
     });
     setCustomEntries((prev) => ({
       ...prev,
-      "personal-checklist": prev["personal-checklist"] ?? [],
-      "personal-notes": prev["personal-notes"] ?? [],
-      "personal-links": prev["personal-links"] ?? [],
+      "personal-checklist":
+        prev["personal-checklist"]?.length ? prev["personal-checklist"] : STARTER_ENTRIES["personal-checklist"],
+      "personal-notes":
+        prev["personal-notes"]?.length ? prev["personal-notes"] : STARTER_ENTRIES["personal-notes"],
+      "personal-links":
+        prev["personal-links"]?.length ? prev["personal-links"] : STARTER_ENTRIES["personal-links"],
     }));
     onComplete();
     navigate("/");
