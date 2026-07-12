@@ -255,9 +255,9 @@ export default function CustomCategory() {
         </div>
       )}
 
-      <div className={template === "payments" ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "flex flex-col gap-4"}>
+      <div className="overflow-hidden rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-1)">
         {query.trim() && filtered.length === 0 && (
-          <p className={template === "payments" ? "text-center text-[14px] text-(--color-ink-faint) sm:col-span-2" : "text-center text-[14px] text-(--color-ink-faint)"}>
+          <p className="px-5 py-8 text-center text-[14px] text-(--color-ink-faint)">
             {t("customCategory.noMatches")}
           </p>
         )}
@@ -267,12 +267,11 @@ export default function CustomCategory() {
             description={t("customCategory.emptyDescription")}
             actionLabel={t("empty.addFirst")}
             onAction={() => setIsAdding(true)}
-            className={template === "payments" ? "sm:col-span-2" : ""}
           />
         )}
         {filtered.map((entry) =>
           editingId === entry.id ? (
-            <div key={entry.id} className={template === "payments" ? "sm:col-span-2" : ""}>
+            <div key={entry.id} className="border-b border-(--color-hairline) p-4 last:border-b-0">
               <CustomEntryForm
                 template={template}
                 initial={entry}
@@ -285,7 +284,7 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
+                "group relative border-b border-(--color-hairline) px-4 py-3.5 transition-colors last:border-b-0 hover:bg-(--color-canvas-soft)/70 sm:px-5",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
@@ -376,11 +375,11 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
+                "group relative border-b border-(--color-hairline) px-4 py-3.5 transition-colors last:border-b-0 hover:bg-(--color-canvas-soft)/70 sm:px-5",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+              <div className="absolute top-3.5 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
@@ -397,8 +396,8 @@ export default function CustomCategory() {
                 </button>
               </div>
 
-              <h2 className="mb-2 pr-12 text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
-              <div className="flex flex-col gap-2.5">
+              <h2 className="pr-14 text-[15px] leading-snug font-semibold text-(--color-ink)">{entry.title}</h2>
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 pr-6">
                 {(entry.portals ?? []).map((portal, i) =>
                   portal.url ? (
                     <a
@@ -406,7 +405,7 @@ export default function CustomCategory() {
                       href={portal.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-1.5 text-[14px] leading-relaxed text-(--color-ink-secondary)"
+                      className="inline-flex items-center gap-1.5 text-[13px] leading-relaxed text-(--color-ink-secondary)"
                     >
                       <span className="text-(--color-ink-muted)">{portal.name}:</span>
                       <span className="inline-flex items-center gap-1 font-medium text-(--color-primary) hover:underline">
@@ -415,16 +414,16 @@ export default function CustomCategory() {
                       </span>
                     </a>
                   ) : (
-                    <span key={i} className="text-[14px] leading-relaxed text-(--color-ink-secondary)">
+                    <span key={i} className="text-[13px] leading-relaxed text-(--color-ink-secondary)">
                       {portal.name}
                     </span>
                   ),
                 )}
               </div>
               {entry.notes && (
-                <div className="mt-3 rounded-(--radius-md) border border-(--color-accent-sky)/30 bg-(--color-accent-sky)/8 p-3.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
+                <p className="mt-2 max-w-2xl pr-8 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-muted)">
                   {entry.notes}
-                </div>
+                </p>
               )}
             </section>
           ) : (
@@ -432,11 +431,11 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
+                "group relative border-b border-(--color-hairline) px-4 py-3.5 transition-colors last:border-b-0 hover:bg-(--color-canvas-soft)/70 sm:px-5",
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+              <div className="absolute top-3.5 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={() => setEditingId(entry.id)}
                   aria-label={t("common.edit")}
@@ -453,8 +452,8 @@ export default function CustomCategory() {
                 </button>
               </div>
 
-              <div className="mb-2 flex flex-wrap items-center gap-2 pr-12">
-                <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
+              <div className="flex flex-wrap items-center gap-2 pr-14">
+                <h2 className="text-[15px] leading-snug font-semibold text-(--color-ink)">{entry.title}</h2>
                 {entry.payer && (
                   <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
                     {entry.payer}
@@ -463,24 +462,24 @@ export default function CustomCategory() {
               </div>
 
               {(entry.summary || entry.notes) && (
-                <p className="text-[14px] leading-relaxed text-(--color-ink-secondary)">
+                <p className="mt-1.5 max-w-2xl pr-8 text-[13px] leading-relaxed text-(--color-ink-secondary)">
                   {entry.summary ?? entry.notes}
                 </p>
               )}
 
               {entry.resolution && (
-                <div className="mt-3 rounded-(--radius-md) bg-(--color-canvas-soft) p-3.5">
-                  <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
+                <div className="mt-2 max-w-2xl pr-8">
+                  <p className="text-[12px] font-semibold text-(--color-ink-faint)">
                     {t("oaCases.resolutionLabel")}
                   </p>
-                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
+                  <p className="mt-0.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
                     {entry.resolution}
                   </p>
                 </div>
               )}
 
               {entry.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                <div className="mt-2 flex flex-wrap gap-1.5 pr-8">
                   {entry.tags.map((tag) => (
                     <span
                       key={tag}
@@ -496,7 +495,7 @@ export default function CustomCategory() {
         )}
 
         {isAdding ? (
-          <div className={template === "payments" ? "sm:col-span-2" : ""}>
+          <div className="border-t border-(--color-hairline) p-4">
             <CustomEntryForm
               template={template}
               onSave={handleCreate}
@@ -507,10 +506,7 @@ export default function CustomCategory() {
           !query.trim() && entries.length > 0 && (
             <button
               onClick={() => setIsAdding(true)}
-              className={[
-                "flex items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]",
-                template === "payments" ? "min-h-[120px]" : "min-h-[100px]",
-              ].join(" ")}
+              className="flex min-h-14 w-full items-center justify-center gap-1.5 border-t border-dashed border-(--color-hairline) px-4 py-4 text-[14px] font-medium text-(--color-ink-faint) transition-colors hover:bg-(--color-canvas-soft)/70 hover:text-(--color-primary)"
             >
               <Plus size={16} />
               {addButtonLabel()}

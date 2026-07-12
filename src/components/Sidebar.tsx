@@ -46,21 +46,18 @@ const NAV_ITEMS = [
     key: "sidebar.checklist",
     category: "checklist",
     icon: ClipboardCheck,
-    dot: "var(--color-accent-teal)",
   },
   {
     to: "/oa-cases",
     key: "sidebar.oaCases",
     category: "oa-cases",
     icon: FileSearch,
-    dot: "var(--color-accent-orange)",
   },
   {
     to: "/payments",
     key: "sidebar.payments",
     category: "payments",
     icon: CreditCard,
-    dot: "var(--color-accent-purple)",
   },
 ] as const;
 
@@ -70,7 +67,6 @@ const PERSONAL_NAV_ITEMS = [
     key: "sidebar.personalChecklist",
     category: "checklist",
     icon: ClipboardCheck,
-    dot: "var(--color-accent-teal)",
   },
 ] as const;
 
@@ -284,7 +280,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="no-scrollbar flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-        {(isPersonalWorkspace ? PERSONAL_NAV_ITEMS : NAV_ITEMS).map(({ to, key, category, icon: Icon, dot }) => (
+        {(isPersonalWorkspace ? PERSONAL_NAV_ITEMS : NAV_ITEMS).map(({ to, key, category, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -300,11 +296,6 @@ export default function Sidebar() {
           >
             <Icon size={16} strokeWidth={2} className="shrink-0" />
             <span className="truncate">{t(key)}</span>
-            <span
-              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
-              style={{ backgroundColor: dot }}
-              aria-hidden
-            />
           </NavLink>
         ))}
       </nav>
@@ -356,11 +347,6 @@ export default function Sidebar() {
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 <span className="truncate">{category.title}</span>
-                <span
-                  className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
-                  style={{ backgroundColor: "var(--color-primary)" }}
-                  aria-hidden
-                />
               </NavLink>
               <button
                 onClick={() => startRename(category)}
