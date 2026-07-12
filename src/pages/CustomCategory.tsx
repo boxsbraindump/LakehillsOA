@@ -288,7 +288,7 @@ export default function CustomCategory() {
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="flex items-start gap-3 pr-16">
+              <div className="flex items-start gap-3">
                 <button
                   role="checkbox"
                   aria-checked={dayState[entry.id]?.checked ?? false}
@@ -340,23 +340,22 @@ export default function CustomCategory() {
                 >
                   <StickyNote size={14} />
                 </button>
-              </div>
-
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                <button
-                  onClick={() => setEditingId(entry.id)}
-                  aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(entry)}
-                  aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                  <button
+                    onClick={() => setEditingId(entry.id)}
+                    aria-label={t("common.edit")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(entry)}
+                    aria-label={t("common.delete")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               {openNoteId === entry.id && (
@@ -379,52 +378,55 @@ export default function CustomCategory() {
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-3.5 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                <button
-                  onClick={() => setEditingId(entry.id)}
-                  aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(entry)}
-                  aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-[15px] leading-snug font-semibold text-(--color-ink)">{entry.title}</h2>
+                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5">
+                    {(entry.portals ?? []).map((portal, i) =>
+                      portal.url ? (
+                        <a
+                          key={i}
+                          href={portal.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-[13px] leading-relaxed text-(--color-ink-secondary)"
+                        >
+                          <span className="text-(--color-ink-muted)">{portal.name}:</span>
+                          <span className="inline-flex items-center gap-1 font-medium text-(--color-primary) hover:underline">
+                            {t("common.link")}
+                            <ExternalLink size={12} />
+                          </span>
+                        </a>
+                      ) : (
+                        <span key={i} className="text-[13px] leading-relaxed text-(--color-ink-secondary)">
+                          {portal.name}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                  {entry.notes && (
+                    <p className="mt-2 max-w-2xl text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-muted)">
+                      {entry.notes}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                  <button
+                    onClick={() => setEditingId(entry.id)}
+                    aria-label={t("common.edit")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(entry)}
+                    aria-label={t("common.delete")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-
-              <h2 className="pr-14 text-[15px] leading-snug font-semibold text-(--color-ink)">{entry.title}</h2>
-              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 pr-6">
-                {(entry.portals ?? []).map((portal, i) =>
-                  portal.url ? (
-                    <a
-                      key={i}
-                      href={portal.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[13px] leading-relaxed text-(--color-ink-secondary)"
-                    >
-                      <span className="text-(--color-ink-muted)">{portal.name}:</span>
-                      <span className="inline-flex items-center gap-1 font-medium text-(--color-primary) hover:underline">
-                        {t("common.link")}
-                        <ExternalLink size={12} />
-                      </span>
-                    </a>
-                  ) : (
-                    <span key={i} className="text-[13px] leading-relaxed text-(--color-ink-secondary)">
-                      {portal.name}
-                    </span>
-                  ),
-                )}
-              </div>
-              {entry.notes && (
-                <p className="mt-2 max-w-2xl pr-8 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-muted)">
-                  {entry.notes}
-                </p>
-              )}
             </section>
           ) : (
             <article
@@ -435,61 +437,64 @@ export default function CustomCategory() {
                 entry.id === justAddedId ? "fade-in-up" : "",
               ].join(" ")}
             >
-              <div className="absolute top-3.5 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                <button
-                  onClick={() => setEditingId(entry.id)}
-                  aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(entry)}
-                  aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-[15px] leading-snug font-semibold text-(--color-ink)">{entry.title}</h2>
+                    {entry.payer && (
+                      <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
+                        {entry.payer}
+                      </span>
+                    )}
+                  </div>
 
-              <div className="flex flex-wrap items-center gap-2 pr-14">
-                <h2 className="text-[15px] leading-snug font-semibold text-(--color-ink)">{entry.title}</h2>
-                {entry.payer && (
-                  <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
-                    {entry.payer}
-                  </span>
-                )}
-              </div>
+                  {(entry.summary || entry.notes) && (
+                    <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-(--color-ink-secondary)">
+                      {entry.summary ?? entry.notes}
+                    </p>
+                  )}
 
-              {(entry.summary || entry.notes) && (
-                <p className="mt-1.5 max-w-2xl pr-8 text-[13px] leading-relaxed text-(--color-ink-secondary)">
-                  {entry.summary ?? entry.notes}
-                </p>
-              )}
+                  {entry.resolution && (
+                    <div className="mt-2 max-w-2xl">
+                      <p className="text-[12px] font-semibold text-(--color-ink-faint)">
+                        {t("oaCases.resolutionLabel")}
+                      </p>
+                      <p className="mt-0.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
+                        {entry.resolution}
+                      </p>
+                    </div>
+                  )}
 
-              {entry.resolution && (
-                <div className="mt-2 max-w-2xl pr-8">
-                  <p className="text-[12px] font-semibold text-(--color-ink-faint)">
-                    {t("oaCases.resolutionLabel")}
-                  </p>
-                  <p className="mt-0.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
-                    {entry.resolution}
-                  </p>
+                  {entry.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {entry.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted)"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {entry.tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5 pr-8">
-                  {entry.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted)"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+                <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                  <button
+                    onClick={() => setEditingId(entry.id)}
+                    aria-label={t("common.edit")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(entry)}
+                    aria-label={t("common.delete")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-              )}
+              </div>
             </article>
           ),
         )}
