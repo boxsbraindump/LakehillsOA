@@ -2,6 +2,7 @@ export type Lang = "zh" | "en";
 
 export const translations = {
   "sidebar.checklist": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
+  "sidebar.personalChecklist": { zh: "行动清单", en: "Action checklist" },
   "sidebar.oaCases": { zh: "OA Cases", en: "OA Cases" },
   "sidebar.payments": { zh: "Where to Find Payments", en: "Where to Find Payments" },
   "sidebar.trash": { zh: "垃圾桶", en: "Trash" },
@@ -155,6 +156,7 @@ export const translations = {
   "workspace.personalSubtitle": { zh: "Personal admin · Private", en: "Personal admin · Private" },
 
   "checklist.title": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
+  "checklist.personalTitle": { zh: "行动清单", en: "Action checklist" },
   "checklist.resetDay": { zh: "重置当日进度", en: "Reset today's progress" },
   "checklist.clearDay": { zh: "清空当天", en: "Clear this day" },
   "checklist.clearDayConfirmTitle": { zh: "清空当天 Checklist？", en: "Clear this day's checklist?" },
@@ -165,6 +167,10 @@ export const translations = {
   "checklist.searchPlaceholder": {
     zh: "搜索所有日期的事项、分支或备注…",
     en: "Search items, sections, or notes across all dates…",
+  },
+  "checklist.personalSearchPlaceholder": {
+    zh: "搜索所有日期的待办、灵感、follow up 或备注…",
+    en: "Search to-dos, ideas, follow-ups, or notes across all dates…",
   },
   "checklist.noNoteMatches": { zh: "没有找到匹配的事项或备注", en: "No matching items or notes found" },
   "checklist.prevDay": { zh: "前一天", en: "Previous day" },

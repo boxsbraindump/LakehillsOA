@@ -20,6 +20,7 @@ import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
+import { useAuth } from "../components/AuthProvider";
 import ChecklistItemForm from "../components/ChecklistItemForm";
 import EmptyState from "../components/EmptyState";
 import { slugify } from "../lib/slugify";
@@ -81,6 +82,8 @@ export default function Checklist() {
   const { showToast } = useToast();
   const { confirm } = useConfirm();
   const { t, lang } = useLanguage();
+  const { syncEnabled, workspace } = useAuth();
+  const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [addingSectionId, setAddingSectionId] = useState<string | null>(null);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
@@ -618,7 +621,7 @@ export default function Checklist() {
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-          {t("checklist.title")}
+          {isPersonalWorkspace ? t("checklist.personalTitle") : t("checklist.title")}
         </h1>
         <button
           onClick={resetSelectedDay}
@@ -634,7 +637,11 @@ export default function Checklist() {
         <input
           value={noteQuery}
           onChange={(e) => setNoteQuery(e.target.value)}
-          placeholder={t("checklist.searchPlaceholder")}
+          placeholder={
+            isPersonalWorkspace
+              ? t("checklist.personalSearchPlaceholder")
+              : t("checklist.searchPlaceholder")
+          }
           className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) py-2.5 pr-16 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
         />
         {noteQuery && (

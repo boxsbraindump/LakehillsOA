@@ -64,6 +64,16 @@ const NAV_ITEMS = [
   },
 ] as const;
 
+const PERSONAL_NAV_ITEMS = [
+  {
+    to: "/checklist",
+    key: "sidebar.personalChecklist",
+    category: "checklist",
+    icon: ClipboardCheck,
+    dot: "var(--color-accent-teal)",
+  },
+] as const;
+
 const UTILITY_NAV_ITEMS = [{ to: "/trash", key: "sidebar.trash", icon: Trash2 }] as const;
 
 const ICON_CHOICES: CustomCategoryIcon[] = ["folder", "shield", "book-open", "landmark", "help-circle"];
@@ -273,33 +283,31 @@ export default function Sidebar() {
         {isPersonalWorkspace ? t("workspace.personalSubtitle") : "Lake Hills Acupuncture · Internal"}
       </div>
 
-      {!isPersonalWorkspace && (
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-          {NAV_ITEMS.map(({ to, key, category, icon: Icon, dot }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() =>
-                trackUsage({
-                  id: category,
-                  category,
-                  path: to,
-                  title: t(key),
-                })
-              }
-              className={navLinkClass}
-            >
-              <Icon size={16} strokeWidth={2} className="shrink-0" />
-              <span className="truncate">{t(key)}</span>
-              <span
-                className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
-                style={{ backgroundColor: dot }}
-                aria-hidden
-              />
-            </NavLink>
-          ))}
-        </nav>
-      )}
+      <nav className="no-scrollbar flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
+        {(isPersonalWorkspace ? PERSONAL_NAV_ITEMS : NAV_ITEMS).map(({ to, key, category, icon: Icon, dot }) => (
+          <NavLink
+            key={to}
+            to={to}
+            onClick={() =>
+              trackUsage({
+                id: category,
+                category,
+                path: to,
+                title: t(key),
+              })
+            }
+            className={navLinkClass}
+          >
+            <Icon size={16} strokeWidth={2} className="shrink-0" />
+            <span className="truncate">{t(key)}</span>
+            <span
+              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full group-[.active]:opacity-0 md:block"
+              style={{ backgroundColor: dot }}
+              aria-hidden
+            />
+          </NavLink>
+        ))}
+      </nav>
 
       <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
         {filterDeletedCustomCategories(normalizedCustomCategories, deletedCategories).map((category) => {

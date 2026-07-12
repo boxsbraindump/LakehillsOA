@@ -5,15 +5,10 @@ import { useLanguage } from "../components/LanguageProvider";
 import ProfileMenu from "../components/ProfileMenu";
 import SyncStatusBadge from "../components/SyncStatusBadge";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
-import type { CustomCategory, CustomEntry } from "../lib/types";
+import { todayKey } from "../lib/date";
+import type { ChecklistItem, ChecklistSectionMeta, CustomCategory, CustomEntry } from "../lib/types";
 
 const STARTER_CATEGORIES: CustomCategory[] = [
-  {
-    id: "personal-checklist",
-    title: "行动清单",
-    icon: "folder",
-    template: "checklist",
-  },
   {
     id: "personal-notes",
     title: "资料卡片",
@@ -28,30 +23,45 @@ const STARTER_CATEGORIES: CustomCategory[] = [
   },
 ];
 
-const STARTER_ENTRIES: Record<string, CustomEntry[]> = {
-  "personal-checklist": [
+const STARTER_CHECKLIST_SECTIONS: ChecklistSectionMeta[] = [
+  {
+    id: "personal-capture",
+    title: "先收进来",
+  },
+  {
+    id: "personal-follow-up",
+    title: "需要 follow up",
+  },
+];
+
+const STARTER_CHECKLIST_ITEMS: Record<string, ChecklistItem[]> = {
+  "personal-capture": [
     {
       id: "demo-checklist-quick-capture",
-      title: "先把脑子里突然蹦出来的事记下来",
+      label: "先把脑子里突然蹦出来的事记下来",
       detail: "不用马上整理，先收进来，之后有精力再分类。",
-      notes: "例如：取消订阅、回一封邮件、保存一个申请链接。",
-      tags: [],
     },
     {
       id: "demo-checklist-admin-reset",
-      title: "15 分钟生活 admin reset",
+      label: "15 分钟生活 admin reset",
       detail: "打开邮箱，看一眼账单，选一件今天能完成的小事。",
-      notes: "适合脑子很乱、任务太多、不知道从哪里开始的时候。",
-      tags: [],
-    },
-    {
-      id: "demo-checklist-follow-up",
-      title: "Follow up 还没处理完的申请",
-      detail: "检查保存过的链接，更新状态，写下下一步。",
-      notes: "链接放在链接库里，之后不用重新翻聊天记录或浏览器历史。",
-      tags: [],
     },
   ],
+  "personal-follow-up": [
+    {
+      id: "demo-checklist-follow-up",
+      label: "Follow up 还没处理完的申请",
+      detail: "检查保存过的链接，更新状态，写下下一步。",
+    },
+  ],
+};
+
+const STARTER_CHECKLIST_ITEM_IDS = Object.values(STARTER_CHECKLIST_ITEMS)
+  .flat()
+  .map((item) => item.id);
+const STARTER_CHECKLIST_SECTION_IDS = STARTER_CHECKLIST_SECTIONS.map((section) => section.id);
+
+const STARTER_ENTRIES: Record<string, CustomEntry[]> = {
   "personal-notes": [
     {
       id: "demo-note-job-application",
@@ -148,8 +158,25 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
     "lh-custom-entries",
     {},
   );
+  const [, setChecklistSections] = useSyncedStorage<ChecklistSectionMeta[]>(
+    "lh-checklist-custom-sections",
+    [],
+  );
+  const [, setChecklistItems] = useSyncedStorage<Record<string, ChecklistItem[]>>(
+    "lh-checklist-custom-items",
+    {},
+  );
+  const [, setChecklistDayItemIds] = useSyncedStorage<Record<string, string[]>>(
+    "lh-checklist-day-item-ids",
+    {},
+  );
+  const [, setChecklistDaySectionIds] = useSyncedStorage<Record<string, string[]>>(
+    "lh-checklist-day-section-ids",
+    {},
+  );
 
   function createWorkspace() {
+    const today = todayKey();
     setCustomCategories((prev) => {
       const existingIds = new Set(prev.map((category) => category.id));
       return [
@@ -157,10 +184,20 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
         ...STARTER_CATEGORIES.filter((category) => !existingIds.has(category.id)),
       ];
     });
+    setChecklistSections((prev) => (prev.length ? prev : STARTER_CHECKLIST_SECTIONS));
+    setChecklistItems((prev) =>
+      Object.keys(prev).length ? prev : STARTER_CHECKLIST_ITEMS,
+    );
+    setChecklistDayItemIds((prev) => ({
+      ...prev,
+      [today]: prev[today]?.length ? prev[today] : STARTER_CHECKLIST_ITEM_IDS,
+    }));
+    setChecklistDaySectionIds((prev) => ({
+      ...prev,
+      [today]: prev[today]?.length ? prev[today] : STARTER_CHECKLIST_SECTION_IDS,
+    }));
     setCustomEntries((prev) => ({
       ...prev,
-      "personal-checklist":
-        prev["personal-checklist"]?.length ? prev["personal-checklist"] : STARTER_ENTRIES["personal-checklist"],
       "personal-notes":
         prev["personal-notes"]?.length ? prev["personal-notes"] : STARTER_ENTRIES["personal-notes"],
       "personal-links":
