@@ -330,8 +330,17 @@ export default function Sidebar() {
               </form>
             );
           }
+          const isCategoryActive = decodeURIComponent(location.pathname) === `/custom/${category.id}`;
           return (
-            <div key={category.id} className="group/cat flex shrink-0 items-center md:shrink">
+            <div
+              key={category.id}
+              className={[
+                "group/cat flex shrink-0 items-center rounded-(--radius-md) transition-colors md:shrink",
+                isCategoryActive
+                  ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
+                  : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
+              ].join(" ")}
+            >
               <NavLink
                 to={`/custom/${category.id}`}
                 onClick={() =>
@@ -343,25 +352,37 @@ export default function Sidebar() {
                     title: category.title,
                   })
                 }
-                className={(props) => navLinkClass(props, "min-w-0 flex-1")}
+                className="flex min-w-0 flex-1 items-center gap-2.5 px-2 py-2 text-[14px] whitespace-nowrap text-inherit"
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 <span className="truncate">{category.title}</span>
               </NavLink>
-              <button
-                onClick={() => startRename(category)}
-                aria-label={t("common.edit")}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-secondary) md:opacity-0 md:group-hover/cat:opacity-100"
-              >
-                <Pencil size={13} />
-              </button>
-              <button
-                onClick={() => handleDeleteCategory(category)}
-                aria-label={t("common.delete")}
-                className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 md:opacity-0 md:group-hover/cat:opacity-100"
-              >
-                <Trash2 size={13} />
-              </button>
+              <div className="flex shrink-0 items-center gap-0.5 pr-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/cat:opacity-100">
+                <button
+                  onClick={() => startRename(category)}
+                  aria-label={t("common.edit")}
+                  className={[
+                    "shrink-0 rounded-(--radius-sm) p-1",
+                    isCategoryActive
+                      ? "text-white/75 hover:text-white"
+                      : "text-(--color-ink-faint) hover:text-(--color-secondary)",
+                  ].join(" ")}
+                >
+                  <Pencil size={13} />
+                </button>
+                <button
+                  onClick={() => handleDeleteCategory(category)}
+                  aria-label={t("common.delete")}
+                  className={[
+                    "shrink-0 rounded-(--radius-sm) p-1",
+                    isCategoryActive
+                      ? "text-white/75 hover:text-white"
+                      : "text-(--color-ink-faint) hover:text-red-500",
+                  ].join(" ")}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
           );
         })}
