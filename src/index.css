@@ -245,11 +245,11 @@ body::before {
 @keyframes drag-drop-preview {
   from {
     opacity: 0;
-    transform: translateY(-6px) scaleY(0.72);
+    transform: translateY(-3px) scaleX(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scaleY(1);
+    transform: translateY(0) scaleX(1);
   }
 }
 

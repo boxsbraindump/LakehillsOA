@@ -305,10 +305,12 @@ export default function CustomCategory() {
     return (
       <div
         className={[
-          "drag-drop-preview h-14 rounded-(--radius-lg) border border-dashed border-(--color-primary)/55 bg-(--color-primary)/8 transition-all duration-200",
+          "drag-drop-preview relative h-3 transition-all duration-200",
           template === "payments" ? "sm:col-span-2" : "",
         ].join(" ")}
-      />
+      >
+        <span className="absolute top-1/2 right-0 left-0 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
+      </div>
     );
   }
 
