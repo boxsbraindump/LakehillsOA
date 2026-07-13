@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ExternalLink, Pencil, Plus, Search, StickyNote, Trash2 } from "lucide-react";
+import { ExternalLink, GripVertical, Pencil, Pin, Plus, Search, StickyNote, Trash2 } from "lucide-react";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
@@ -76,6 +76,8 @@ export default function CustomCategory() {
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
+  const [draggedEntryId, setDraggedEntryId] = useState<string | null>(null);
+  const [dragOverEntryId, setDragOverEntryId] = useState<string | null>(null);
 
   const category = filterDeletedCustomCategories(categories, deletedCategories).find(
     (c) => c.id === categoryId,
@@ -143,9 +145,83 @@ export default function CustomCategory() {
   function handleSave(updated: CustomEntry) {
     setAllEntries((prev) => ({
       ...prev,
-      [categoryId]: (prev[categoryId] ?? []).map((e) => (e.id === updated.id ? updated : e)),
+      [categoryId]: (prev[categoryId] ?? []).map((e) =>
+        e.id === updated.id ? { ...updated, pinned: e.pinned } : e,
+      ),
     }));
     setEditingId(null);
+  }
+
+  function moveEntryBefore(draggedId: string, beforeId: string) {
+    if (draggedId === beforeId) return;
+
+    setAllEntries((prev) => {
+      const current = prev[categoryId] ?? [];
+      const dragged = current.find((entry) => entry.id === draggedId);
+      const target = current.find((entry) => entry.id === beforeId);
+      if (!dragged || !target) return prev;
+
+      const withoutDragged = current.filter((entry) => entry.id !== draggedId);
+      const targetIndex = withoutDragged.findIndex((entry) => entry.id === beforeId);
+      if (targetIndex < 0) return prev;
+
+      const movedEntry =
+        Boolean(dragged.pinned) === Boolean(target.pinned)
+          ? dragged
+          : { ...dragged, pinned: target.pinned };
+      const next = [
+        ...withoutDragged.slice(0, targetIndex),
+        movedEntry,
+        ...withoutDragged.slice(targetIndex),
+      ];
+
+      return { ...prev, [categoryId]: next };
+    });
+  }
+
+  function togglePinned(entry: CustomEntry) {
+    setAllEntries((prev) => {
+      const current = prev[categoryId] ?? [];
+      const withoutEntry = current.filter((item) => item.id !== entry.id);
+      const updatedEntry = { ...entry, pinned: !entry.pinned };
+
+      if (updatedEntry.pinned) {
+        return { ...prev, [categoryId]: [updatedEntry, ...withoutEntry] };
+      }
+
+      const pinned = withoutEntry.filter((item) => item.pinned);
+      const unpinned = withoutEntry.filter((item) => !item.pinned);
+      return { ...prev, [categoryId]: [...pinned, updatedEntry, ...unpinned] };
+    });
+  }
+
+  function entryDragProps(entry: CustomEntry) {
+    const isSearchActive = query.trim().length > 0;
+    const canDrag = !isSearchActive && editingId !== entry.id;
+
+    return {
+      draggable: canDrag,
+      onDragStart: (event: DragEvent<HTMLElement>) => {
+        if (!canDrag) return;
+        event.dataTransfer.effectAllowed = "move";
+        setDraggedEntryId(entry.id);
+      },
+      onDragOver: (event: DragEvent<HTMLElement>) => {
+        if (!draggedEntryId || draggedEntryId === entry.id || isSearchActive) return;
+        event.preventDefault();
+        setDragOverEntryId(entry.id);
+        moveEntryBefore(draggedEntryId, entry.id);
+      },
+      onDrop: (event: DragEvent<HTMLElement>) => {
+        event.preventDefault();
+        setDraggedEntryId(null);
+        setDragOverEntryId(null);
+      },
+      onDragEnd: () => {
+        setDraggedEntryId(null);
+        setDragOverEntryId(null);
+      },
+    };
   }
 
   async function handleDelete(entry: CustomEntry) {
@@ -196,13 +272,79 @@ export default function CustomCategory() {
   }
 
   const q = query.trim().toLowerCase();
-  const filtered = q ? entries.filter((e) => getEntrySearchText(e).includes(q)) : entries;
+  const orderedEntries = [
+    ...entries.filter((entry) => entry.pinned),
+    ...entries.filter((entry) => !entry.pinned),
+  ];
+  const filtered = q ? orderedEntries.filter((e) => getEntrySearchText(e).includes(q)) : orderedEntries;
   const done = entries.filter((entry) => dayState[entry.id]?.checked).length;
 
   function addButtonLabel() {
     if (template === "checklist") return t("checklist.addItem");
     if (template === "payments") return t("payments.addNew");
     return t("oaCases.addNew");
+  }
+
+  function cardClassName(entry: CustomEntry) {
+    return [
+      "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) transition-[transform,box-shadow,border-color] duration-150 sm:p-6",
+      entry.id === justAddedId ? "fade-in-up" : "",
+      draggedEntryId === entry.id ? "scale-[0.99] border-(--color-primary)/45 shadow-(--shadow-level-2)" : "",
+      dragOverEntryId === entry.id && draggedEntryId !== entry.id
+        ? "translate-y-1 border-(--color-primary)/45"
+        : "",
+    ].join(" ");
+  }
+
+  function pinnedBadge(entry: CustomEntry) {
+    if (!entry.pinned) return null;
+
+    return (
+      <span className="rounded-full bg-(--color-primary)/10 px-2.5 py-0.5 text-[12px] font-semibold text-(--color-primary)">
+        {t("common.pinned")}
+      </span>
+    );
+  }
+
+  function entryActions(entry: CustomEntry) {
+    const pinLabel = entry.pinned ? t("common.unpin") : t("common.pin");
+
+    return (
+      <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+        <span
+          aria-label={t("customCategory.dragHandle")}
+          title={t("customCategory.dragHandle")}
+          className="hidden cursor-grab rounded-(--radius-sm) p-1 text-(--color-ink-faint) active:cursor-grabbing sm:inline-flex"
+        >
+          <GripVertical size={14} />
+        </span>
+        <button
+          onClick={() => togglePinned(entry)}
+          aria-label={pinLabel}
+          title={pinLabel}
+          className={[
+            "rounded-(--radius-sm) p-1 hover:text-(--color-primary)",
+            entry.pinned ? "text-(--color-primary)" : "text-(--color-ink-faint)",
+          ].join(" ")}
+        >
+          <Pin size={14} fill={entry.pinned ? "currentColor" : "none"} />
+        </button>
+        <button
+          onClick={() => setEditingId(entry.id)}
+          aria-label={t("common.edit")}
+          className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={() => handleDelete(entry)}
+          aria-label={t("common.delete")}
+          className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -284,10 +426,8 @@ export default function CustomCategory() {
             <article
               key={entry.id}
               id={entry.id}
-              className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
-                entry.id === justAddedId ? "fade-in-up" : "",
-              ].join(" ")}
+              className={cardClassName(entry)}
+              {...entryDragProps(entry)}
             >
               <div className="flex items-start gap-3 pr-16">
                 <button
@@ -324,6 +464,7 @@ export default function CustomCategory() {
                   >
                     {entry.title}
                   </h2>
+                  {pinnedBadge(entry)}
                   {(entry.detail || entry.notes) && (
                     <p className="mt-1 text-[13px] leading-relaxed text-(--color-ink-muted)">
                       {entry.detail ?? entry.notes}
@@ -343,22 +484,7 @@ export default function CustomCategory() {
                 </button>
               </div>
 
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                <button
-                  onClick={() => setEditingId(entry.id)}
-                  aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(entry)}
-                  aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              {entryActions(entry)}
 
               {openNoteId === entry.id && (
                 <textarea
@@ -375,29 +501,15 @@ export default function CustomCategory() {
             <section
               key={entry.id}
               id={entry.id}
-              className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
-                entry.id === justAddedId ? "fade-in-up" : "",
-              ].join(" ")}
+              className={cardClassName(entry)}
+              {...entryDragProps(entry)}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                <button
-                  onClick={() => setEditingId(entry.id)}
-                  aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(entry)}
-                  aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              {entryActions(entry)}
 
-              <h2 className="mb-2 pr-12 text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
+              <div className="mb-2 flex flex-wrap items-center gap-2 pr-16">
+                <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
+                {pinnedBadge(entry)}
+              </div>
               <div className="flex flex-col gap-2.5">
                 {(entry.portals ?? []).map((portal, i) =>
                   portal.url ? (
@@ -431,30 +543,14 @@ export default function CustomCategory() {
             <article
               key={entry.id}
               id={entry.id}
-              className={[
-                "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6",
-                entry.id === justAddedId ? "fade-in-up" : "",
-              ].join(" ")}
+              className={cardClassName(entry)}
+              {...entryDragProps(entry)}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                <button
-                  onClick={() => setEditingId(entry.id)}
-                  aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(entry)}
-                  aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              {entryActions(entry)}
 
-              <div className="mb-2 flex flex-wrap items-center gap-2 pr-12">
+              <div className="mb-2 flex flex-wrap items-center gap-2 pr-16">
                 <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
+                {pinnedBadge(entry)}
                 {entry.payer && (
                   <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
                     {entry.payer}

@@ -209,6 +209,9 @@ export const translations = {
   "common.delete": { zh: "删除", en: "Delete" },
   "common.undo": { zh: "撤销", en: "Undo" },
   "common.link": { zh: "链接", en: "Link" },
+  "common.pin": { zh: "置顶", en: "Pin" },
+  "common.pinned": { zh: "已置顶", en: "Pinned" },
+  "common.unpin": { zh: "取消置顶", en: "Unpin" },
   "confirm.title": { zh: "确认删除", en: "Confirm delete" },
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
@@ -250,6 +253,7 @@ export const translations = {
   "customCategory.addNew": { zh: "添加新记录", en: "Add new entry" },
   "customCategory.deleteConfirm": { zh: "删除「{title}」？", en: 'Delete "{title}"?' },
   "customCategory.deletedToast": { zh: "已删除「{title}」", en: 'Deleted "{title}"' },
+  "customCategory.dragHandle": { zh: "拖拽排序", en: "Drag to reorder" },
   "customCategory.notFound": { zh: "这个分类不存在或已被删除", en: "This category doesn't exist or was deleted" },
   "customCategory.backHome": { zh: "返回首页", en: "Back to home" },
 

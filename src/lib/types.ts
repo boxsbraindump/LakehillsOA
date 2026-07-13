@@ -74,6 +74,7 @@ export interface CustomEntry {
   detail?: string;
   notes?: string;
   tags: string[];
+  pinned?: boolean;
   payer?: string;
   summary?: string;
   resolution?: string;
