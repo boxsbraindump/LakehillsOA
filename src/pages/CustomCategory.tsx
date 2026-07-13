@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from "react";
+import { Fragment, useState, type DragEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, GripVertical, Pencil, Pin, Plus, Search, StickyNote, Trash2 } from "lucide-react";
 import { useHashHighlight } from "../hooks/useHashHighlight";
@@ -204,16 +204,19 @@ export default function CustomCategory() {
       onDragStart: (event: DragEvent<HTMLElement>) => {
         if (!canDrag) return;
         event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", entry.id);
         setDraggedEntryId(entry.id);
       },
       onDragOver: (event: DragEvent<HTMLElement>) => {
         if (!draggedEntryId || draggedEntryId === entry.id || isSearchActive) return;
         event.preventDefault();
         setDragOverEntryId(entry.id);
-        moveEntryBefore(draggedEntryId, entry.id);
       },
       onDrop: (event: DragEvent<HTMLElement>) => {
         event.preventDefault();
+        if (draggedEntryId && draggedEntryId !== entry.id && !isSearchActive) {
+          moveEntryBefore(draggedEntryId, entry.id);
+        }
         setDraggedEntryId(null);
         setDragOverEntryId(null);
       },
@@ -289,11 +292,24 @@ export default function CustomCategory() {
     return [
       "group relative rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) transition-[transform,box-shadow,border-color] duration-150 sm:p-6",
       entry.id === justAddedId ? "fade-in-up" : "",
-      draggedEntryId === entry.id ? "scale-[0.99] border-(--color-primary)/45 shadow-(--shadow-level-2)" : "",
+      draggedEntryId === entry.id ? "scale-[0.99] border-(--color-primary)/45 opacity-45 shadow-(--shadow-level-2)" : "",
       dragOverEntryId === entry.id && draggedEntryId !== entry.id
-        ? "translate-y-1 border-(--color-primary)/45"
+        ? "translate-y-2 border-(--color-primary)/45"
         : "",
     ].join(" ");
+  }
+
+  function dropPreview(entry: CustomEntry) {
+    if (!draggedEntryId || dragOverEntryId !== entry.id || draggedEntryId === entry.id) return null;
+
+    return (
+      <div
+        className={[
+          "drag-drop-preview h-14 rounded-(--radius-lg) border border-dashed border-(--color-primary)/55 bg-(--color-primary)/8 transition-all duration-200",
+          template === "payments" ? "sm:col-span-2" : "",
+        ].join(" ")}
+      />
+    );
   }
 
   function pinnedBadge(entry: CustomEntry) {
@@ -412,8 +428,10 @@ export default function CustomCategory() {
             className={template === "payments" ? "sm:col-span-2" : ""}
           />
         )}
-        {filtered.map((entry) =>
-          editingId === entry.id ? (
+        {filtered.map((entry) => (
+          <Fragment key={entry.id}>
+            {dropPreview(entry)}
+            {editingId === entry.id ? (
             <div key={entry.id} className={template === "payments" ? "sm:col-span-2" : ""}>
               <CustomEntryForm
                 template={template}
@@ -588,8 +606,9 @@ export default function CustomCategory() {
                 </div>
               )}
             </article>
-          ),
-        )}
+            )}
+          </Fragment>
+        ))}
 
         {isAdding ? (
           <div className={template === "payments" ? "sm:col-span-2" : ""}>

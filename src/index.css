@@ -142,6 +142,10 @@ body::before {
   animation: fade-in-up 0.3s ease-out;
 }
 
+.drag-drop-preview {
+  animation: drag-drop-preview 0.18s ease-out;
+}
+
 .search-result-enter {
   animation: search-result-enter 0.16s ease-out both;
 }
@@ -238,6 +242,17 @@ body::before {
   }
 }
 
+@keyframes drag-drop-preview {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scaleY(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
 @keyframes landing-caret {
   0%,
   45% {
@@ -275,6 +290,7 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .fade-in-up,
+  .drag-drop-preview,
   .search-result-enter,
   .landing-search-caret,
   .landing-sync-pulse,
