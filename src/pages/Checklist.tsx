@@ -43,6 +43,8 @@ interface ChecklistMatch {
   sectionTitle: string;
   note: string;
   detail: string;
+  matchedField: "item" | "detail" | "note" | "section" | "date";
+  snippet: string;
 }
 
 interface DraggedItem {
@@ -609,12 +611,30 @@ export default function Checklist() {
         const detail = found?.item.detail ?? "";
         const note = day[itemId]?.note ?? "";
         const sectionTitle = found?.section.title ?? "";
-        const haystack = [itemLabel, detail, note, sectionTitle].join(" ").toLowerCase();
+        const displayDate = formatDisplayDate(date, lang);
+        const fields = [
+          { key: "item" as const, value: itemLabel },
+          { key: "detail" as const, value: detail },
+          { key: "note" as const, value: note },
+          { key: "section" as const, value: sectionTitle },
+          { key: "date" as const, value: displayDate },
+        ];
+        const haystack = fields.map((field) => field.value).join(" ").toLowerCase();
         if (!haystack.includes(q)) continue;
-        results.push({ date, itemId, itemLabel, sectionTitle, note, detail });
+        const matched = fields.find((field) => field.value.toLowerCase().includes(q)) ?? fields[0];
+        results.push({
+          date,
+          itemId,
+          itemLabel,
+          sectionTitle,
+          note,
+          detail,
+          matchedField: matched.key,
+          snippet: matched.value || note || detail || sectionTitle || itemLabel,
+        });
       }
     }
-    return results.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+    return results.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
   })();
 
   return (
@@ -660,7 +680,11 @@ export default function Checklist() {
                 {t("checklist.noNoteMatches")}
               </p>
             ) : (
-              <ul className="max-h-96 overflow-y-auto py-1.5">
+              <div>
+                <div className="border-b border-(--color-hairline) px-4 py-2 text-[12px] font-medium text-(--color-ink-faint)">
+                  {t("checklist.searchResultCount", { count: checklistMatches.length })}
+                </div>
+                <ul className="max-h-96 overflow-y-auto py-1.5">
                 {checklistMatches.map((match) => (
                   <li key={`${match.date}-${match.itemId}`}>
                     <button
@@ -674,15 +698,21 @@ export default function Checklist() {
                         {formatDisplayDate(match.date, lang)}
                         {match.sectionTitle ? ` · ${match.sectionTitle}` : ""}
                       </span>
-                      {(match.note || match.detail) && (
-                        <span className="mt-0.5 line-clamp-2 text-[13px] text-(--color-ink-muted)">
-                          {match.note || match.detail}
+                      {match.snippet && (
+                        <span className="mt-1 flex max-w-full items-start gap-2">
+                          <span className="shrink-0 rounded-full bg-(--color-primary)/10 px-2 py-0.5 text-[11px] font-semibold text-(--color-primary)">
+                            {t(`checklist.match.${match.matchedField}`)}
+                          </span>
+                          <span className="line-clamp-2 text-[13px] text-(--color-ink-muted)">
+                            {match.snippet}
+                          </span>
                         </span>
                       )}
                     </button>
                   </li>
                 ))}
-              </ul>
+                </ul>
+              </div>
             )}
           </div>
         )}
