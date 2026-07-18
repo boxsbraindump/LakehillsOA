@@ -195,18 +195,10 @@ export default function CustomCategory() {
     });
   }
 
-  function entryDragProps(entry: CustomEntry) {
+  function entryDropProps(entry: CustomEntry) {
     const isSearchActive = query.trim().length > 0;
-    const canDrag = !isSearchActive && editingId !== entry.id;
 
     return {
-      draggable: canDrag,
-      onDragStart: (event: DragEvent<HTMLElement>) => {
-        if (!canDrag) return;
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", entry.id);
-        setDraggedEntryId(entry.id);
-      },
       onDragOver: (event: DragEvent<HTMLElement>) => {
         if (!draggedEntryId || draggedEntryId === entry.id || isSearchActive) return;
         event.preventDefault();
@@ -220,11 +212,18 @@ export default function CustomCategory() {
         setDraggedEntryId(null);
         setDragOverEntryId(null);
       },
-      onDragEnd: () => {
-        setDraggedEntryId(null);
-        setDragOverEntryId(null);
-      },
     };
+  }
+
+  function startEntryDrag(event: DragEvent<HTMLElement>, entry: CustomEntry) {
+    if (query.trim() || editingId === entry.id) {
+      event.preventDefault();
+      return;
+    }
+    event.stopPropagation();
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", entry.id);
+    setDraggedEntryId(entry.id);
   }
 
   async function handleDelete(entry: CustomEntry) {
@@ -330,6 +329,12 @@ export default function CustomCategory() {
     return (
       <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
         <span
+          draggable={!query.trim() && editingId !== entry.id}
+          onDragStart={(event) => startEntryDrag(event, entry)}
+          onDragEnd={() => {
+            setDraggedEntryId(null);
+            setDragOverEntryId(null);
+          }}
           aria-label={t("customCategory.dragHandle")}
           title={t("customCategory.dragHandle")}
           className="hidden cursor-grab rounded-(--radius-sm) p-1 text-(--color-ink-faint) active:cursor-grabbing sm:inline-flex"
@@ -447,7 +452,7 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={cardClassName(entry)}
-              {...entryDragProps(entry)}
+              {...entryDropProps(entry)}
             >
               <div className="flex items-start gap-3 pr-16">
                 <button
@@ -522,7 +527,7 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={cardClassName(entry)}
-              {...entryDragProps(entry)}
+              {...entryDropProps(entry)}
             >
               {entryActions(entry)}
 
@@ -564,7 +569,7 @@ export default function CustomCategory() {
               key={entry.id}
               id={entry.id}
               className={cardClassName(entry)}
-              {...entryDragProps(entry)}
+              {...entryDropProps(entry)}
             >
               {entryActions(entry)}
 

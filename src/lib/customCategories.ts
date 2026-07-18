@@ -3,7 +3,11 @@ import type { CustomCategory, DeletedCustomCategory } from "./types";
 export const CUSTOM_CATEGORY_DELETIONS_KEY = "lh-custom-category-deletions";
 
 export function normalizeCategoryTitle(title: string) {
-  return title.trim().toLowerCase();
+  return title
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 export function isDeletedCustomCategory(

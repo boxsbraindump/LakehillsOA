@@ -736,15 +736,6 @@ export default function Checklist() {
           <section
             key={section.id}
             id={section.id}
-            draggable={editingSectionId !== section.id}
-            onDragStart={(event) => {
-              event.dataTransfer.effectAllowed = "move";
-              setDraggedEntity({ type: "section", sectionId: section.id });
-            }}
-            onDragEnd={() => {
-              setDraggedEntity(null);
-              setDragOverTarget(null);
-            }}
             onDragOver={(event) => {
               if (!draggedEntity) return;
               event.preventDefault();
@@ -816,11 +807,24 @@ export default function Checklist() {
               ) : (
                 <>
                   <div className="flex min-w-0 items-center gap-2">
-                    <GripVertical
-                      size={15}
-                      className="shrink-0 cursor-grab text-(--color-ink-faint)"
-                      aria-hidden
-                    />
+                    <span
+                      draggable={editingSectionId !== section.id}
+                      onDragStart={(event) => {
+                        event.stopPropagation();
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", section.id);
+                        setDraggedEntity({ type: "section", sectionId: section.id });
+                      }}
+                      onDragEnd={() => {
+                        setDraggedEntity(null);
+                        setDragOverTarget(null);
+                      }}
+                      className="shrink-0 cursor-grab text-(--color-ink-faint) active:cursor-grabbing"
+                      aria-label={t("customCategory.dragHandle")}
+                      title={t("customCategory.dragHandle")}
+                    >
+                      <GripVertical size={15} aria-hidden />
+                    </span>
                     <h2 className="min-w-0 text-[18px] font-bold text-(--color-ink)">
                       {section.title}
                     </h2>
@@ -866,20 +870,6 @@ export default function Checklist() {
                   <li
                     key={item.id}
                     id={item.id}
-                    draggable={editingItemId !== item.id}
-                    onDragStart={(event) => {
-                      event.stopPropagation();
-                      event.dataTransfer.effectAllowed = "move";
-                      setDraggedEntity({
-                        type: "item",
-                        itemId: item.id,
-                        sourceSectionId: section.id,
-                      });
-                    }}
-                    onDragEnd={() => {
-                      setDraggedEntity(null);
-                      setDragOverTarget(null);
-                    }}
                     onDragOver={(event) => {
                       if (!draggedEntity) return;
                       event.preventDefault();
@@ -919,11 +909,28 @@ export default function Checklist() {
                     ].join(" ")}
                   >
                     <div className="flex items-start gap-3">
-                      <GripVertical
-                        size={14}
-                        className="mt-0.5 shrink-0 cursor-grab text-(--color-ink-faint) opacity-70"
-                        aria-hidden
-                      />
+                      <span
+                        draggable={editingItemId !== item.id}
+                        onDragStart={(event) => {
+                          event.stopPropagation();
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", item.id);
+                          setDraggedEntity({
+                            type: "item",
+                            itemId: item.id,
+                            sourceSectionId: section.id,
+                          });
+                        }}
+                        onDragEnd={() => {
+                          setDraggedEntity(null);
+                          setDragOverTarget(null);
+                        }}
+                        className="mt-0.5 shrink-0 cursor-grab text-(--color-ink-faint) opacity-70 active:cursor-grabbing"
+                        aria-label={t("customCategory.dragHandle")}
+                        title={t("customCategory.dragHandle")}
+                      >
+                        <GripVertical size={14} aria-hidden />
+                      </span>
                       <button
                         role="checkbox"
                         aria-checked={checked}
@@ -951,14 +958,14 @@ export default function Checklist() {
                       <div className="min-w-0 flex-1">
                         <span
                           className={[
-                            "text-[15px]",
+                            "select-text text-[15px]",
                             checked ? "text-(--color-ink-faint) line-through" : "text-(--color-ink)",
                           ].join(" ")}
                         >
                           {item.label}
                         </span>
                         {item.detail && (
-                          <span className="block text-[13px] text-(--color-ink-muted)">
+                          <span className="block select-text text-[13px] text-(--color-ink-muted)">
                             {item.detail}
                           </span>
                         )}
@@ -994,7 +1001,7 @@ export default function Checklist() {
                     </div>
 
                     {note && !noteOpen && (
-                      <div className="mt-2 ml-[30px] w-[calc(100%-30px)] rounded-(--radius-md) bg-(--color-canvas-soft) px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
+                      <div className="mt-2 ml-[30px] w-[calc(100%-30px)] select-text rounded-(--radius-md) bg-(--color-canvas-soft) px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)">
                         {note}
                       </div>
                     )}
