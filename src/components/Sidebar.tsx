@@ -202,9 +202,10 @@ export default function Sidebar() {
 
   async function handleDeleteCategory(category: CustomCategory) {
     const normalizedTitle = normalizeCategoryTitle(category.title);
-    const categoriesToDelete = normalizedCustomCategories.filter(
+    const matchingCategories = normalizedCustomCategories.filter(
       (c) => c.id === category.id || normalizeCategoryTitle(c.title) === normalizedTitle,
     );
+    const categoriesToDelete = matchingCategories.length > 0 ? matchingCategories : [category];
     const idsToDelete = new Set(categoriesToDelete.map((c) => c.id));
     const entries = categoriesToDelete.flatMap((c) => customEntries[c.id] ?? []);
     if (
@@ -215,10 +216,17 @@ export default function Sidebar() {
       return;
 
     const trashId = `custom-category:${category.id}`;
-    setCustomCategories((prev) => prev.filter((c) => !idsToDelete.has(c.id)));
+    setCustomCategories((prev) =>
+      prev.filter(
+        (c) => !idsToDelete.has(c.id) && normalizeCategoryTitle(c.title) !== normalizedTitle,
+      ),
+    );
     setCustomEntries((prev) => {
       const next = { ...prev };
       for (const id of idsToDelete) delete next[id];
+      for (const c of Object.values(customCategories)) {
+        if (normalizeCategoryTitle(c.title) === normalizedTitle) delete next[c.id];
+      }
       return next;
     });
     setDeletedCategories((prev) => [
