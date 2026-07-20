@@ -24,3 +24,11 @@ CREATE TABLE IF NOT EXISTS workspace_kv_store (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (workspace_id, key)
 );
+
+CREATE TABLE IF NOT EXISTS user_workspaces (
+  email TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'owner',
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, workspace_id)
+);

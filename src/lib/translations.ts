@@ -22,6 +22,10 @@ export const translations = {
 
   "profileMenu.settings": { zh: "设置", en: "Settings" },
   "profileMenu.workspaces": { zh: "工作区", en: "Workspaces" },
+  "profileMenu.newWorkspace": { zh: "新建工作区", en: "New workspace" },
+  "profileMenu.workspaceNamePlaceholder": { zh: "工作区名称", en: "Workspace name" },
+  "profileMenu.createWorkspace": { zh: "创建工作区", en: "Create workspace" },
+  "profileMenu.createWorkspaceError": { zh: "创建失败，请稍后再试", en: "Could not create workspace. Try again." },
   "profileMenu.logout": { zh: "退出登录", en: "Log out" },
   "syncStatus.local": { zh: "本地保存", en: "Saved locally" },
   "syncStatus.syncing": { zh: "正在同步", en: "Syncing" },

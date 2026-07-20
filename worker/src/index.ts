@@ -62,6 +62,15 @@ interface WorkspaceInfo {
   isPrimary: boolean;
 }
 
+function workspaceSlug(name: string) {
+  return name
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
 function normalizedAllowedEmails(env: Env) {
   return env.ALLOWED_EMAILS.split(",")
     .map((e) => e.trim().toLowerCase())
@@ -95,16 +104,33 @@ function defaultWorkspaceForEmail(email: string, env: Env): WorkspaceInfo {
   return personalWorkspace(email);
 }
 
-function workspacesForEmail(email: string, env: Env): WorkspaceInfo[] {
+async function customWorkspacesForEmail(email: string, env: Env): Promise<WorkspaceInfo[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT w.id, w.name
+     FROM user_workspaces uw
+     JOIN workspaces w ON w.id = uw.workspace_id
+     WHERE uw.email = ?1
+     ORDER BY uw.created_at ASC`,
+  )
+    .bind(email.toLowerCase())
+    .all<{ id: string; name: string }>();
+
+  const baseIds = new Set([primaryWorkspace(env).id, personalWorkspace(email).id]);
+  return results
+    .filter((workspace) => !baseIds.has(workspace.id))
+    .map((workspace) => ({ ...workspace, isPrimary: false }));
+}
+
+async function workspacesForEmail(email: string, env: Env): Promise<WorkspaceInfo[]> {
   const allowed = normalizedAllowedEmails(env);
-  const workspaces = [personalWorkspace(email)];
+  const workspaces = [personalWorkspace(email), ...(await customWorkspacesForEmail(email, env))];
   if (allowed.includes(email.toLowerCase())) return [primaryWorkspace(env), ...workspaces];
   return workspaces;
 }
 
-function requestedWorkspaceForEmail(request: Request, email: string, env: Env): WorkspaceInfo {
+async function requestedWorkspaceForEmail(request: Request, email: string, env: Env): Promise<WorkspaceInfo> {
   const requestedId = request.headers.get("X-Workspace-Id");
-  const workspaces = workspacesForEmail(email, env);
+  const workspaces = await workspacesForEmail(email, env);
   return workspaces.find((workspace) => workspace.id === requestedId) ?? defaultWorkspaceForEmail(email, env);
 }
 
@@ -124,6 +150,15 @@ async function ensureWorkspaceTables(env: Env) {
         value TEXT NOT NULL,
         updated_at INTEGER NOT NULL,
         PRIMARY KEY (workspace_id, key)
+      )`,
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS user_workspaces (
+        email TEXT NOT NULL,
+        workspace_id TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'owner',
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (email, workspace_id)
       )`,
     ),
   ]);
@@ -170,7 +205,7 @@ export default {
       }
 
       const workspace = defaultWorkspaceForEmail(email, env);
-      await ensureWorkspaces(env, workspacesForEmail(email, env));
+      await ensureWorkspaces(env, await workspacesForEmail(email, env));
 
       const token = crypto.randomUUID();
       const now = Date.now();
@@ -186,17 +221,41 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/auth/session") {
       const email = await getSessionEmail(request, env);
       if (!email) return json({ error: "unauthorized" }, headers, 401);
-      const workspace = requestedWorkspaceForEmail(request, email, env);
-      await ensureWorkspaces(env, workspacesForEmail(email, env));
+      const workspace = await requestedWorkspaceForEmail(request, email, env);
+      await ensureWorkspaces(env, await workspacesForEmail(email, env));
       return json({ email, workspace }, headers);
     }
 
     if (request.method === "GET" && url.pathname === "/api/workspaces") {
       const email = await getSessionEmail(request, env);
       if (!email) return json({ error: "unauthorized" }, headers, 401);
-      const workspaces = workspacesForEmail(email, env);
+      const workspaces = await workspacesForEmail(email, env);
       await ensureWorkspaces(env, workspaces);
       return json({ workspaces }, headers);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/workspaces") {
+      const email = await getSessionEmail(request, env);
+      if (!email) return json({ error: "unauthorized" }, headers, 401);
+
+      const body = await request.json<{ name?: string }>();
+      const name = body.name?.trim();
+      if (!name) return json({ error: "missing_name" }, headers, 400);
+      if (name.length > 80) return json({ error: "name_too_long" }, headers, 400);
+
+      const id = `workspace-${workspaceSlug(name) || "workspace"}-${crypto.randomUUID().slice(0, 8)}`;
+      const workspace: WorkspaceInfo = { id, name, isPrimary: false };
+      const now = Date.now();
+      await ensureWorkspace(env, workspace);
+      await env.DB.prepare(
+        `INSERT INTO user_workspaces (email, workspace_id, role, created_at)
+         VALUES (?1, ?2, 'owner', ?3)
+         ON CONFLICT(email, workspace_id) DO NOTHING`,
+      )
+        .bind(email.toLowerCase(), id, now)
+        .run();
+
+      return json({ workspace }, headers, 201);
     }
 
     if (request.method === "DELETE" && url.pathname === "/api/auth/session") {
@@ -211,7 +270,7 @@ export default {
     if (!email) {
       return json({ error: "unauthorized" }, headers, 401);
     }
-    const workspace = requestedWorkspaceForEmail(request, email, env);
+    const workspace = await requestedWorkspaceForEmail(request, email, env);
     await ensureWorkspace(env, workspace);
 
     if (request.method === "GET" && url.pathname === "/api/state") {

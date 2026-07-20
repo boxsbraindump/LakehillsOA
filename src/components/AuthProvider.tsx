@@ -17,6 +17,7 @@ import {
   logoutRemote,
   setUnauthorizedHandler,
   fetchWorkspaces,
+  createRemoteWorkspace,
   setCurrentWorkspace,
   type WorkspaceMeta,
 } from "../lib/syncApi";
@@ -29,6 +30,7 @@ interface AuthContextValue {
   workspace: WorkspaceMeta | null;
   workspaces: WorkspaceMeta[];
   loginWithGoogle: (idToken: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  createWorkspace: (name: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   switchWorkspace: (workspaceId: string) => void;
   logout: () => void;
 }
@@ -113,6 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [workspace?.id, workspaces],
   );
 
+  const createWorkspace = useCallback(async (name: string) => {
+    const result = await createRemoteWorkspace(name);
+    if (!result.ok) return { ok: false as const, error: result.error };
+    setWorkspace(result.workspace);
+    setWorkspaces((prev) => {
+      const withoutDuplicate = prev.filter((item) => item.id !== result.workspace.id);
+      return [...withoutDuplicate, result.workspace];
+    });
+    return { ok: true as const };
+  }, []);
+
   const logout = useCallback(() => {
     void logoutRemote();
     clearAuthToken();
@@ -132,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         workspace,
         workspaces,
         loginWithGoogle: login,
+        createWorkspace,
         switchWorkspace,
         logout,
       }}

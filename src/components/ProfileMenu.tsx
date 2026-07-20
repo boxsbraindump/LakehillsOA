@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, LogOut, Settings } from "lucide-react";
+import { Check, LogOut, Plus, Settings, X } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 
 export default function ProfileMenu({ placement = "top" }: { placement?: "top" | "bottom" }) {
-  const { email, logout, workspace, workspaces, switchWorkspace } = useAuth();
+  const { email, logout, workspace, workspaces, switchWorkspace, createWorkspace, syncEnabled } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,12 +25,28 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
 
   const initial = email?.trim()[0]?.toUpperCase() ?? "?";
 
+  async function handleCreateWorkspace(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const name = newWorkspaceName.trim();
+    if (!name) return;
+    setWorkspaceError(null);
+    const result = await createWorkspace(name);
+    if (!result.ok) {
+      setWorkspaceError(t("profileMenu.createWorkspaceError"));
+      return;
+    }
+    setNewWorkspaceName("");
+    setIsCreatingWorkspace(false);
+    setOpen(false);
+    navigate("/");
+  }
+
   return (
     <div ref={ref} className="relative">
       {open && (
         <div
           className={[
-            "fade-in-up absolute left-0 z-20 w-full min-w-[180px] rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) py-1 shadow-(--shadow-level-2)",
+            "fade-in-up absolute left-0 z-20 w-full min-w-[240px] rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) py-1 shadow-(--shadow-level-2)",
             placement === "bottom" ? "top-full mt-2" : "bottom-full mb-2",
           ].join(" ")}
         >
@@ -41,7 +60,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
             <Settings size={15} strokeWidth={2} className="shrink-0" />
             {t("profileMenu.settings")}
           </button>
-          {workspaces.length > 1 && (
+          {syncEnabled && (
             <>
               <div className="my-1 border-t border-(--color-hairline)" />
               <p className="px-3 pt-1 pb-1 text-[11px] font-semibold text-(--color-ink-faint)">
@@ -63,6 +82,56 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                   )}
                 </button>
               ))}
+              {isCreatingWorkspace ? (
+                <form onSubmit={handleCreateWorkspace} className="px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      autoFocus
+                      value={newWorkspaceName}
+                      onChange={(e) => {
+                        setNewWorkspaceName(e.target.value);
+                        setWorkspaceError(null);
+                      }}
+                      placeholder={t("profileMenu.workspaceNamePlaceholder")}
+                      className="min-w-0 flex-1 rounded-(--radius-sm) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[13px] text-(--color-ink) outline-none transition focus:border-(--color-primary)"
+                    />
+                    <button
+                      type="submit"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-(--radius-sm) bg-(--color-primary) text-white transition hover:bg-(--color-primary-hover)"
+                      aria-label={t("profileMenu.createWorkspace")}
+                    >
+                      <Check size={14} strokeWidth={2.2} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreatingWorkspace(false);
+                        setNewWorkspaceName("");
+                        setWorkspaceError(null);
+                      }}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-(--radius-sm) text-(--color-ink-tertiary) transition hover:bg-(--color-canvas-soft) hover:text-(--color-ink)"
+                      aria-label={t("common.cancel")}
+                    >
+                      <X size={14} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                  {workspaceError && (
+                    <p className="mt-1.5 text-[12px] text-(--color-danger)">{workspaceError}</p>
+                  )}
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingWorkspace(true);
+                    setWorkspaceError(null);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+                >
+                  <Plus size={15} strokeWidth={2} className="shrink-0" />
+                  {t("profileMenu.newWorkspace")}
+                </button>
+              )}
             </>
           )}
           <div className="my-1 border-t border-(--color-hairline)" />
