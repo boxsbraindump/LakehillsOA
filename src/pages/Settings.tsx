@@ -16,14 +16,18 @@ const PAYER_SEED_VERSION = "2026-07-payers-v1";
 const PLATFORM_SEED_VERSION = "2026-07-platforms-v2";
 
 export default function Settings() {
-  const { email, logout } = useAuth();
+  const { email, logout, syncEnabled, workspace } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { confirm } = useConfirm();
-  const [payers, setPayers] = useSyncedStorage<Payer[]>("lh-payers", defaultPayers);
+  const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
+  const [payers, setPayers] = useSyncedStorage<Payer[]>(
+    "lh-payers",
+    isPersonalWorkspace ? [] : defaultPayers,
+  );
   const [payerSeedVersion, setPayerSeedVersion] = useSyncedStorage("lh-payers-seed-version", "");
   const [platforms, setPlatforms] = useSyncedStorage<Platform[]>(
     "lh-platforms",
-    defaultPlatforms,
+    isPersonalWorkspace ? [] : defaultPlatforms,
   );
   const [platformSeedVersion, setPlatformSeedVersion] = useSyncedStorage(
     "lh-platforms-seed-version",
@@ -35,6 +39,7 @@ export default function Settings() {
   const [newPlatformUrl, setNewPlatformUrl] = useState("");
 
   useEffect(() => {
+    if (isPersonalWorkspace) return;
     if (payerSeedVersion === PAYER_SEED_VERSION) return;
 
     setPayers((prev) => {
@@ -47,9 +52,10 @@ export default function Settings() {
       return missingPayers.length > 0 ? [...prev, ...missingPayers] : prev;
     });
     setPayerSeedVersion(PAYER_SEED_VERSION);
-  }, [payerSeedVersion, setPayerSeedVersion, setPayers]);
+  }, [isPersonalWorkspace, payerSeedVersion, setPayerSeedVersion, setPayers]);
 
   useEffect(() => {
+    if (isPersonalWorkspace) return;
     if (platformSeedVersion === PLATFORM_SEED_VERSION) return;
 
     setPlatforms((prev) => {
@@ -69,7 +75,7 @@ export default function Settings() {
         : updatedPlatforms;
     });
     setPlatformSeedVersion(PLATFORM_SEED_VERSION);
-  }, [platformSeedVersion, setPlatformSeedVersion, setPlatforms]);
+  }, [isPersonalWorkspace, platformSeedVersion, setPlatformSeedVersion, setPlatforms]);
 
   function handleAddPayer(e: React.FormEvent) {
     e.preventDefault();
@@ -174,65 +180,67 @@ export default function Settings() {
           {t("settings.workspaceData")}
         </h2>
 
-        <div className="mt-5 grid gap-8 xl:grid-cols-[1.35fr_1fr]">
-          <div className="min-w-0">
-            <h3 className="text-[14px] font-bold text-(--color-ink)">{t("settings.payers")}</h3>
-            <p className="mt-1 mb-4 text-[13px] text-(--color-ink-muted)">{t("settings.payersHint")}</p>
+        <div className={isPersonalWorkspace ? "mt-5" : "mt-5 grid gap-8 xl:grid-cols-[1.35fr_1fr]"}>
+          {!isPersonalWorkspace && (
+            <div className="min-w-0">
+              <h3 className="text-[14px] font-bold text-(--color-ink)">{t("settings.payers")}</h3>
+              <p className="mt-1 mb-4 text-[13px] text-(--color-ink-muted)">{t("settings.payersHint")}</p>
 
-            {payers.length === 0 ? (
-              <p className="mb-4 text-[13px] text-(--color-ink-faint)">{t("payers.empty")}</p>
-            ) : (
-              <ul className="mb-4 flex max-h-[520px] flex-col divide-y divide-(--color-hairline) overflow-y-auto pr-2">
-                {payers.map((payer) => (
-                  <li key={payer.id} className="group grid grid-cols-[minmax(0,1fr)_80px_28px] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_104px_28px] sm:gap-3">
-                    <p className="truncate text-[14px] text-(--color-ink)">{payer.name}</p>
-                    <p className="truncate text-[12px] text-(--color-ink-faint)">{payer.payerId}</p>
-                    <button
-                      onClick={() => handleDeletePayer(payer)}
-                      aria-label={t("common.delete")}
-                      className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+              {payers.length === 0 ? (
+                <p className="mb-4 text-[13px] text-(--color-ink-faint)">{t("payers.empty")}</p>
+              ) : (
+                <ul className="mb-4 flex max-h-[520px] flex-col divide-y divide-(--color-hairline) overflow-y-auto pr-2">
+                  {payers.map((payer) => (
+                    <li key={payer.id} className="group grid grid-cols-[minmax(0,1fr)_80px_28px] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_104px_28px] sm:gap-3">
+                      <p className="truncate text-[14px] text-(--color-ink)">{payer.name}</p>
+                      <p className="truncate text-[12px] text-(--color-ink-faint)">{payer.payerId}</p>
+                      <button
+                        onClick={() => handleDeletePayer(payer)}
+                        aria-label={t("common.delete")}
+                        className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-            <form onSubmit={handleAddPayer} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_132px_auto] sm:items-end">
-              <div>
-                <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-                  {t("payers.name")}
-                </label>
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder={t("payers.namePlaceholder")}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-                  {t("payers.payerId")}
-                </label>
-                <input
-                  value={newPayerId}
-                  onChange={(e) => setNewPayerId(e.target.value)}
-                  placeholder={t("payers.payerIdPlaceholder")}
-                  className={inputClass}
-                />
-              </div>
-              <button
-                type="submit"
-                className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
-              >
-                <Plus size={14} />
-                {t("payers.addNew")}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handleAddPayer} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_132px_auto] sm:items-end">
+                <div>
+                  <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+                    {t("payers.name")}
+                  </label>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder={t("payers.namePlaceholder")}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+                    {t("payers.payerId")}
+                  </label>
+                  <input
+                    value={newPayerId}
+                    onChange={(e) => setNewPayerId(e.target.value)}
+                    placeholder={t("payers.payerIdPlaceholder")}
+                    className={inputClass}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                >
+                  <Plus size={14} />
+                  {t("payers.addNew")}
+                </button>
+              </form>
+            </div>
+          )}
 
-          <div className="min-w-0 border-t border-(--color-hairline) pt-6 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8">
+          <div className={isPersonalWorkspace ? "min-w-0" : "min-w-0 border-t border-(--color-hairline) pt-6 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8"}>
             <h3 className="text-[14px] font-bold text-(--color-ink)">{t("settings.platforms")}</h3>
             <p className="mt-1 mb-4 text-[13px] text-(--color-ink-muted)">
               {t("settings.platformsHint")}

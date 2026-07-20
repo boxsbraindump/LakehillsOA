@@ -33,7 +33,10 @@ export default function CustomEntryForm({
   const { syncEnabled, workspace } = useAuth();
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const [payers] = useSyncedStorage<Payer[]>("lh-payers", []);
-  const [platforms] = useSyncedStorage<Platform[]>("lh-platforms", defaultPlatforms);
+  const [platforms] = useSyncedStorage<Platform[]>(
+    "lh-platforms",
+    isPersonalWorkspace ? [] : defaultPlatforms,
+  );
   const [title, setTitle] = useState(initial?.title ?? "");
   const [detail, setDetail] = useState(initial?.detail ?? initial?.notes ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");

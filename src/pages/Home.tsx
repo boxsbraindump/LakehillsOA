@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { CATEGORY_DOT } from "../lib/searchIndex";
 import { useSearchIndex } from "../hooks/useSearchIndex";
 import { useUsageStats } from "../hooks/useUsageStats";
@@ -59,6 +59,7 @@ export default function Home() {
 
     return chips.slice(0, 6);
   }, [docs, isPersonalWorkspace, usageEntries]);
+  const showEmptyWorkspaceHint = isPersonalWorkspace && docs.length === 0 && !query.trim();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -152,6 +153,22 @@ export default function Home() {
                 </Link>
               ) : null,
             )}
+          </div>
+        )}
+
+        {showEmptyWorkspaceHint && (
+          <div className="mx-auto mt-6 flex max-w-xl items-start gap-3 rounded-(--radius-lg) border border-(--color-hairline) bg-white/82 p-4 text-left shadow-(--shadow-level-1)">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary)/10 text-(--color-primary)">
+              <Plus size={16} />
+            </span>
+            <div>
+              <p className="text-[14px] font-bold text-(--color-ink)">
+                {t("home.emptyWorkspaceTitle")}
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-(--color-ink-muted)">
+                {t("home.emptyWorkspaceBody")}
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -150,6 +150,9 @@ export default function Sidebar() {
   const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const templateLabels = isPersonalWorkspace ? PERSONAL_TEMPLATE_LABEL_KEY : TEMPLATE_LABEL_KEY;
+  const categoryNamePlaceholder = isPersonalWorkspace
+    ? t("sidebar.personalCategoryNamePlaceholder")
+    : t("sidebar.categoryNamePlaceholder");
 
   function startRename(category: CustomCategory) {
     setEditingCategoryId(category.id);
@@ -404,7 +407,7 @@ export default function Sidebar() {
               autoFocus
               value={newCategoryTitle}
               onChange={(e) => setNewCategoryTitle(e.target.value)}
-              placeholder={t("sidebar.categoryNamePlaceholder")}
+              placeholder={categoryNamePlaceholder}
               className={inlineInputClass}
             />
             <div className="grid grid-cols-3 gap-1">

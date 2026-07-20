@@ -8,6 +8,7 @@ export const translations = {
   "sidebar.trash": { zh: "垃圾桶", en: "Trash" },
   "sidebar.addCategory": { zh: "添加分类", en: "Add category" },
   "sidebar.categoryNamePlaceholder": { zh: "例如 查保险", en: "e.g. Check insurance" },
+  "sidebar.personalCategoryNamePlaceholder": { zh: "例如 SOP、客户资料、链接库", en: "e.g. SOP, client notes, link hub" },
   "sidebar.deleteCategoryConfirm": {
     zh: "删除分类「{title}」？其中的 {count} 条记录也会一并删除。",
     en: 'Delete the category "{title}"? Its {count} entries will be deleted too.',
@@ -104,32 +105,37 @@ export const translations = {
     zh: "试试「申请」「链接」「follow up」「灵感」…",
     en: "Try “application”, “link”, “follow up”, “idea”…",
   },
+  "home.emptyWorkspaceTitle": { zh: "从第一个 page 开始", en: "Start with your first page" },
+  "home.emptyWorkspaceBody": {
+    zh: "左侧点「添加分类」，选择 Checklist、资料卡片或链接目录。这个工作区现在是空白的，不会预载任何示例资料。",
+    en: "Use Add category in the sidebar, then choose Checklist, Knowledge Card, or Link Directory. This workspace starts blank with no sample data preloaded.",
+  },
 
   "workspaceOnboarding.workspaceFallback": { zh: "新的工作区", en: "New workspace" },
-  "workspaceOnboarding.privateLabel": { zh: "独立资料空间", en: "Separate data space" },
-  "workspaceOnboarding.label": { zh: "开始设置", en: "Workspace setup" },
+  "workspaceOnboarding.privateLabel": { zh: "空白工作区", en: "Blank workspace" },
+  "workspaceOnboarding.label": { zh: "创建工作区", en: "Create workspace" },
   "workspaceOnboarding.title": {
-    zh: "创建你的 Personal Admin",
-    en: "Create your Personal Admin",
+    zh: "从空白开始搭建你的工作区",
+    en: "Start with a blank workspace",
   },
   "workspaceOnboarding.body": {
-    zh: "这个工作区是独立的，不会显示 Lake Hills 的资料。它适合记录突然想到的事情、待办、链接和生活里的 admin 资料。",
-    en: "This workspace is separate from Lake Hills data. It is for quick thoughts, to-dos, links, and everyday admin notes.",
+    zh: "这里不会预先放入任何 Lake Hills 或保险资料。进入后可以在左侧创建 page，并从 Checklist、资料卡片、链接目录三种模板开始。",
+    en: "No Lake Hills or insurance data is preloaded. Once inside, create pages from the sidebar using Checklist, Knowledge Card, or Link Directory templates.",
   },
   "workspaceOnboarding.templateChecklist": { zh: "Checklist", en: "Checklist" },
   "workspaceOnboarding.templateChecklistBody": {
-    zh: "适合每日流程、开店打烊、follow-up 或重复任务。",
-    en: "For daily routines, opening and closing, follow-ups, and repeated tasks.",
+    zh: "适合每日流程、交接清单、follow-up、重复任务或任何需要一步步完成的工作。",
+    en: "For daily routines, handoff lists, follow-ups, repeated tasks, or any step-by-step work.",
   },
   "workspaceOnboarding.templateCards": { zh: "资料卡片", en: "Knowledge cards" },
   "workspaceOnboarding.templateCardsBody": {
-    zh: "适合记录问题、背景、处理方式和之后可以复用的经验。",
-    en: "For issues, context, resolutions, and knowledge you can reuse later.",
+    zh: "适合记录背景、说明、处理方式、客户偏好、内部 SOP 或之后可以复用的经验。",
+    en: "For context, explanations, resolutions, client preferences, internal SOPs, and reusable knowledge.",
   },
   "workspaceOnboarding.templateLinks": { zh: "链接目录", en: "Link Directory" },
   "workspaceOnboarding.templateLinksBody": {
-    zh: "适合保存入口链接、用途说明和注意事项。",
-    en: "For useful links, descriptions, and notes.",
+    zh: "适合保存常用系统入口、表格、文件夹、申请页面和每个链接的用途说明。",
+    en: "For portals, forms, folders, application pages, and notes explaining what each link is for.",
   },
   "workspaceOnboarding.templateBlank": { zh: "Blank Cards", en: "Blank Cards" },
   "workspaceOnboarding.templateBlankBody": {
@@ -137,12 +143,12 @@ export const translations = {
     en: "For starting with simple titles, notes, and tags.",
   },
   "workspaceOnboarding.templateComingSoon": { zh: "下一步接入", en: "Next step" },
-  "workspaceOnboarding.createWorkspace": { zh: "创建 Personal Admin", en: "Create Personal Admin" },
+  "workspaceOnboarding.createWorkspace": { zh: "进入空白工作区", en: "Open blank workspace" },
   "workspaceOnboarding.startBlank": { zh: "从空白开始", en: "Start blank" },
-  "workspaceOnboarding.included": { zh: "将会创建", en: "Included templates" },
+  "workspaceOnboarding.included": { zh: "可创建的模板", en: "Available templates" },
   "workspaceOnboarding.safetyNote": {
-    zh: "安全说明：Lake Hills 仍然是私有工作区。只有在后端明确开启公开注册后，新邮箱才会进入这个独立设置流程。",
-    en: "Safety note: Lake Hills stays private. New emails only enter this separate setup flow after public signups are intentionally enabled on the backend.",
+    zh: "新客户工作区默认是空白且独立的。Lake Hills 的共享资料仍然只存在于 Lake Hills 私有工作区里。",
+    en: "New customer workspaces start blank and separate. Lake Hills shared data stays inside the private Lake Hills workspace.",
   },
 
   "search.noResults": {
