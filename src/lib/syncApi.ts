@@ -113,6 +113,15 @@ export function setCurrentWorkspace(workspace: WorkspaceMeta) {
   }
 }
 
+function markCurrentWorkspaceInitialized() {
+  try {
+    window.localStorage.setItem(getScopedStorageKey("lh-workspace-initialized"), JSON.stringify(true));
+  } catch {
+    // ignore
+  }
+  void pushRemoteValue("lh-workspace-initialized", true);
+}
+
 export function clearAuthToken() {
   try {
     window.localStorage.removeItem(TOKEN_KEY);
@@ -217,7 +226,38 @@ export async function createRemoteWorkspace(
       return { ok: false, error: body.error ?? "unknown_error" };
     }
     setCurrentWorkspace(body.workspace);
+    markCurrentWorkspaceInitialized();
     return { ok: true, workspace: body.workspace };
+  } catch {
+    setSyncStatus("offline");
+    return { ok: false, error: "network_error" };
+  }
+}
+
+export async function deleteRemoteWorkspace(
+  workspaceId: string,
+): Promise<
+  | { ok: true; workspaces: WorkspaceMeta[]; workspace: WorkspaceMeta }
+  | { ok: false; error: string }
+> {
+  if (!API_BASE) return { ok: false, error: "sync_not_configured" };
+  try {
+    setSyncStatus("syncing");
+    const res = await fetch(`${API_BASE}/api/workspaces/${encodeURIComponent(workspaceId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    const body = (await res.json()) as {
+      workspaces?: WorkspaceMeta[];
+      workspace?: WorkspaceMeta;
+      error?: string;
+    };
+    if (res.status === 401) onUnauthorized?.();
+    setSyncStatus(statusFromResponse(res));
+    if (!res.ok || !body.workspace) {
+      return { ok: false, error: body.error ?? "unknown_error" };
+    }
+    return { ok: true, workspaces: body.workspaces ?? [body.workspace], workspace: body.workspace };
   } catch {
     setSyncStatus("offline");
     return { ok: false, error: "network_error" };

@@ -6,6 +6,7 @@ import ClickSpark from "./components/ClickSpark";
 import { useAuth } from "./components/AuthProvider";
 import WorkspaceOnboarding from "./pages/WorkspaceOnboarding";
 import { useSyncedStorage } from "./hooks/useSyncedStorage";
+import { getScopedStorageKey } from "./lib/syncApi";
 
 function WorkspaceShell() {
   return (
@@ -25,7 +26,13 @@ function App() {
     "lh-workspace-initialized",
     false,
   );
-  const needsOnboarding = syncEnabled && workspace && !workspace.isPrimary && !workspaceInitialized;
+  const locallyInitialized =
+    syncEnabled &&
+    workspace &&
+    !workspace.isPrimary &&
+    window.localStorage.getItem(getScopedStorageKey("lh-workspace-initialized")) === "true";
+  const needsOnboarding =
+    syncEnabled && workspace && !workspace.isPrimary && !workspaceInitialized && !locallyInitialized;
 
   return (
     <ToastProvider>

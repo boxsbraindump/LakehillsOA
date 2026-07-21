@@ -26,6 +26,12 @@ export const translations = {
   "profileMenu.workspaceNamePlaceholder": { zh: "工作区名称", en: "Workspace name" },
   "profileMenu.createWorkspace": { zh: "创建工作区", en: "Create workspace" },
   "profileMenu.createWorkspaceError": { zh: "创建失败，请稍后再试", en: "Could not create workspace. Try again." },
+  "profileMenu.deleteWorkspace": { zh: "删除工作区", en: "Delete workspace" },
+  "profileMenu.deleteWorkspaceConfirm": {
+    zh: "删除工作区「{name}」？里面的页面和资料都会一起删除，无法撤销。",
+    en: 'Delete workspace "{name}"? Its pages and data will be deleted too. This cannot be undone.',
+  },
+  "profileMenu.deleteWorkspaceError": { zh: "删除失败，请稍后再试", en: "Could not delete workspace. Try again." },
   "profileMenu.logout": { zh: "退出登录", en: "Log out" },
   "syncStatus.local": { zh: "本地保存", en: "Saved locally" },
   "syncStatus.syncing": { zh: "正在同步", en: "Syncing" },

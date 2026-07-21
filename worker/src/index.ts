@@ -258,6 +258,31 @@ export default {
       return json({ workspace }, headers, 201);
     }
 
+    const workspaceMatch = /^\/api\/workspaces\/([^/]+)$/.exec(url.pathname);
+    if (request.method === "DELETE" && workspaceMatch) {
+      const email = await getSessionEmail(request, env);
+      if (!email) return json({ error: "unauthorized" }, headers, 401);
+
+      const workspaceId = decodeURIComponent(workspaceMatch[1]);
+      const row = await env.DB.prepare(
+        "SELECT workspace_id FROM user_workspaces WHERE email = ?1 AND workspace_id = ?2",
+      )
+        .bind(email.toLowerCase(), workspaceId)
+        .first<{ workspace_id: string }>();
+      if (!row) return json({ error: "workspace_not_found" }, headers, 404);
+
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM workspace_kv_store WHERE workspace_id = ?1").bind(workspaceId),
+        env.DB.prepare("DELETE FROM user_workspaces WHERE workspace_id = ?1").bind(workspaceId),
+        env.DB.prepare("DELETE FROM workspaces WHERE id = ?1").bind(workspaceId),
+      ]);
+
+      const workspaces = await workspacesForEmail(email, env);
+      await ensureWorkspaces(env, workspaces);
+      const workspace = workspaces[0] ?? defaultWorkspaceForEmail(email, env);
+      return json({ workspaces, workspace }, headers);
+    }
+
     if (request.method === "DELETE" && url.pathname === "/api/auth/session") {
       const token = bearerToken(request);
       if (token) {

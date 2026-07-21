@@ -1,17 +1,29 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, LogOut, Plus, Settings, X } from "lucide-react";
+import { Check, LogOut, Plus, Settings, Trash2, X } from "lucide-react";
 import { useAuth } from "./AuthProvider";
+import { useConfirm } from "./ConfirmProvider";
 import { useLanguage } from "./LanguageProvider";
 
 export default function ProfileMenu({ placement = "top" }: { placement?: "top" | "bottom" }) {
-  const { email, logout, workspace, workspaces, switchWorkspace, createWorkspace, syncEnabled } = useAuth();
+  const {
+    email,
+    logout,
+    workspace,
+    workspaces,
+    switchWorkspace,
+    createWorkspace,
+    deleteWorkspace,
+    syncEnabled,
+  } = useAuth();
   const { t } = useLanguage();
+  const { confirm } = useConfirm();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [deletingWorkspaceId, setDeletingWorkspaceId] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +53,30 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
     navigate("/");
   }
 
+  async function handleDeleteWorkspace(item: { id: string; name: string }) {
+    if (
+      !(await confirm({
+        message: t("profileMenu.deleteWorkspaceConfirm", { name: item.name }),
+        confirmLabel: t("profileMenu.deleteWorkspace"),
+      }))
+    ) {
+      return;
+    }
+    setWorkspaceError(null);
+    setDeletingWorkspaceId(item.id);
+    const deletingCurrentWorkspace = workspace?.id === item.id;
+    const result = await deleteWorkspace(item.id);
+    setDeletingWorkspaceId(null);
+    if (!result.ok) {
+      setWorkspaceError(t("profileMenu.deleteWorkspaceError"));
+      return;
+    }
+    if (deletingCurrentWorkspace) {
+      setOpen(false);
+      navigate("/");
+    }
+  }
+
   return (
     <div ref={ref} className="relative">
       {open && (
@@ -66,22 +102,41 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
               <p className="px-3 pt-1 pb-1 text-[11px] font-semibold text-(--color-ink-faint)">
                 {t("profileMenu.workspaces")}
               </p>
-              {workspaces.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setOpen(false);
-                    switchWorkspace(item.id);
-                    navigate("/");
-                  }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
-                >
-                  <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                  {workspace?.id === item.id && (
-                    <Check size={14} strokeWidth={2.2} className="shrink-0 text-(--color-primary)" />
-                  )}
-                </button>
-              ))}
+              {workspaces.map((item) => {
+                const canDeleteWorkspace = item.id.startsWith("workspace-");
+                return (
+                  <div
+                    key={item.id}
+                    className="group flex items-center gap-1 px-1.5 hover:bg-(--color-canvas-soft)"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        switchWorkspace(item.id);
+                        navigate("/");
+                      }}
+                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-(--radius-sm) px-1.5 py-2 text-left text-[14px] text-(--color-ink-secondary)"
+                    >
+                      <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                      {workspace?.id === item.id && (
+                        <Check size={14} strokeWidth={2.2} className="shrink-0 text-(--color-primary)" />
+                      )}
+                    </button>
+                    {canDeleteWorkspace && (
+                      <button
+                        type="button"
+                        disabled={deletingWorkspaceId === item.id}
+                        onClick={() => void handleDeleteWorkspace(item)}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-sm) text-(--color-ink-faint) opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
+                        aria-label={t("profileMenu.deleteWorkspace")}
+                      >
+                        <Trash2 size={14} strokeWidth={2.1} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
               {isCreatingWorkspace ? (
                 <form onSubmit={handleCreateWorkspace} className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
