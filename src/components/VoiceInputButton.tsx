@@ -19,12 +19,16 @@ interface SpeechRecognitionEventLike extends Event {
   };
 }
 
+interface SpeechRecognitionErrorEventLike extends Event {
+  readonly error: string;
+}
+
 interface SpeechRecognitionLike extends EventTarget {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   start: () => void;
   stop: () => void;
@@ -44,6 +48,7 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
   const { t, lang } = useLanguage();
   const customTerms = useVoiceGlossaryTerms();
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const shouldKeepListeningRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
   const Recognition = typeof window === "undefined" ? undefined : getSpeechRecognition();
 
@@ -51,6 +56,7 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
   const RecognitionCtor = Recognition;
 
   function stopListening() {
+    shouldKeepListeningRef.current = false;
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setIsListening(false);
@@ -62,10 +68,11 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
       return;
     }
 
+    shouldKeepListeningRef.current = true;
     const recognition = new RecognitionCtor();
     recognitionRef.current = recognition;
     recognition.lang = lang === "zh" ? "zh-CN" : "en-US";
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = false;
     recognition.onresult = (event) => {
       const parts: string[] = [];
@@ -78,8 +85,33 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
       const transcript = normalizeVoiceTranscript(parts.join(" "), customTerms);
       if (transcript) onTranscript(transcript);
     };
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event) => {
+      if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
+        shouldKeepListeningRef.current = false;
+        recognitionRef.current = null;
+        setIsListening(false);
+      }
+    };
+    recognition.onend = () => {
+      if (!shouldKeepListeningRef.current) {
+        recognitionRef.current = null;
+        setIsListening(false);
+        return;
+      }
+
+      window.setTimeout(() => {
+        if (!shouldKeepListeningRef.current) return;
+        try {
+          recognition.start();
+          recognitionRef.current = recognition;
+          setIsListening(true);
+        } catch {
+          shouldKeepListeningRef.current = false;
+          recognitionRef.current = null;
+          setIsListening(false);
+        }
+      }, 250);
+    };
     recognition.start();
     setIsListening(true);
   }
