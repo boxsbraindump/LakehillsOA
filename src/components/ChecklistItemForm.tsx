@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ChecklistItem } from "../lib/types";
 import { slugify } from "../lib/slugify";
 import { useLanguage } from "./LanguageProvider";
+import VoiceInputButton from "./VoiceInputButton";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -19,6 +20,11 @@ export default function ChecklistItemForm({
   const [label, setLabel] = useState(initial?.label ?? "");
   const [detail, setDetail] = useState(initial?.detail ?? "");
 
+  function appendVoiceText(current: string, text: string) {
+    if (!current.trim()) return text;
+    return `${current} ${text}`;
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!label.trim()) return;
@@ -32,6 +38,12 @@ export default function ChecklistItemForm({
 
   return (
     <form onSubmit={handleSubmit} className="fade-in-up py-2.5">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("checklistItemForm.contentPlaceholder")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setLabel((current) => appendVoiceText(current, text))} />
+      </div>
       <input
         autoFocus
         value={label}
@@ -39,6 +51,12 @@ export default function ChecklistItemForm({
         placeholder={t("checklistItemForm.contentPlaceholder")}
         className={`${inputClass} mb-1.5`}
       />
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("checklistItemForm.detailPlaceholder")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setDetail((current) => appendVoiceText(current, text))} />
+      </div>
       <input
         value={detail}
         onChange={(e) => setDetail(e.target.value)}

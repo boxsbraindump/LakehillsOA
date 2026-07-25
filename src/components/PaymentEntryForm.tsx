@@ -6,6 +6,7 @@ import { defaultPlatforms } from "../data/platforms";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "./LanguageProvider";
 import PortalFields from "./PortalFields";
+import VoiceInputButton from "./VoiceInputButton";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
 
@@ -33,6 +34,12 @@ export default function PaymentEntryForm({
     initial?.portals ?? [{ name: "", url: "" }],
   );
   const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  function appendVoiceText(current: string, text: string, multiline = false) {
+    if (!current.trim()) return text;
+    const separator = multiline ? "\n" : " ";
+    return `${current}${separator}${text}`;
+  }
 
   function handlePayerSelect(value: string) {
     setSelectedPayerValue(value);
@@ -62,9 +69,12 @@ export default function PaymentEntryForm({
       onSubmit={handleSubmit}
       className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6"
     >
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("paymentEntryForm.payer")}
-      </label>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("paymentEntryForm.payer")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setPayer((current) => appendVoiceText(current, text))} />
+      </div>
       {payers.length > 0 && (
         <select
           value={selectedPayerValue}
@@ -91,9 +101,12 @@ export default function PaymentEntryForm({
 
       <PortalFields portals={portals} platforms={platforms} setPortals={setPortals} />
 
-      <label className="mt-3 mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("paymentEntryForm.notes")}
-      </label>
+      <div className="mt-3 mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("paymentEntryForm.notes")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setNotes((current) => appendVoiceText(current, text, true))} />
+      </div>
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}

@@ -4,6 +4,7 @@ import { slugify } from "../lib/slugify";
 import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { defaultPayers } from "../data/payers";
+import VoiceInputButton from "./VoiceInputButton";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
 
@@ -30,6 +31,12 @@ export default function OACaseForm({
   const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
   const [summary, setSummary] = useState(initial?.summary ?? "");
   const [resolution, setResolution] = useState(initial?.resolution ?? "");
+
+  function appendVoiceText(current: string, text: string, multiline = false) {
+    if (!current.trim()) return text;
+    const separator = multiline ? "\n" : " ";
+    return `${current}${separator}${text}`;
+  }
 
   function handlePayerSelect(value: string) {
     setSelectedPayerValue(value);
@@ -61,9 +68,12 @@ export default function OACaseForm({
       onSubmit={handleSubmit}
       className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6"
     >
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.title")}
-      </label>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("oaCaseForm.title")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setTitle((current) => appendVoiceText(current, text))} />
+      </div>
       <input
         autoFocus
         value={title}
@@ -98,9 +108,12 @@ export default function OACaseForm({
         />
       )}
 
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.summary")}
-      </label>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("oaCaseForm.summary")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setSummary((current) => appendVoiceText(current, text, true))} />
+      </div>
       <textarea
         value={summary}
         onChange={(e) => setSummary(e.target.value)}
@@ -109,9 +122,12 @@ export default function OACaseForm({
         className={`${inputClass} mb-3`}
       />
 
-      <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-        {t("oaCaseForm.resolution")}
-      </label>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+          {t("oaCaseForm.resolution")}
+        </label>
+        <VoiceInputButton onTranscript={(text) => setResolution((current) => appendVoiceText(current, text, true))} />
+      </div>
       <textarea
         value={resolution}
         onChange={(e) => setResolution(e.target.value)}

@@ -23,6 +23,7 @@ import { useConfirm } from "../components/ConfirmProvider";
 import { useAuth } from "../components/AuthProvider";
 import ChecklistItemForm from "../components/ChecklistItemForm";
 import EmptyState from "../components/EmptyState";
+import VoiceInputButton from "../components/VoiceInputButton";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
 import type { ChecklistItem, ChecklistSectionMeta } from "../lib/types";
@@ -199,6 +200,12 @@ export default function Checklist() {
         [selectedDate]: { ...day, [id]: { checked: day[id]?.checked ?? false, note } },
       };
     });
+  }
+
+  function appendVoiceText(current: string, text: string, multiline = false) {
+    if (!current.trim()) return text;
+    const separator = multiline ? "\n" : " ";
+    return `${current}${separator}${text}`;
   }
 
   async function resetSelectedDay() {
@@ -1037,14 +1044,23 @@ export default function Checklist() {
                     )}
 
                     {noteOpen && (
-                      <textarea
-                        autoFocus
-                        value={note}
-                        onChange={(e) => setNote(item.id, e.target.value)}
-                        placeholder={t("checklist.notePlaceholder")}
-                        rows={2}
-                        className="mt-2 ml-[30px] w-[calc(100%-30px)] rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2.5 py-2 text-[13px] text-(--color-ink) outline-none focus:shadow-(--shadow-level-1)"
-                      />
+                      <div className="mt-2 ml-[30px] w-[calc(100%-30px)]">
+                        <div className="mb-1 flex justify-end">
+                          <VoiceInputButton
+                            onTranscript={(text) =>
+                              setNote(item.id, appendVoiceText(note, text, true))
+                            }
+                          />
+                        </div>
+                        <textarea
+                          autoFocus
+                          value={note}
+                          onChange={(e) => setNote(item.id, e.target.value)}
+                          placeholder={t("checklist.notePlaceholder")}
+                          rows={2}
+                          className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas-soft) px-2.5 py-2 text-[13px] text-(--color-ink) outline-none focus:shadow-(--shadow-level-1)"
+                        />
+                      </div>
                     )}
                   </li>
                 );
@@ -1089,9 +1105,16 @@ export default function Checklist() {
             }}
             className="fade-in-up rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6"
           >
-            <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-              {t("checklist.sectionNameLabel")}
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+                {t("checklist.sectionNameLabel")}
+              </label>
+              <VoiceInputButton
+                onTranscript={(text) =>
+                  setNewSectionTitle((current) => appendVoiceText(current, text))
+                }
+              />
+            </div>
             <input
               autoFocus
               value={newSectionTitle}
