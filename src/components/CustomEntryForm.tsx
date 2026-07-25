@@ -12,6 +12,7 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { defaultPlatforms } from "../data/platforms";
 import PortalFields from "./PortalFields";
 import { useAuth } from "./AuthProvider";
+import VoiceInputButton from "./VoiceInputButton";
 
 const CUSTOM_PAYER_VALUE = "__custom__";
 
@@ -57,6 +58,12 @@ export default function CustomEntryForm({
   const [portals, setPortals] = useState<PaymentPortal[]>(
     initial?.portals ?? [{ name: "", url: "" }],
   );
+
+  function appendVoiceText(current: string, text: string, multiline = false) {
+    if (!current.trim()) return text;
+    const separator = multiline ? "\n" : " ";
+    return `${current}${separator}${text}`;
+  }
 
   function handleCasePayerSelect(value: string) {
     setSelectedCasePayerValue(value);
@@ -128,9 +135,12 @@ export default function CustomEntryForm({
     >
       {template === "checklist" && (
         <>
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("customEntryForm.checklistItem")}
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("customEntryForm.checklistItem")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setTitle((current) => appendVoiceText(current, text))} />
+          </div>
           <input
             autoFocus
             value={title}
@@ -139,9 +149,12 @@ export default function CustomEntryForm({
             className={`${inputClass} mb-3`}
           />
 
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("customEntryForm.detail")}
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("customEntryForm.detail")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setDetail((current) => appendVoiceText(current, text, true))} />
+          </div>
           <textarea
             value={detail}
             onChange={(e) => setDetail(e.target.value)}
@@ -154,9 +167,12 @@ export default function CustomEntryForm({
 
       {template === "oa-case" && (
         <>
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("oaCaseForm.title")}
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("oaCaseForm.title")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setTitle((current) => appendVoiceText(current, text))} />
+          </div>
           <input
             autoFocus
             value={title}
@@ -195,9 +211,12 @@ export default function CustomEntryForm({
             </>
           )}
 
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("oaCaseForm.summary")}
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("oaCaseForm.summary")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setSummary((current) => appendVoiceText(current, text, true))} />
+          </div>
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
@@ -206,9 +225,12 @@ export default function CustomEntryForm({
             className={`${inputClass} mb-3`}
           />
 
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("oaCaseForm.resolution")}
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("oaCaseForm.resolution")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setResolution((current) => appendVoiceText(current, text, true))} />
+          </div>
           <textarea
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
@@ -231,9 +253,12 @@ export default function CustomEntryForm({
 
       {template === "payments" && (
         <>
-          <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {isPersonalWorkspace ? t("linkEntryForm.title") : t("paymentEntryForm.payer")}
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {isPersonalWorkspace ? t("linkEntryForm.title") : t("paymentEntryForm.payer")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setPaymentPayer((current) => appendVoiceText(current, text))} />
+          </div>
           {!isPersonalWorkspace && payers.length > 0 && (
             <select
               value={selectedPaymentPayerValue}
@@ -264,9 +289,12 @@ export default function CustomEntryForm({
 
           <PortalFields portals={portals} platforms={platforms} setPortals={setPortals} />
 
-          <label className="mt-3 mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
-            {t("paymentEntryForm.notes")}
-          </label>
+          <div className="mt-3 mb-1 flex items-center justify-between gap-2">
+            <label className="text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("paymentEntryForm.notes")}
+            </label>
+            <VoiceInputButton onTranscript={(text) => setNotes((current) => appendVoiceText(current, text, true))} />
+          </div>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

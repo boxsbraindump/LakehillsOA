@@ -14,6 +14,7 @@ export const translations = {
     en: 'Delete the category "{title}"? Its {count} entries will be deleted too.',
   },
   "sidebar.deletedCategoryToast": { zh: "已删除分类「{title}」", en: 'Deleted category "{title}"' },
+  "sidebar.duplicateCategoryName": { zh: "已经有这个名字的文件夹，请换一个名字", en: "A folder with this name already exists. Please use a different name." },
   "template.checklist": { zh: "Checklist", en: "Checklist" },
   "template.oaCase": { zh: "OA 案例", en: "OA Case" },
   "template.payments": { zh: "Payments", en: "Payments" },
@@ -236,6 +237,8 @@ export const translations = {
   "common.pin": { zh: "置顶", en: "Pin" },
   "common.pinned": { zh: "已置顶", en: "Pinned" },
   "common.unpin": { zh: "取消置顶", en: "Unpin" },
+  "voiceInput.start": { zh: "语音输入", en: "Voice input" },
+  "voiceInput.stop": { zh: "停止语音输入", en: "Stop voice input" },
   "confirm.title": { zh: "确认删除", en: "Confirm delete" },
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },

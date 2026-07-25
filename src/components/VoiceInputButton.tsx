@@ -1,0 +1,100 @@
+import { useRef, useState } from "react";
+import { Mic, Square } from "lucide-react";
+import { useLanguage } from "./LanguageProvider";
+
+interface SpeechRecognitionResultLike {
+  readonly length: number;
+  item(index: number): { transcript: string };
+  [index: number]: { transcript: string };
+}
+
+interface SpeechRecognitionEventLike extends Event {
+  readonly resultIndex: number;
+  readonly results: {
+    readonly length: number;
+    item(index: number): SpeechRecognitionResultLike;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+}
+
+interface SpeechRecognitionLike extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+function getSpeechRecognition() {
+  const win = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return win.SpeechRecognition ?? win.webkitSpeechRecognition;
+}
+
+export default function VoiceInputButton({ onTranscript }: { onTranscript: (text: string) => void }) {
+  const { t, lang } = useLanguage();
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const Recognition = typeof window === "undefined" ? undefined : getSpeechRecognition();
+
+  if (!Recognition) return null;
+  const RecognitionCtor = Recognition;
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setIsListening(false);
+  }
+
+  function startListening() {
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    const recognition = new RecognitionCtor();
+    recognitionRef.current = recognition;
+    recognition.lang = lang === "zh" ? "zh-CN" : "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const parts: string[] = [];
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i] ?? event.results.item(i);
+        for (let j = 0; j < result.length; j += 1) {
+          parts.push((result[j] ?? result.item(j)).transcript);
+        }
+      }
+      const transcript = parts.join(" ").trim();
+      if (transcript) onTranscript(transcript);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+    setIsListening(true);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startListening}
+      aria-label={isListening ? t("voiceInput.stop") : t("voiceInput.start")}
+      title={isListening ? t("voiceInput.stop") : t("voiceInput.start")}
+      className={[
+        "inline-flex h-7 w-7 items-center justify-center rounded-(--radius-sm) transition",
+        isListening
+          ? "bg-(--color-primary) text-white"
+          : "text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)",
+      ].join(" ")}
+    >
+      {isListening ? <Square size={13} fill="currentColor" /> : <Mic size={14} />}
+    </button>
+  );
+}

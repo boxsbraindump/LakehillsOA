@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { Fragment, useState, type DragEvent, type FormEvent } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardCheck,
@@ -148,6 +148,8 @@ export default function Sidebar() {
     useState<CustomCategoryTemplate>("checklist");
   const [isEditingWorkspaceName, setIsEditingWorkspaceName] = useState(false);
   const [workspaceNameValue, setWorkspaceNameValue] = useState("");
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
 
   const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
   const deletedCategoriesForSidebar = [
@@ -162,6 +164,10 @@ export default function Sidebar() {
   ];
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const canRenameWorkspace = Boolean(workspace?.id.startsWith("workspace-"));
+  const visibleCustomCategories = filterDeletedCustomCategories(
+    normalizedCustomCategories,
+    deletedCategoriesForSidebar,
+  );
   const templateLabels = isPersonalWorkspace ? PERSONAL_TEMPLATE_LABEL_KEY : TEMPLATE_LABEL_KEY;
   const categoryNamePlaceholder = isPersonalWorkspace
     ? t("sidebar.personalCategoryNamePlaceholder")
@@ -194,6 +200,19 @@ export default function Sidebar() {
   function handleRenameSubmit(e: React.FormEvent, categoryId: string) {
     e.preventDefault();
     if (!renameValue.trim()) return;
+    const normalizedTitle = normalizeCategoryTitle(renameValue);
+    const hasDuplicateName = [
+      ...visibleCustomCategories
+        .filter((category) => category.id !== categoryId)
+        .map((category) => category.title),
+      ...deletedCategoriesForSidebar
+        .filter((category) => category.id !== categoryId)
+        .map((category) => category.title),
+    ].some((title) => normalizeCategoryTitle(title) === normalizedTitle);
+    if (hasDuplicateName) {
+      showToast(t("sidebar.duplicateCategoryName"));
+      return;
+    }
     setCustomCategories((prev) =>
       prev.map((c) => (c.id === categoryId ? { ...c, title: renameValue.trim() } : c)),
     );
@@ -205,16 +224,16 @@ export default function Sidebar() {
     if (!newCategoryTitle.trim()) return;
     const id = slugify(newCategoryTitle, "category");
     const normalizedTitle = normalizeCategoryTitle(newCategoryTitle);
-    const sameTitleIds = new Set(
-      normalizedCustomCategories
-        .filter((category) => normalizeCategoryTitle(category.title) === normalizedTitle)
-        .map((category) => category.id),
-    );
-    setDeletedCategories((prev) =>
-      prev.filter((deleted) => normalizeCategoryTitle(deleted.title) !== normalizedTitle),
-    );
+    const hasDuplicateName = [
+      ...visibleCustomCategories.map((category) => category.title),
+      ...deletedCategoriesForSidebar.map((category) => category.title),
+    ].some((title) => normalizeCategoryTitle(title) === normalizedTitle);
+    if (hasDuplicateName) {
+      showToast(t("sidebar.duplicateCategoryName"));
+      return;
+    }
     setCustomCategories((prev) => [
-      ...prev.filter((category) => normalizeCategoryTitle(category.title) !== normalizedTitle),
+      ...prev,
       {
         id,
         title: newCategoryTitle.trim(),
@@ -222,17 +241,86 @@ export default function Sidebar() {
         template: newCategoryTemplate,
       },
     ]);
-    if (sameTitleIds.size > 0) {
-      setCustomEntries((prev) => {
-        const next = { ...prev };
-        for (const oldId of sameTitleIds) delete next[oldId];
-        return next;
-      });
-    }
+    setDeletedCategories((prev) => prev.filter((deleted) => deleted.id !== id));
     setIsAddingCategory(false);
     setNewCategoryTitle("");
     setNewCategoryIcon("folder");
     setNewCategoryTemplate("checklist");
+  }
+
+  function moveCategoryBefore(draggedId: string, beforeId: string) {
+    if (draggedId === beforeId) return;
+    setCustomCategories((prev) => {
+      const visible = filterDeletedCustomCategories(prev, deletedCategoriesForSidebar);
+      const dragged = visible.find((category) => category.id === draggedId);
+      if (!dragged || !visible.some((category) => category.id === beforeId)) return prev;
+
+      const hidden = prev.filter((category) => !visible.some((item) => item.id === category.id));
+      const withoutDragged = visible.filter((category) => category.id !== draggedId);
+      const targetIndex = withoutDragged.findIndex((category) => category.id === beforeId);
+      if (targetIndex < 0) return prev;
+
+      return [
+        ...withoutDragged.slice(0, targetIndex),
+        dragged,
+        ...withoutDragged.slice(targetIndex),
+        ...hidden,
+      ];
+    });
+  }
+
+  function moveCategoryToEnd(draggedId: string) {
+    setCustomCategories((prev) => {
+      const visible = filterDeletedCustomCategories(prev, deletedCategoriesForSidebar);
+      const dragged = visible.find((category) => category.id === draggedId);
+      if (!dragged) return prev;
+      const hidden = prev.filter((category) => !visible.some((item) => item.id === category.id));
+      return [...visible.filter((category) => category.id !== draggedId), dragged, ...hidden];
+    });
+  }
+
+  function categoryDropProps(category: CustomCategory) {
+    return {
+      draggable: editingCategoryId !== category.id,
+      onDragStart: (event: DragEvent<HTMLElement>) => {
+        if (editingCategoryId === category.id) {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", category.id);
+        setDraggedCategoryId(category.id);
+      },
+      onDragOver: (event: DragEvent<HTMLElement>) => {
+        if (!draggedCategoryId || draggedCategoryId === category.id) return;
+        event.preventDefault();
+        setDragOverCategoryId(category.id);
+      },
+      onDrop: (event: DragEvent<HTMLElement>) => {
+        event.preventDefault();
+        if (draggedCategoryId && draggedCategoryId !== category.id) {
+          moveCategoryBefore(draggedCategoryId, category.id);
+        }
+        setDraggedCategoryId(null);
+        setDragOverCategoryId(null);
+      },
+      onDragEnd: () => {
+        setDraggedCategoryId(null);
+        setDragOverCategoryId(null);
+      },
+    };
+  }
+
+  function categoryDropPreview(category: CustomCategory) {
+    if (!draggedCategoryId || dragOverCategoryId !== category.id || draggedCategoryId === category.id) {
+      return null;
+    }
+
+    return (
+      <div className="relative h-2">
+        <span className="absolute top-1/2 right-1 left-1 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
+      </div>
+    );
   }
 
   async function handleDeleteCategory(category: CustomCategory) {
@@ -392,7 +480,7 @@ export default function Sidebar() {
       </nav>
 
       <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-        {filterDeletedCustomCategories(normalizedCustomCategories, deletedCategoriesForSidebar).map((category) => {
+        {visibleCustomCategories.map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
             return (
@@ -423,15 +511,18 @@ export default function Sidebar() {
           }
           const isCategoryActive = decodeURIComponent(location.pathname) === `/custom/${category.id}`;
           return (
-            <div
-              key={category.id}
-              className={[
-                "group/cat flex shrink-0 items-center rounded-(--radius-md) transition-colors md:shrink",
-                isCategoryActive
-                  ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
-                  : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
-              ].join(" ")}
-            >
+            <Fragment key={category.id}>
+              {categoryDropPreview(category)}
+              <div
+                className={[
+                  "group/cat flex shrink-0 cursor-grab items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
+                  draggedCategoryId === category.id ? "opacity-45" : "",
+                  isCategoryActive
+                    ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
+                    : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
+                ].join(" ")}
+                {...categoryDropProps(category)}
+              >
               <NavLink
                 to={`/custom/${category.id}`}
                 onClick={() =>
@@ -450,6 +541,8 @@ export default function Sidebar() {
               </NavLink>
               <div className="flex shrink-0 items-center gap-0.5 pr-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/cat:opacity-100">
                 <button
+                  type="button"
+                  onDragStart={(event) => event.preventDefault()}
                   onClick={() => startRename(category)}
                   aria-label={t("common.edit")}
                   className={[
@@ -462,6 +555,8 @@ export default function Sidebar() {
                   <Pencil size={13} />
                 </button>
                 <button
+                  type="button"
+                  onDragStart={(event) => event.preventDefault()}
                   onClick={() => handleDeleteCategory(category)}
                   aria-label={t("common.delete")}
                   className={[
@@ -474,9 +569,30 @@ export default function Sidebar() {
                   <Trash2 size={13} />
                 </button>
               </div>
-            </div>
+              </div>
+            </Fragment>
           );
         })}
+
+        {draggedCategoryId && (
+          <div
+            className="relative h-3"
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOverCategoryId("__end__");
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              moveCategoryToEnd(draggedCategoryId);
+              setDraggedCategoryId(null);
+              setDragOverCategoryId(null);
+            }}
+          >
+            {dragOverCategoryId === "__end__" && (
+              <span className="absolute top-1/2 right-1 left-1 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
+            )}
+          </div>
+        )}
 
         {isAddingCategory ? (
           <form

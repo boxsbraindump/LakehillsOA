@@ -1,4 +1,4 @@
-import { Fragment, useState, type DragEvent } from "react";
+import { Fragment, useEffect, useState, type DragEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, GripVertical, Pencil, Pin, Plus, Search, StickyNote, Trash2 } from "lucide-react";
 import { useHashHighlight } from "../hooks/useHashHighlight";
@@ -78,6 +78,16 @@ export default function CustomCategory() {
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [draggedEntryId, setDraggedEntryId] = useState<string | null>(null);
   const [dragOverEntryId, setDragOverEntryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setQuery("");
+    setEditingId(null);
+    setIsAdding(false);
+    setJustAddedId(null);
+    setOpenNoteId(null);
+    setDraggedEntryId(null);
+    setDragOverEntryId(null);
+  }, [categoryId]);
 
   const category = filterDeletedCustomCategories(categories, deletedCategories).find(
     (c) => c.id === categoryId,
@@ -441,6 +451,7 @@ export default function CustomCategory() {
             {editingId === entry.id ? (
             <div key={entry.id} className={template === "payments" ? "sm:col-span-2" : ""}>
               <CustomEntryForm
+                key={`edit-${categoryId}-${entry.id}-${template}`}
                 template={template}
                 initial={entry}
                 onSave={handleSave}
@@ -620,6 +631,7 @@ export default function CustomCategory() {
         {isAdding ? (
           <div className={template === "payments" ? "sm:col-span-2" : ""}>
             <CustomEntryForm
+              key={`add-${categoryId}-${template}`}
               template={template}
               onSave={handleCreate}
               onCancel={() => setIsAdding(false)}
