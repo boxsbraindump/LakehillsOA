@@ -18,6 +18,7 @@ import {
   setUnauthorizedHandler,
   fetchWorkspaces,
   createRemoteWorkspace,
+  renameRemoteWorkspace,
   deleteRemoteWorkspace,
   setCurrentWorkspace,
   type WorkspaceMeta,
@@ -31,7 +32,8 @@ interface AuthContextValue {
   workspace: WorkspaceMeta | null;
   workspaces: WorkspaceMeta[];
   loginWithGoogle: (idToken: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-  createWorkspace: (name: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  createWorkspace: (name?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  renameWorkspace: (workspaceId: string, name: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   deleteWorkspace: (workspaceId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   switchWorkspace: (workspaceId: string) => void;
   logout: () => void;
@@ -117,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [workspace?.id, workspaces],
   );
 
-  const createWorkspace = useCallback(async (name: string) => {
+  const createWorkspace = useCallback(async (name?: string) => {
     const result = await createRemoteWorkspace(name);
     if (!result.ok) return { ok: false as const, error: result.error };
     setWorkspace(result.workspace);
@@ -125,6 +127,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const withoutDuplicate = prev.filter((item) => item.id !== result.workspace.id);
       return [...withoutDuplicate, result.workspace];
     });
+    return { ok: true as const };
+  }, []);
+
+  const renameWorkspace = useCallback(async (workspaceId: string, name: string) => {
+    const result = await renameRemoteWorkspace(workspaceId, name);
+    if (!result.ok) return { ok: false as const, error: result.error };
+    setWorkspaces(result.workspaces);
+    setWorkspace(result.workspace);
     return { ok: true as const };
   }, []);
 
@@ -162,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         workspaces,
         loginWithGoogle: login,
         createWorkspace,
+        renameWorkspace,
         deleteWorkspace,
         switchWorkspace,
         logout,

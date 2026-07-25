@@ -27,7 +27,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   const allow = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, PUT, POST, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id",
     Vary: "Origin",
   };
@@ -239,8 +239,7 @@ export default {
       if (!email) return json({ error: "unauthorized" }, headers, 401);
 
       const body = await request.json<{ name?: string }>();
-      const name = body.name?.trim();
-      if (!name) return json({ error: "missing_name" }, headers, 400);
+      const name = body.name?.trim() || "Untitled workspace";
       if (name.length > 80) return json({ error: "name_too_long" }, headers, 400);
 
       const id = `workspace-${workspaceSlug(name) || "workspace"}-${crypto.randomUUID().slice(0, 8)}`;
@@ -259,6 +258,33 @@ export default {
     }
 
     const workspaceMatch = /^\/api\/workspaces\/([^/]+)$/.exec(url.pathname);
+    if (request.method === "PATCH" && workspaceMatch) {
+      const email = await getSessionEmail(request, env);
+      if (!email) return json({ error: "unauthorized" }, headers, 401);
+
+      const workspaceId = decodeURIComponent(workspaceMatch[1]);
+      const body = await request.json<{ name?: string }>();
+      const name = body.name?.trim();
+      if (!name) return json({ error: "missing_name" }, headers, 400);
+      if (name.length > 80) return json({ error: "name_too_long" }, headers, 400);
+
+      const row = await env.DB.prepare(
+        "SELECT workspace_id FROM user_workspaces WHERE email = ?1 AND workspace_id = ?2",
+      )
+        .bind(email.toLowerCase(), workspaceId)
+        .first<{ workspace_id: string }>();
+      if (!row) return json({ error: "workspace_not_found" }, headers, 404);
+
+      await env.DB.prepare("UPDATE workspaces SET name = ?1 WHERE id = ?2")
+        .bind(name, workspaceId)
+        .run();
+
+      const workspaces = await workspacesForEmail(email, env);
+      const workspace = workspaces.find((item) => item.id === workspaceId);
+      if (!workspace) return json({ error: "workspace_not_found" }, headers, 404);
+      return json({ workspaces, workspace }, headers);
+    }
+
     if (request.method === "DELETE" && workspaceMatch) {
       const email = await getSessionEmail(request, env);
       if (!email) return json({ error: "unauthorized" }, headers, 401);

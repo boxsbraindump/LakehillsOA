@@ -86,7 +86,14 @@ export default function Trash() {
       }
     } else if (entry.category === "custom" && entry.entryType === "section") {
       const { category, entries } = entry.snapshot as { category: CustomCategory; entries: CustomEntry[] };
-      setCustomCategories((prev) => [...prev, category]);
+      setCustomCategories((prev) => [
+        ...prev.filter(
+          (item) =>
+            item.id !== category.id &&
+            normalizeCategoryTitle(item.title) !== normalizeCategoryTitle(category.title),
+        ),
+        category,
+      ]);
       setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
       setDeletedCategories((prev) =>
         prev.filter(

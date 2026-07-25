@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardCheck,
@@ -117,11 +117,11 @@ const inlineInputClass =
   "w-full rounded-(--radius-xs) border border-(--color-sidebar-border) bg-white/80 px-2 py-1 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary) focus:shadow-(--shadow-level-1)";
 
 export default function Sidebar() {
-  const { syncEnabled, workspace } = useAuth();
+  const { syncEnabled, workspace, renameWorkspace } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToTrash, removeFromTrash } = useTrash();
+  const { trash, addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
   const { trackUsage } = useUsageStats();
@@ -146,9 +146,22 @@ export default function Sidebar() {
   const [newCategoryIcon, setNewCategoryIcon] = useState<CustomCategoryIcon>("folder");
   const [newCategoryTemplate, setNewCategoryTemplate] =
     useState<CustomCategoryTemplate>("checklist");
+  const [isEditingWorkspaceName, setIsEditingWorkspaceName] = useState(false);
+  const [workspaceNameValue, setWorkspaceNameValue] = useState("");
 
   const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
+  const deletedCategoriesForSidebar = [
+    ...deletedCategories,
+    ...trash
+      .filter((entry) => entry.category === "custom" && entry.entryType === "section")
+      .map((entry) => ({
+        id: entry.itemId,
+        title: entry.title,
+        deletedAt: entry.deletedAt,
+      })),
+  ];
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
+  const canRenameWorkspace = Boolean(workspace?.id.startsWith("workspace-"));
   const templateLabels = isPersonalWorkspace ? PERSONAL_TEMPLATE_LABEL_KEY : TEMPLATE_LABEL_KEY;
   const categoryNamePlaceholder = isPersonalWorkspace
     ? t("sidebar.personalCategoryNamePlaceholder")
@@ -157,6 +170,25 @@ export default function Sidebar() {
   function startRename(category: CustomCategory) {
     setEditingCategoryId(category.id);
     setRenameValue(category.title);
+  }
+
+  function startWorkspaceRename() {
+    if (!workspace) return;
+    setWorkspaceNameValue(workspace.name);
+    setIsEditingWorkspaceName(true);
+  }
+
+  async function handleWorkspaceRenameSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!workspace) return;
+    const nextName = workspaceNameValue.trim();
+    if (!nextName) return;
+    const result = await renameWorkspace(workspace.id, nextName);
+    if (!result.ok) {
+      showToast(t("workspace.renameError"));
+      return;
+    }
+    setIsEditingWorkspaceName(false);
   }
 
   function handleRenameSubmit(e: React.FormEvent, categoryId: string) {
@@ -259,7 +291,14 @@ export default function Sidebar() {
     showToast(t("sidebar.deletedCategoryToast", { title: category.title }), {
       label: t("common.undo"),
       onClick: () => {
-        setCustomCategories((prev) => [...prev, category]);
+        setCustomCategories((prev) => [
+          ...prev.filter(
+            (item) =>
+              item.id !== category.id &&
+              normalizeCategoryTitle(item.title) !== normalizeCategoryTitle(category.title),
+          ),
+          category,
+        ]);
         setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
         setDeletedCategories((prev) =>
           prev.filter(
@@ -276,15 +315,56 @@ export default function Sidebar() {
 
   return (
     <aside className="flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:w-64 md:border-r md:border-b-0 md:overflow-visible md:py-4">
-      <NavLink
-        to="/"
-        className="flex items-center gap-2 rounded-(--radius-md) px-2 py-1.5 text-[15px] font-semibold text-(--color-ink) hover:bg-(--color-sidebar-hover)"
-      >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
-          <Sparkles size={15} strokeWidth={2.25} />
-        </span>
-        {workspace?.name ?? "Lake Hills OA"}
-      </NavLink>
+      {isEditingWorkspaceName ? (
+        <form onSubmit={handleWorkspaceRenameSubmit} className="flex items-center gap-1 px-2 py-1.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
+            <Sparkles size={15} strokeWidth={2.25} />
+          </span>
+          <input
+            autoFocus
+            value={workspaceNameValue}
+            onChange={(e) => setWorkspaceNameValue(e.target.value)}
+            className={inlineInputClass}
+          />
+          <button
+            type="submit"
+            aria-label={t("common.save")}
+            className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-secondary) hover:bg-(--color-sidebar-hover)"
+          >
+            <Check size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsEditingWorkspaceName(false)}
+            aria-label={t("common.cancel")}
+            className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)"
+          >
+            <X size={14} />
+          </button>
+        </form>
+      ) : (
+        <div className="group/workspace flex items-center rounded-(--radius-md) hover:bg-(--color-sidebar-hover)">
+          <NavLink
+            to="/"
+            className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-[15px] font-semibold text-(--color-ink)"
+          >
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
+              <Sparkles size={15} strokeWidth={2.25} />
+            </span>
+            <span className="truncate">{workspace?.name ?? "Lake Hills OA"}</span>
+          </NavLink>
+          {canRenameWorkspace && (
+            <button
+              type="button"
+              onClick={startWorkspaceRename}
+              aria-label={t("workspace.rename")}
+              className="mr-1 shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition hover:text-(--color-secondary) md:opacity-0 md:group-hover/workspace:opacity-100"
+            >
+              <Pencil size={13} />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="hidden px-2 pb-4 text-[12px] text-(--color-ink-muted) md:block">
         {isPersonalWorkspace ? t("workspace.personalSubtitle") : "Lake Hills Acupuncture · Internal"}
@@ -312,7 +392,7 @@ export default function Sidebar() {
       </nav>
 
       <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
-        {filterDeletedCustomCategories(normalizedCustomCategories, deletedCategories).map((category) => {
+        {filterDeletedCustomCategories(normalizedCustomCategories, deletedCategoriesForSidebar).map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
             return (

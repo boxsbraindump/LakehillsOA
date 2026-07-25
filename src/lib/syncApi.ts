@@ -206,7 +206,7 @@ export async function fetchWorkspaces(): Promise<WorkspaceMeta[]> {
 }
 
 export async function createRemoteWorkspace(
-  name: string,
+  name?: string,
 ): Promise<{ ok: true; workspace: WorkspaceMeta } | { ok: false; error: string }> {
   if (!API_BASE) return { ok: false, error: "sync_not_configured" };
   try {
@@ -228,6 +228,42 @@ export async function createRemoteWorkspace(
     setCurrentWorkspace(body.workspace);
     markCurrentWorkspaceInitialized();
     return { ok: true, workspace: body.workspace };
+  } catch {
+    setSyncStatus("offline");
+    return { ok: false, error: "network_error" };
+  }
+}
+
+export async function renameRemoteWorkspace(
+  workspaceId: string,
+  name: string,
+): Promise<
+  | { ok: true; workspaces: WorkspaceMeta[]; workspace: WorkspaceMeta }
+  | { ok: false; error: string }
+> {
+  if (!API_BASE) return { ok: false, error: "sync_not_configured" };
+  try {
+    setSyncStatus("syncing");
+    const res = await fetch(`${API_BASE}/api/workspaces/${encodeURIComponent(workspaceId)}`, {
+      method: "PATCH",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+    const body = (await res.json()) as {
+      workspaces?: WorkspaceMeta[];
+      workspace?: WorkspaceMeta;
+      error?: string;
+    };
+    if (res.status === 401) onUnauthorized?.();
+    setSyncStatus(statusFromResponse(res));
+    if (!res.ok || !body.workspace) {
+      return { ok: false, error: body.error ?? "unknown_error" };
+    }
+    setCurrentWorkspace(body.workspace);
+    return { ok: true, workspaces: body.workspaces ?? [body.workspace], workspace: body.workspace };
   } catch {
     setSyncStatus("offline");
     return { ok: false, error: "network_error" };

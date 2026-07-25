@@ -3,6 +3,7 @@ import Fuse from "fuse.js";
 import { oaCases as seedCases } from "../data/oaCases";
 import { paymentEntries as seedPaymentEntries } from "../data/payments";
 import { useSyncedStorage } from "./useSyncedStorage";
+import { useTrash } from "./useTrash";
 import { useAuth } from "../components/AuthProvider";
 import {
   buildChecklistSearchDocs,
@@ -39,6 +40,7 @@ function latestChecklistDateByItemId(dayItemIds: Record<string, string[]>) {
 /** Rebuilds the search index whenever synced workspace data changes. */
 export function useSearchIndex() {
   const { syncEnabled, workspace } = useAuth();
+  const { trash } = useTrash();
   const includeSeedData = !syncEnabled || !workspace || workspace.isPrimary;
   const [customCategories] = useSyncedStorage<CustomCategory[]>("lh-custom-categories", []);
   const [customEntries] = useSyncedStorage<Record<string, CustomEntry[]>>("lh-custom-entries", {});
@@ -75,7 +77,20 @@ export function useSearchIndex() {
   const [hiddenPaymentIds] = useSyncedStorage<string[]>("lh-payments-hidden", []);
 
   return useMemo(() => {
-    const visibleCategories = filterDeletedCustomCategories(customCategories, deletedCategories);
+    const deletedCategoriesForSearch = [
+      ...deletedCategories,
+      ...trash
+        .filter((entry) => entry.category === "custom" && entry.entryType === "section")
+        .map((entry) => ({
+          id: entry.itemId,
+          title: entry.title,
+          deletedAt: entry.deletedAt,
+        })),
+    ];
+    const visibleCategories = filterDeletedCustomCategories(
+      customCategories,
+      deletedCategoriesForSearch,
+    );
     const liveChecklistSections: ChecklistSection[] = checklistSections.map((section) => ({
       id: section.id,
       title: section.title,
@@ -116,5 +131,6 @@ export function useSearchIndex() {
     includeSeedData,
     oaCaseOverrides,
     paymentOverrides,
+    trash,
   ]);
 }

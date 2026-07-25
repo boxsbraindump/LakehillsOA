@@ -170,6 +170,8 @@ export const translations = {
   "category.payments": { zh: "Payments", en: "Payments" },
   "category.custom": { zh: "自定义", en: "Custom" },
   "workspace.personalSubtitle": { zh: "Personal admin · Private", en: "Personal admin · Private" },
+  "workspace.rename": { zh: "修改工作区名称", en: "Rename workspace" },
+  "workspace.renameError": { zh: "工作区名称保存失败，请稍后再试", en: "Could not save workspace name. Try again." },
 
   "checklist.title": { zh: "前台工作 Checklist", en: "Front Desk Checklist" },
   "checklist.personalTitle": { zh: "行动清单", en: "Action checklist" },
