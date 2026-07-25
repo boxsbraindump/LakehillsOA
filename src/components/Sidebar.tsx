@@ -1,7 +1,6 @@
 import {
   Fragment,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -127,17 +126,19 @@ const inlineInputClass =
 
 interface CategoryDragState {
   id: string;
-  pointerId: number;
-  startY: number;
   currentY: number;
   offsetY: number;
-  hasMoved: boolean;
   rect: {
     top: number;
     left: number;
     width: number;
     height: number;
   };
+}
+
+interface PendingCategoryDragState extends CategoryDragState {
+  pointerId: number;
+  startY: number;
 }
 
 export default function Sidebar() {
@@ -175,6 +176,7 @@ export default function Sidebar() {
   const [categoryDrag, setCategoryDrag] = useState<CategoryDragState | null>(null);
   const [categoryDropTargetId, setCategoryDropTargetId] = useState<string | null>(null);
   const categoryRefs = useRef(new Map<string, HTMLDivElement>());
+  const pendingCategoryDrag = useRef<PendingCategoryDragState | null>(null);
   const dragClickBlocked = useRef(false);
 
   const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
@@ -310,7 +312,7 @@ export default function Sidebar() {
 
   function categoryDropPreview(category: CustomCategory) {
     if (
-      !categoryDrag?.hasMoved ||
+      !categoryDrag ||
       categoryDropTargetId !== category.id ||
       categoryDrag.id === category.id
     ) {
@@ -342,49 +344,58 @@ export default function Sidebar() {
     if (target.closest("button,input,textarea,select")) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setCategoryDrag({
+    const pending: PendingCategoryDragState = {
       id: category.id,
       pointerId: event.pointerId,
       startY: event.clientY,
       currentY: event.clientY,
       offsetY: event.clientY - rect.top,
-      hasMoved: false,
       rect: {
         top: rect.top,
         left: rect.left,
         width: rect.width,
         height: rect.height,
       },
-    });
+    };
+    let isDragging = false;
+    pendingCategoryDrag.current = pending;
     setCategoryDropTargetId(null);
-  }
 
-  useEffect(() => {
-    if (!categoryDrag) return;
-    const activeDrag = categoryDrag;
+    function cleanup() {
+      pendingCategoryDrag.current = null;
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    }
 
     function handlePointerMove(event: globalThis.PointerEvent) {
-      if (event.pointerId !== activeDrag.pointerId) return;
-      const distance = Math.abs(event.clientY - activeDrag.startY);
-      const hasMoved = distance > 4;
-      if (hasMoved) dragClickBlocked.current = true;
-      setCategoryDrag((current) =>
-        current ? { ...current, currentY: event.clientY, hasMoved: current.hasMoved || hasMoved } : current,
-      );
-      if (hasMoved) setCategoryDropTargetId(calculateCategoryDropTarget(event.clientY, activeDrag.id));
+      if (event.pointerId !== pending.pointerId) return;
+      const distance = Math.abs(event.clientY - pending.startY);
+      if (!isDragging && distance <= 6) return;
+      event.preventDefault();
+      isDragging = true;
+      dragClickBlocked.current = true;
+      pending.currentY = event.clientY;
+      setCategoryDrag({
+        id: pending.id,
+        currentY: event.clientY,
+        offsetY: pending.offsetY,
+        rect: pending.rect,
+      });
+      setCategoryDropTargetId(calculateCategoryDropTarget(event.clientY, pending.id));
     }
 
     function handlePointerUp(event: globalThis.PointerEvent) {
-      if (event.pointerId !== activeDrag.pointerId) return;
-      if (activeDrag.hasMoved || Math.abs(event.clientY - activeDrag.startY) > 4) {
-        const targetId = calculateCategoryDropTarget(event.clientY, activeDrag.id);
+      if (event.pointerId !== pending.pointerId) return;
+      if (isDragging) {
+        const targetId = calculateCategoryDropTarget(event.clientY, pending.id);
         if (targetId === "__end__") {
-          moveCategoryToEnd(activeDrag.id);
-        } else if (targetId && targetId !== activeDrag.id) {
-          moveCategoryBefore(activeDrag.id, targetId);
+          moveCategoryToEnd(pending.id);
+        } else if (targetId && targetId !== pending.id) {
+          moveCategoryBefore(pending.id, targetId);
         }
       }
+      cleanup();
       setCategoryDrag(null);
       setCategoryDropTargetId(null);
       window.setTimeout(() => {
@@ -395,12 +406,7 @@ export default function Sidebar() {
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
     window.addEventListener("pointercancel", handlePointerUp);
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
-    };
-  }, [calculateCategoryDropTarget, categoryDrag, moveCategoryBefore, moveCategoryToEnd]);
+  }
 
   async function handleDeleteCategory(category: CustomCategory) {
     const normalizedTitle = normalizeCategoryTitle(category.title);
@@ -603,7 +609,7 @@ export default function Sidebar() {
                 }}
                 className={[
                   "group/cat flex shrink-0 cursor-grab touch-none select-none items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
-                  categoryDrag?.hasMoved && categoryDrag.id === category.id ? "opacity-0" : "",
+                  categoryDrag?.id === category.id ? "opacity-0" : "",
                   isCategoryActive
                     ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
                     : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
@@ -666,7 +672,7 @@ export default function Sidebar() {
           );
         })}
 
-        {categoryDrag?.hasMoved && (
+        {categoryDrag && (
           <div
             className="relative h-3"
           >
@@ -760,7 +766,7 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {categoryDrag?.hasMoved && draggedCategory && (() => {
+      {categoryDrag && draggedCategory && (() => {
         const Icon = ICON_MAP[draggedCategory.icon];
         const isDraggedActive =
           decodeURIComponent(location.pathname) === `/custom/${draggedCategory.id}`;
