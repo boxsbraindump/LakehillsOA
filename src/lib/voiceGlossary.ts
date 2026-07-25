@@ -41,11 +41,48 @@ const PHRASE_REPLACEMENTS: Array<[RegExp, string]> = [
 
 const UPPERCASE_TERMS = ["EOB", "ERA", "CPT", "ICD", "NPI", "DOS"];
 
-export function normalizeVoiceTranscript(transcript: string) {
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function spacedCamelCase(value: string) {
+  return value.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
+function replaceLatinTerm(text: string, patternText: string, replacement: string) {
+  const flexiblePattern = escapeRegExp(patternText.trim()).replace(/\\\s+/g, "[\\s-]+");
+  const pattern = new RegExp(`(^|[^A-Za-z0-9])(${flexiblePattern})(?=$|[^A-Za-z0-9])`, "gi");
+  return text.replace(pattern, (_match, prefix: string) => `${prefix}${replacement}`);
+}
+
+function isAscii(value: string) {
+  return Array.from(value).every((char) => char.charCodeAt(0) <= 127);
+}
+
+function normalizeCustomTerms(transcript: string, customTerms: string[]) {
+  let normalized = transcript;
+  const terms = Array.from(
+    new Set(customTerms.map((term) => term.replace(/\s+/g, " ").trim()).filter(Boolean)),
+  ).sort((a, b) => b.length - a.length);
+
+  for (const term of terms) {
+    if (isAscii(term)) {
+      normalized = replaceLatinTerm(normalized, term, term);
+      const spaced = spacedCamelCase(term);
+      if (spaced !== term) normalized = replaceLatinTerm(normalized, spaced, term);
+    } else {
+      normalized = normalized.replace(new RegExp(escapeRegExp(term), "g"), term);
+    }
+  }
+  return normalized;
+}
+
+export function normalizeVoiceTranscript(transcript: string, customTerms: string[] = []) {
   let normalized = transcript.trim();
   for (const [pattern, replacement] of PHRASE_REPLACEMENTS) {
     normalized = normalized.replace(pattern, replacement);
   }
+  normalized = normalizeCustomTerms(normalized, customTerms);
   normalized = normalized.replace(/\s+/g, " ").trim();
   for (const term of UPPERCASE_TERMS) {
     normalized = normalized.replace(new RegExp(`\\b${term}\\b`, "gi"), term);

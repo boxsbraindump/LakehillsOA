@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Mic, Square } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
+import { useVoiceGlossaryTerms } from "../hooks/useVoiceGlossaryTerms";
 import { normalizeVoiceTranscript } from "../lib/voiceGlossary";
 
 interface SpeechRecognitionResultLike {
@@ -41,6 +42,7 @@ function getSpeechRecognition() {
 
 export default function VoiceInputButton({ onTranscript }: { onTranscript: (text: string) => void }) {
   const { t, lang } = useLanguage();
+  const customTerms = useVoiceGlossaryTerms();
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [isListening, setIsListening] = useState(false);
   const Recognition = typeof window === "undefined" ? undefined : getSpeechRecognition();
@@ -73,7 +75,7 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
           parts.push((result[j] ?? result.item(j)).transcript);
         }
       }
-      const transcript = normalizeVoiceTranscript(parts.join(" "));
+      const transcript = normalizeVoiceTranscript(parts.join(" "), customTerms);
       if (transcript) onTranscript(transcript);
     };
     recognition.onerror = () => setIsListening(false);
