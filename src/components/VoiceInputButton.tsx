@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Mic, Square } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
+import { normalizeVoiceTranscript } from "../lib/voiceGlossary";
 
 interface SpeechRecognitionResultLike {
   readonly length: number;
@@ -72,7 +73,7 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
           parts.push((result[j] ?? result.item(j)).transcript);
         }
       }
-      const transcript = parts.join(" ").trim();
+      const transcript = normalizeVoiceTranscript(parts.join(" "));
       if (transcript) onTranscript(transcript);
     };
     recognition.onerror = () => setIsListening(false);
