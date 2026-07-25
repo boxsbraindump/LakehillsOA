@@ -45,7 +45,9 @@ export default function Home() {
 
     for (const entry of usageEntries) {
       if (entry.path === "/" || entry.path === "/settings" || entry.path === "/trash") continue;
-      const chip = docsByPath.get(entry.path) ?? entry;
+      const indexedDoc = docsByPath.get(entry.path);
+      if (isPersonalWorkspace && !indexedDoc) continue;
+      const chip = indexedDoc ?? entry;
       if (seenPaths.has(chip.path)) continue;
       chips.push(chip);
       seenPaths.add(chip.path);

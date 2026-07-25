@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useLocalStorage } from "./useLocalStorage";
+import { getScopedStorageKey } from "../lib/syncApi";
 import type { Category, SearchDoc } from "../lib/types";
 
 const USAGE_STATS_KEY = "lh-usage-stats";
@@ -22,7 +23,10 @@ export type UsageTarget = Pick<
 type UsageStats = Record<string, UsageEntry>;
 
 export function useUsageStats() {
-  const [stats, setStats] = useLocalStorage<UsageStats>(USAGE_STATS_KEY, {});
+  const [stats, setStats] = useLocalStorage<UsageStats>(
+    getScopedStorageKey(USAGE_STATS_KEY),
+    {},
+  );
 
   const trackUsage = useCallback(
     (target: UsageTarget) => {
