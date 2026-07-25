@@ -128,7 +128,7 @@ export default function Sidebar() {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { trash, addToTrash, removeFromTrash } = useTrash();
+  const { trash, setTrash, addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
   const { trackUsage } = useUsageStats();
@@ -211,20 +211,37 @@ export default function Sidebar() {
     e.preventDefault();
     if (!renameValue.trim()) return;
     const normalizedTitle = normalizeCategoryTitle(renameValue);
-    const hasDuplicateName = [
-      ...visibleCustomCategories
-        .filter((category) => category.id !== categoryId)
-        .map((category) => category.title),
-      ...deletedCategoriesForSidebar
-        .filter((category) => category.id !== categoryId)
-        .map((category) => category.title),
-    ].some((title) => normalizeCategoryTitle(title) === normalizedTitle);
+    const hasDuplicateName = visibleCustomCategories
+      .filter((category) => category.id !== categoryId)
+      .some((category) => normalizeCategoryTitle(category.title) === normalizedTitle);
     if (hasDuplicateName) {
       showToast(t("sidebar.duplicateCategoryName"));
       return;
     }
     setCustomCategories((prev) =>
-      prev.map((c) => (c.id === categoryId ? { ...c, title: renameValue.trim() } : c)),
+      prev
+        .filter(
+          (c) =>
+            c.id === categoryId ||
+            normalizeCategoryTitle(c.title) !== normalizedTitle,
+        )
+        .map((c) => (c.id === categoryId ? { ...c, title: renameValue.trim() } : c)),
+    );
+    setDeletedCategories((prev) =>
+      prev.filter(
+        (deleted) =>
+          deleted.id !== categoryId && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
+      ),
+    );
+    setTrash((prev) =>
+      prev.filter(
+        (entry) =>
+          !(
+            entry.category === "custom" &&
+            entry.entryType === "section" &&
+            (entry.itemId === categoryId || normalizeCategoryTitle(entry.title) === normalizedTitle)
+          ),
+      ),
     );
     setEditingCategoryId(null);
   }
@@ -234,16 +251,18 @@ export default function Sidebar() {
     if (!newCategoryTitle.trim()) return;
     const id = slugify(newCategoryTitle, "category");
     const normalizedTitle = normalizeCategoryTitle(newCategoryTitle);
-    const hasDuplicateName = [
-      ...visibleCustomCategories.map((category) => category.title),
-      ...deletedCategoriesForSidebar.map((category) => category.title),
-    ].some((title) => normalizeCategoryTitle(title) === normalizedTitle);
+    const hasDuplicateName = visibleCustomCategories.some(
+      (category) => normalizeCategoryTitle(category.title) === normalizedTitle,
+    );
     if (hasDuplicateName) {
       showToast(t("sidebar.duplicateCategoryName"));
       return;
     }
     setCustomCategories((prev) => [
-      ...prev,
+      ...prev.filter(
+        (category) =>
+          category.id !== id && normalizeCategoryTitle(category.title) !== normalizedTitle,
+      ),
       {
         id,
         title: newCategoryTitle.trim(),
@@ -251,7 +270,32 @@ export default function Sidebar() {
         template: newCategoryTemplate,
       },
     ]);
-    setDeletedCategories((prev) => prev.filter((deleted) => deleted.id !== id));
+    setCustomEntries((prev) => {
+      const next = { ...prev };
+      for (const category of customCategories) {
+        if (category.id === id || normalizeCategoryTitle(category.title) === normalizedTitle) {
+          delete next[category.id];
+        }
+      }
+      delete next[id];
+      return next;
+    });
+    setDeletedCategories((prev) =>
+      prev.filter(
+        (deleted) =>
+          deleted.id !== id && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
+      ),
+    );
+    setTrash((prev) =>
+      prev.filter(
+        (entry) =>
+          !(
+            entry.category === "custom" &&
+            entry.entryType === "section" &&
+            (entry.itemId === id || normalizeCategoryTitle(entry.title) === normalizedTitle)
+          ),
+      ),
+    );
     setIsAddingCategory(false);
     setNewCategoryTitle("");
     setNewCategoryIcon("folder");

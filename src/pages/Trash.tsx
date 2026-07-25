@@ -123,6 +123,28 @@ export default function Trash() {
       }))
     )
       return;
+    if (entry.category === "custom" && entry.entryType === "section") {
+      const normalizedTitle = normalizeCategoryTitle(entry.title);
+      setCustomCategories((prev) =>
+        prev.filter(
+          (category) =>
+            category.id !== entry.itemId &&
+            normalizeCategoryTitle(category.title) !== normalizedTitle,
+        ),
+      );
+      setCustomEntries((prev) => {
+        const next = { ...prev };
+        delete next[entry.itemId];
+        return next;
+      });
+      setDeletedCategories((prev) =>
+        prev.filter(
+          (deleted) =>
+            deleted.id !== entry.itemId &&
+            normalizeCategoryTitle(deleted.title) !== normalizedTitle,
+        ),
+      );
+    }
     removeFromTrash(entry.trashId);
   }
 
