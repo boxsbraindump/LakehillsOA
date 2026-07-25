@@ -2,10 +2,9 @@ import {
   Fragment,
   useCallback,
   useMemo,
-  useRef,
   useState,
+  type DragEvent,
   type FormEvent,
-  type PointerEvent,
 } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -124,23 +123,6 @@ function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
 const inlineInputClass =
   "w-full rounded-(--radius-xs) border border-(--color-sidebar-border) bg-white/80 px-2 py-1 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary) focus:shadow-(--shadow-level-1)";
 
-interface CategoryDragState {
-  id: string;
-  currentY: number;
-  offsetY: number;
-  rect: {
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-  };
-}
-
-interface PendingCategoryDragState extends CategoryDragState {
-  pointerId: number;
-  startY: number;
-}
-
 export default function Sidebar() {
   const { syncEnabled, workspace, renameWorkspace } = useAuth();
   const { t } = useLanguage();
@@ -173,11 +155,8 @@ export default function Sidebar() {
     useState<CustomCategoryTemplate>("checklist");
   const [isEditingWorkspaceName, setIsEditingWorkspaceName] = useState(false);
   const [workspaceNameValue, setWorkspaceNameValue] = useState("");
-  const [categoryDrag, setCategoryDrag] = useState<CategoryDragState | null>(null);
-  const [categoryDropTargetId, setCategoryDropTargetId] = useState<string | null>(null);
-  const categoryRefs = useRef(new Map<string, HTMLDivElement>());
-  const pendingCategoryDrag = useRef<PendingCategoryDragState | null>(null);
-  const dragClickBlocked = useRef(false);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
 
   const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
   const deletedCategoriesForSidebar = useMemo(
@@ -310,12 +289,40 @@ export default function Sidebar() {
     });
   }, [deletedCategoriesForSidebar, setCustomCategories]);
 
+  function categoryDropProps(category: CustomCategory) {
+    return {
+      draggable: editingCategoryId !== category.id,
+      onDragStart: (event: DragEvent<HTMLElement>) => {
+        if (editingCategoryId === category.id) {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", category.id);
+        setDraggedCategoryId(category.id);
+      },
+      onDragOver: (event: DragEvent<HTMLElement>) => {
+        if (!draggedCategoryId || draggedCategoryId === category.id) return;
+        event.preventDefault();
+        setDragOverCategoryId(category.id);
+      },
+      onDrop: (event: DragEvent<HTMLElement>) => {
+        event.preventDefault();
+        if (draggedCategoryId && draggedCategoryId !== category.id) {
+          moveCategoryBefore(draggedCategoryId, category.id);
+        }
+        setDraggedCategoryId(null);
+        setDragOverCategoryId(null);
+      },
+      onDragEnd: () => {
+        setDraggedCategoryId(null);
+        setDragOverCategoryId(null);
+      },
+    };
+  }
+
   function categoryDropPreview(category: CustomCategory) {
-    if (
-      !categoryDrag ||
-      categoryDropTargetId !== category.id ||
-      categoryDrag.id === category.id
-    ) {
+    if (!draggedCategoryId || dragOverCategoryId !== category.id || draggedCategoryId === category.id) {
       return null;
     }
 
@@ -324,88 +331,6 @@ export default function Sidebar() {
         <span className="absolute top-1/2 right-1 left-1 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
       </div>
     );
-  }
-
-  const calculateCategoryDropTarget = useCallback((pointerY: number, draggingId: string) => {
-    const visibleIds = visibleCustomCategories.map((category) => category.id);
-    for (const id of visibleIds) {
-      if (id === draggingId) continue;
-      const node = categoryRefs.current.get(id);
-      if (!node) continue;
-      const rect = node.getBoundingClientRect();
-      if (pointerY < rect.top + rect.height / 2) return id;
-    }
-    return "__end__";
-  }, [visibleCustomCategories]);
-
-  function startCategoryPointerDrag(event: PointerEvent<HTMLDivElement>, category: CustomCategory) {
-    if (event.button !== 0 || editingCategoryId === category.id) return;
-    const target = event.target as HTMLElement;
-    if (target.closest("button,input,textarea,select")) return;
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pending: PendingCategoryDragState = {
-      id: category.id,
-      pointerId: event.pointerId,
-      startY: event.clientY,
-      currentY: event.clientY,
-      offsetY: event.clientY - rect.top,
-      rect: {
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      },
-    };
-    let isDragging = false;
-    pendingCategoryDrag.current = pending;
-    setCategoryDropTargetId(null);
-
-    function cleanup() {
-      pendingCategoryDrag.current = null;
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
-    }
-
-    function handlePointerMove(event: globalThis.PointerEvent) {
-      if (event.pointerId !== pending.pointerId) return;
-      const distance = Math.abs(event.clientY - pending.startY);
-      if (!isDragging && distance <= 6) return;
-      event.preventDefault();
-      isDragging = true;
-      dragClickBlocked.current = true;
-      pending.currentY = event.clientY;
-      setCategoryDrag({
-        id: pending.id,
-        currentY: event.clientY,
-        offsetY: pending.offsetY,
-        rect: pending.rect,
-      });
-      setCategoryDropTargetId(calculateCategoryDropTarget(event.clientY, pending.id));
-    }
-
-    function handlePointerUp(event: globalThis.PointerEvent) {
-      if (event.pointerId !== pending.pointerId) return;
-      if (isDragging) {
-        const targetId = calculateCategoryDropTarget(event.clientY, pending.id);
-        if (targetId === "__end__") {
-          moveCategoryToEnd(pending.id);
-        } else if (targetId && targetId !== pending.id) {
-          moveCategoryBefore(pending.id, targetId);
-        }
-      }
-      cleanup();
-      setCategoryDrag(null);
-      setCategoryDropTargetId(null);
-      window.setTimeout(() => {
-        dragClickBlocked.current = false;
-      }, 0);
-    }
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
   }
 
   async function handleDeleteCategory(category: CustomCategory) {
@@ -485,10 +410,6 @@ export default function Sidebar() {
 
     if (decodeURIComponent(location.pathname) === `/custom/${category.id}`) navigate("/");
   }
-
-  const draggedCategory = categoryDrag
-    ? visibleCustomCategories.find((category) => category.id === categoryDrag.id)
-    : null;
 
   return (
     <aside className="flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:w-64 md:border-r md:border-b-0 md:overflow-visible md:py-4">
@@ -603,23 +524,14 @@ export default function Sidebar() {
             <Fragment key={category.id}>
               {categoryDropPreview(category)}
               <div
-                ref={(node) => {
-                  if (node) categoryRefs.current.set(category.id, node);
-                  else categoryRefs.current.delete(category.id);
-                }}
+                {...categoryDropProps(category)}
                 className={[
-                  "group/cat flex shrink-0 cursor-grab touch-none select-none items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
-                  categoryDrag?.id === category.id ? "opacity-0" : "",
+                  "group/cat flex shrink-0 cursor-grab items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
+                  draggedCategoryId === category.id ? "opacity-60" : "",
                   isCategoryActive
                     ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
                     : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
                 ].join(" ")}
-                onPointerDown={(event) => startCategoryPointerDrag(event, category)}
-                onClickCapture={(event) => {
-                  if (!dragClickBlocked.current) return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
               >
               <NavLink
                 to={`/custom/${category.id}`}
@@ -672,11 +584,21 @@ export default function Sidebar() {
           );
         })}
 
-        {categoryDrag && (
+        {draggedCategoryId && (
           <div
             className="relative h-3"
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOverCategoryId("__end__");
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              moveCategoryToEnd(draggedCategoryId);
+              setDraggedCategoryId(null);
+              setDragOverCategoryId(null);
+            }}
           >
-            {categoryDropTargetId === "__end__" && (
+            {dragOverCategoryId === "__end__" && (
               <span className="absolute top-1/2 right-1 left-1 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
             )}
           </div>
@@ -765,32 +687,6 @@ export default function Sidebar() {
           </button>
         )}
       </nav>
-
-      {categoryDrag && draggedCategory && (() => {
-        const Icon = ICON_MAP[draggedCategory.icon];
-        const isDraggedActive =
-          decodeURIComponent(location.pathname) === `/custom/${draggedCategory.id}`;
-        return (
-          <div
-            className={[
-              "pointer-events-none fixed z-50 flex items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] whitespace-nowrap shadow-(--shadow-level-2) ring-1 ring-(--color-primary)/20",
-              isDraggedActive
-                ? "bg-(--color-sidebar-active) font-medium text-white"
-                : "bg-white text-(--color-ink-secondary)",
-            ].join(" ")}
-            style={{
-              left: categoryDrag.rect.left,
-              top: categoryDrag.currentY - categoryDrag.offsetY,
-              width: categoryDrag.rect.width,
-              minHeight: categoryDrag.rect.height,
-              transform: "scale(1.02)",
-            }}
-          >
-            <Icon size={16} strokeWidth={2} className="shrink-0" />
-            <span className="min-w-0 flex-1 truncate">{draggedCategory.title}</span>
-          </div>
-        );
-      })()}
 
       <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-auto md:flex-col md:overflow-visible md:border-t">
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
