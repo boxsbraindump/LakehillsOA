@@ -12,10 +12,12 @@ export default function PortalFields({
   portals,
   platforms,
   setPortals,
+  personalCopy = false,
 }: {
   portals: PaymentPortal[];
   platforms: Platform[];
   setPortals: Dispatch<SetStateAction<PaymentPortal[]>>;
+  personalCopy?: boolean;
 }) {
   const { t } = useLanguage();
 
@@ -104,12 +106,20 @@ export default function PortalFields({
                   <>
                     <div>
                       <label className="mb-1 block text-[11px] font-semibold text-(--color-ink-faint)">
-                        {t("paymentEntryForm.portalNamePlaceholder")}
+                        {t(
+                          personalCopy
+                            ? "paymentEntryForm.personalPortalNamePlaceholder"
+                            : "paymentEntryForm.portalNamePlaceholder",
+                        )}
                       </label>
                       <input
                         value={portal.name}
                         onChange={(e) => updatePortal(i, "name", e.target.value)}
-                        placeholder={t("paymentEntryForm.portalNamePlaceholder")}
+                        placeholder={t(
+                          personalCopy
+                            ? "paymentEntryForm.personalPortalNamePlaceholder"
+                            : "paymentEntryForm.portalNamePlaceholder",
+                        )}
                         className={inputClass}
                       />
                     </div>

@@ -142,7 +142,7 @@ export default function OACaseForm({
       <input
         value={tags}
         onChange={(e) => setTags(e.target.value)}
-        placeholder="denial, prior authorization"
+        placeholder={t("oaCaseForm.tagsPlaceholder")}
         className={inputClass}
       />
 

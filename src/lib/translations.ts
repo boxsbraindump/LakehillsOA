@@ -274,6 +274,10 @@ export const translations = {
   "oaCaseForm.resolution": { zh: "处理方式", en: "Resolution" },
   "oaCaseForm.resolutionPlaceholder": { zh: "怎么解决的", en: "How it was resolved" },
   "oaCaseForm.tags": { zh: "标签（逗号分隔，可选）", en: "Tags (comma-separated, optional)" },
+  "oaCaseForm.tagsPlaceholder": {
+    zh: "例如 denial, prior authorization",
+    en: "e.g. denial, prior authorization",
+  },
 
   "customCategory.searchPlaceholder": { zh: "按标题、标签、备注搜索…", en: "Search by title, tag, or note…" },
   "customCategory.noMatches": { zh: "没有匹配的记录", en: "No matching entries" },
@@ -286,6 +290,10 @@ export const translations = {
 
   "customEntryForm.title": { zh: "标题", en: "Title" },
   "customEntryForm.titlePlaceholder": { zh: "例如 Aetna", en: "e.g. Aetna" },
+  "customEntryForm.personalTitlePlaceholder": {
+    zh: "例如 项目灵感 / 报名流程 / 账户整理",
+    en: "e.g. project idea / application steps / account notes",
+  },
   "customEntryForm.checklistItem": { zh: "Checklist 事项", en: "Checklist item" },
   "customEntryForm.detail": { zh: "补充说明（可选）", en: "Detail (optional)" },
   "customEntryForm.notes": { zh: "备注（可选）", en: "Notes (optional)" },
@@ -293,9 +301,25 @@ export const translations = {
     zh: "例如 隶属于 Premera，走 Premera 网络查询",
     en: "e.g. Underwritten by Premera — look it up under Premera's network",
   },
+  "customEntryForm.personalSummaryPlaceholder": {
+    zh: "这条资料是关于什么的",
+    en: "What this note is about",
+  },
+  "customEntryForm.personalResolutionPlaceholder": {
+    zh: "下一步、操作方式或结论",
+    en: "Next step, process, or conclusion",
+  },
   "customEntryForm.tags": { zh: "标签（逗号分隔，可选）", en: "Tags (comma-separated, optional)" },
+  "customEntryForm.personalTagsPlaceholder": {
+    zh: "例如 idea, admin, project",
+    en: "e.g. idea, admin, project",
+  },
   "linkEntryForm.title": { zh: "名称", en: "Name" },
   "linkEntryForm.titlePlaceholder": { zh: "例如 Job applications / DMV / 银行账户", en: "e.g. Job applications / DMV / bank account" },
+  "linkEntryForm.notesPlaceholder": {
+    zh: "这个链接用来做什么、什么时候需要打开…",
+    en: "What this link is for, when to use it…",
+  },
 
   "payments.title": { zh: "Where to Find Payments", en: "Where to Find Payments" },
   "payments.subtitle": {
@@ -326,6 +350,10 @@ export const translations = {
   "paymentEntryForm.portalNamePlaceholder": {
     zh: "平台名称，如 Availity",
     en: "Portal name, e.g. Availity",
+  },
+  "paymentEntryForm.personalPortalNamePlaceholder": {
+    zh: "网站或 App 名称，例如 Notion / GitHub / DMV",
+    en: "Site or app name, e.g. Notion / GitHub / DMV",
   },
   "paymentEntryForm.addPortal": { zh: "添加一个入口", en: "Add a portal" },
   "paymentEntryForm.notes": { zh: "备注（可选）", en: "Notes (optional)" },

@@ -177,7 +177,11 @@ export default function CustomEntryForm({
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={t("oaCaseForm.titlePlaceholder")}
+            placeholder={t(
+              isPersonalWorkspace
+                ? "customEntryForm.personalTitlePlaceholder"
+                : "oaCaseForm.titlePlaceholder",
+            )}
             className={`${inputClass} mb-3`}
           />
 
@@ -221,7 +225,11 @@ export default function CustomEntryForm({
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={2}
-            placeholder={t("oaCaseForm.summaryPlaceholder")}
+            placeholder={t(
+              isPersonalWorkspace
+                ? "customEntryForm.personalSummaryPlaceholder"
+                : "oaCaseForm.summaryPlaceholder",
+            )}
             className={`${inputClass} mb-3`}
           />
 
@@ -235,7 +243,11 @@ export default function CustomEntryForm({
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
             rows={3}
-            placeholder={t("oaCaseForm.resolutionPlaceholder")}
+            placeholder={t(
+              isPersonalWorkspace
+                ? "customEntryForm.personalResolutionPlaceholder"
+                : "oaCaseForm.resolutionPlaceholder",
+            )}
             className={`${inputClass} mb-3`}
           />
 
@@ -245,7 +257,11 @@ export default function CustomEntryForm({
           <input
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="denial, prior authorization"
+            placeholder={t(
+              isPersonalWorkspace
+                ? "customEntryForm.personalTagsPlaceholder"
+                : "oaCaseForm.tagsPlaceholder",
+            )}
             className={inputClass}
           />
         </>
@@ -287,7 +303,12 @@ export default function CustomEntryForm({
             />
           )}
 
-          <PortalFields portals={portals} platforms={platforms} setPortals={setPortals} />
+          <PortalFields
+            portals={portals}
+            platforms={platforms}
+            setPortals={setPortals}
+            personalCopy={isPersonalWorkspace}
+          />
 
           <div className="mt-3 mb-1 flex items-center justify-between gap-2">
             <label className="text-[12px] font-semibold text-(--color-ink-faint)">
@@ -299,7 +320,11 @@ export default function CustomEntryForm({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            placeholder={t("paymentEntryForm.notesPlaceholder")}
+            placeholder={t(
+              isPersonalWorkspace
+                ? "linkEntryForm.notesPlaceholder"
+                : "paymentEntryForm.notesPlaceholder",
+            )}
             className={inputClass}
           />
         </>
