@@ -6,6 +6,8 @@ export const translations = {
   "sidebar.oaCases": { zh: "OA Cases", en: "OA Cases" },
   "sidebar.payments": { zh: "Where to Find Payments", en: "Where to Find Payments" },
   "sidebar.trash": { zh: "垃圾桶", en: "Trash" },
+  "sidebar.groupDaily": { zh: "日常", en: "Daily" },
+  "sidebar.groupFolders": { zh: "我的文件夹", en: "My folders" },
   "sidebar.addCategory": { zh: "添加分类", en: "Add category" },
   "sidebar.categoryNamePlaceholder": { zh: "例如 查保险", en: "e.g. Check insurance" },
   "sidebar.personalCategoryNamePlaceholder": { zh: "例如 SOP、客户资料、链接库", en: "e.g. SOP, client notes, link hub" },
