@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type DragEvent,
   type FormEvent,
@@ -158,6 +159,9 @@ export default function Sidebar() {
   const [workspaceNameValue, setWorkspaceNameValue] = useState("");
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
+  const [dragOverAfter, setDragOverAfter] = useState(false);
+  /** Set while the pointer is held on a row's icons, so pressing one can't start a drag. */
+  const pointerOnControlRef = useRef(false);
 
   // Backfill templates for folders created before templates were stored, once, in storage —
   // so nothing has to guess a folder's shape from its title at render time.
@@ -266,26 +270,35 @@ export default function Sidebar() {
     setNewCategoryTemplate("checklist");
   }
 
-  const moveCategoryBefore = useCallback((draggedId: string, beforeId: string) => {
-    if (draggedId === beforeId) return;
-    setCustomCategories((prev) => {
-      const visible = filterDeletedCustomCategories(prev, deletedCategoriesForSidebar);
-      const dragged = visible.find((category) => category.id === draggedId);
-      if (!dragged || !visible.some((category) => category.id === beforeId)) return prev;
+  /**
+   * `placeAfter` comes from which half of the target row the pointer is over. Without it
+   * every drop inserted before the target, so dragging a folder onto the row directly
+   * below it put it back exactly where it started — dragging downwards looked broken.
+   */
+  const moveCategoryRelativeTo = useCallback(
+    (draggedId: string, targetId: string, placeAfter: boolean) => {
+      if (draggedId === targetId) return;
+      setCustomCategories((prev) => {
+        const visible = filterDeletedCustomCategories(prev, deletedCategoriesForSidebar);
+        const dragged = visible.find((category) => category.id === draggedId);
+        if (!dragged || !visible.some((category) => category.id === targetId)) return prev;
 
-      const hidden = prev.filter((category) => !visible.some((item) => item.id === category.id));
-      const withoutDragged = visible.filter((category) => category.id !== draggedId);
-      const targetIndex = withoutDragged.findIndex((category) => category.id === beforeId);
-      if (targetIndex < 0) return prev;
+        const hidden = prev.filter((category) => !visible.some((item) => item.id === category.id));
+        const withoutDragged = visible.filter((category) => category.id !== draggedId);
+        const targetIndex = withoutDragged.findIndex((category) => category.id === targetId);
+        if (targetIndex < 0) return prev;
 
-      return [
-        ...withoutDragged.slice(0, targetIndex),
-        dragged,
-        ...withoutDragged.slice(targetIndex),
-        ...hidden,
-      ];
-    });
-  }, [deletedCategoriesForSidebar, setCustomCategories]);
+        const insertAt = placeAfter ? targetIndex + 1 : targetIndex;
+        return [
+          ...withoutDragged.slice(0, insertAt),
+          dragged,
+          ...withoutDragged.slice(insertAt),
+          ...hidden,
+        ];
+      });
+    },
+    [deletedCategoriesForSidebar, setCustomCategories],
+  );
 
   const moveCategoryToEnd = useCallback((draggedId: string) => {
     setCustomCategories((prev) => {
@@ -297,11 +310,19 @@ export default function Sidebar() {
     });
   }, [deletedCategoriesForSidebar, setCustomCategories]);
 
+  function isAfterMidpoint(event: DragEvent<HTMLElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return event.clientY > rect.top + rect.height / 2;
+  }
+
   function categoryDropProps(category: CustomCategory) {
     return {
       draggable: editingCategoryId !== category.id,
       onDragStart: (event: DragEvent<HTMLElement>) => {
-        if (editingCategoryId === category.id) {
+        // The row is the drag source, so a dragstart from the pencil/trash icons is
+        // dispatched here, not on the button — their own handlers never ran. Pressing an
+        // icon and moving a few pixels used to start a drag and swallow the click.
+        if (editingCategoryId === category.id || pointerOnControlRef.current) {
           event.preventDefault();
           return;
         }
@@ -313,11 +334,17 @@ export default function Sidebar() {
         if (!draggedCategoryId || draggedCategoryId === category.id) return;
         event.preventDefault();
         setDragOverCategoryId(category.id);
+        setDragOverAfter(isAfterMidpoint(event));
+      },
+      onDragLeave: (event: DragEvent<HTMLElement>) => {
+        // Without this the insertion line stayed painted over areas that can't accept a drop.
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setDragOverCategoryId((current) => (current === category.id ? null : current));
       },
       onDrop: (event: DragEvent<HTMLElement>) => {
         event.preventDefault();
         if (draggedCategoryId && draggedCategoryId !== category.id) {
-          moveCategoryBefore(draggedCategoryId, category.id);
+          moveCategoryRelativeTo(draggedCategoryId, category.id, isAfterMidpoint(event));
         }
         setDraggedCategoryId(null);
         setDragOverCategoryId(null);
@@ -329,15 +356,24 @@ export default function Sidebar() {
     };
   }
 
-  function categoryDropPreview(category: CustomCategory) {
+  /**
+   * Drawn as an overlay on the row itself. It used to be a spacer element rendered above
+   * the row, which pushed the row down under the cursor and, having no drop handlers of
+   * its own, silently refused the drop the user was aiming at.
+   */
+  function categoryDropIndicator(category: CustomCategory) {
     if (!draggedCategoryId || dragOverCategoryId !== category.id || draggedCategoryId === category.id) {
       return null;
     }
 
     return (
-      <div className="relative h-2">
-        <span className="absolute top-1/2 right-1 left-1 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
-      </div>
+      <span
+        aria-hidden
+        className={[
+          "pointer-events-none absolute right-1 left-1 h-[2px] rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]",
+          dragOverAfter ? "-bottom-px" : "-top-px",
+        ].join(" ")}
+      />
     );
   }
 
@@ -500,19 +536,20 @@ export default function Sidebar() {
           const isCategoryActive = decodeURIComponent(location.pathname) === `/custom/${category.id}`;
           return (
             <Fragment key={category.id}>
-              {categoryDropPreview(category)}
               <div
                 {...categoryDropProps(category)}
                 className={[
-                  "group/cat flex shrink-0 cursor-grab items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
+                  "group/cat relative flex shrink-0 cursor-grab items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
                   draggedCategoryId === category.id ? "opacity-60" : "",
                   isCategoryActive
                     ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
                     : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
                 ].join(" ")}
               >
+              {categoryDropIndicator(category)}
               <NavLink
                 to={`/custom/${category.id}`}
+                draggable={false}
                 onClick={() =>
                   trackUsage({
                     id: category.id,
@@ -527,10 +564,21 @@ export default function Sidebar() {
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 <span className="truncate">{category.title}</span>
               </NavLink>
-              <div className="flex shrink-0 items-center gap-0.5 pr-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/cat:opacity-100">
+              <div
+                className="flex shrink-0 items-center gap-0.5 pr-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/cat:opacity-100"
+                onPointerDown={() => {
+                  pointerOnControlRef.current = true;
+                }}
+                onPointerUp={() => {
+                  pointerOnControlRef.current = false;
+                }}
+                onPointerLeave={() => {
+                  pointerOnControlRef.current = false;
+                }}
+              >
                 <button
                   type="button"
-                  onDragStart={(event) => event.preventDefault()}
+                  draggable={false}
                   onClick={() => startRename(category)}
                   aria-label={t("common.edit")}
                   className={[
@@ -544,7 +592,7 @@ export default function Sidebar() {
                 </button>
                 <button
                   type="button"
-                  onDragStart={(event) => event.preventDefault()}
+                  draggable={false}
                   onClick={() => handleDeleteCategory(category)}
                   aria-label={t("common.delete")}
                   className={[
