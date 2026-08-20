@@ -242,6 +242,7 @@ export const translations = {
   "confirm.title": { zh: "确认删除", en: "Confirm delete" },
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
+  "checklistItemForm.titleRequired": { zh: "请先填写事项内容", en: "Enter the item text first" },
   "checklistItemForm.detailPlaceholder": {
     zh: "补充说明（可选）",
     en: "Additional detail (optional)",

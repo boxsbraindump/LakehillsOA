@@ -19,6 +19,7 @@ export default function ChecklistItemForm({
   const { t } = useLanguage();
   const [label, setLabel] = useState(initial?.label ?? "");
   const [detail, setDetail] = useState(initial?.detail ?? "");
+  const [error, setError] = useState(false);
 
   function appendVoiceText(current: string, text: string) {
     if (!current.trim()) return text;
@@ -27,7 +28,12 @@ export default function ChecklistItemForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!label.trim()) return;
+    // Saving with an empty title used to return silently: no message, form left open,
+    // nothing written. From the desk that reads as "I pressed save and nothing happened."
+    if (!label.trim()) {
+      setError(true);
+      return;
+    }
 
     onSave({
       id: initial?.id ?? slugify(label, "item"),
@@ -47,10 +53,17 @@ export default function ChecklistItemForm({
       <input
         autoFocus
         value={label}
-        onChange={(e) => setLabel(e.target.value)}
+        onChange={(e) => {
+          setLabel(e.target.value);
+          if (error) setError(false);
+        }}
         placeholder={t("checklistItemForm.contentPlaceholder")}
-        className={`${inputClass} mb-1.5`}
+        aria-invalid={error || undefined}
+        className={[inputClass, "mb-1.5", error ? "border-red-400" : ""].join(" ")}
       />
+      {error && (
+        <p className="mb-1.5 text-[12px] text-red-500">{t("checklistItemForm.titleRequired")}</p>
+      )}
       <div className="mb-1 flex items-center justify-between gap-2">
         <label className="text-[12px] font-semibold text-(--color-ink-faint)">
           {t("checklistItemForm.detailPlaceholder")}
