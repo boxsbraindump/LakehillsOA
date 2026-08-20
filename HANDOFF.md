@@ -9,7 +9,7 @@
 - **Deploy**: push to `main` → GitHub Actions (`.github/workflows/deploy.yml`) builds & publishes Pages. Build-time env from repo secrets `VITE_API_BASE`, `VITE_GOOGLE_CLIENT_ID`.
 - **Backend**: `worker/` (Cloudflare Worker + D1). See `worker/README.md`. Deploy with `wrangler`.
 
-## Today's work — 2026-07-09
+## History — 2026-07-09 (kept for context; not the current state)
 
 ### Public welcome / login flow
 - Added a public pre-login welcome page at `#/welcome` (`src/pages/PublicHome.tsx`) using the same teal design system.
@@ -74,7 +74,12 @@
 ## Feature map
 
 ### Three fixed built-in categories (cannot be renamed/hidden/deleted)
-- **前台工作 Checklist** — date-keyed daily checklist with per-item notes; cross-date note search bar. `src/pages/Checklist.tsx`
+- **前台工作 Checklist** — one list per day with per-item notes and cross-date search.
+  Items and sections are *shared definitions*; `lh-checklist-day-item-ids` /
+  `-day-section-ids` hold each day's references and `lh-checklist-state` holds that day's
+  ticks and notes. Copying carries references forward from the most recent earlier day that
+  has content (so days the clinic is closed are skipped), optionally only the unfinished
+  items, always arriving unticked. `src/pages/Checklist.tsx`
 - **OA Cases** — insurance claim edge-case cards (title/payer/tags/summary/resolution). `src/pages/OACases.tsx`
 - **Where to Find Payments** — payment-portal lookup per payer; payer field is a dropdown fed by the Payer directory. `src/pages/Payments.tsx`
 
@@ -104,10 +109,58 @@
 
 ## Dev / verification notes (Windows)
 - PowerShell is the primary shell. Dev server runs on port 5185 (`npm run dev`).
-- Verification flow: `npx tsc --noEmit` must be clean, then browser end-to-end.
-- **Gotcha:** in the Claude Code preview harness, `preview_console_logs` showed a stale cached buffer — don't trust its reported errors; verify real DOM state via snapshot/eval. `preview_screenshot` occasionally times out at 30s.
+- **Verify with `npm run build`, NOT `npx tsc --noEmit`.** The root tsconfig is a solution
+  file that checks nothing, so `tsc --noEmit` exits 0 on code that does not compile — it
+  waved through two real type errors in one session. `npm run build` is the only trustworthy
+  type gate. Then verify behaviour in the browser.
+- Login is gated by `.env.local` (gitignored, holds `VITE_API_BASE` + `VITE_GOOGLE_CLIENT_ID`).
+  To exercise workspace pages without signing in, temporarily move that file aside: with no
+  sync configured `LoginGate` passes straight through and the app runs local-only, which is a
+  faithful stand-in for the primary workspace UI. **Restore it afterwards and diff it against a
+  backup** — Vite restarts on the change, so the app flips modes automatically.
+- Reading DOM state in the same call that clicked something returns the *pre-render* value.
+  React state updates are async: click in one call, assert in the next, or await a short
+  timeout. Several "bugs" in this repo were only this race. Toasts auto-dismiss, so a late
+  read can also miss a message that really did appear.
+
+## How data recovery works (D1 Time Travel)
+`kv_store` overwrites in place and keeps no history, but D1 retains 30 days of
+point-in-time bookmarks. There is no read-only view of a past state — recovering means
+restoring the database, so treat it as production surgery:
+1. `wrangler d1 export lakehills-oa --remote --output backup.sql` (safe, do this first).
+2. Record the current bookmark: `wrangler d1 time-travel info lakehills-oa`.
+3. Restore to the moment before the loss (`--timestamp` or `--bookmark`), read what you need.
+4. Restore forward to the bookmark from step 2, then **diff the live data against the
+   pre-operation snapshot** to prove nothing else moved.
+5. Re-apply only the lost rows with a targeted `UPDATE` that merges rather than replaces.
+Nobody may use the app during the window — an edit made then is rolled back on the way
+forward. `updated_at` on each row is the best clue for when a deletion happened.
+
+## Bug patterns this codebase keeps producing
+Worth checking first when something "won't save" or "disappeared":
+- **Identity by title instead of id.** Matching folders/entries on their name made tombstones
+  act as permanent name blocklists, which made create/rename purge Trash to free a name.
+  Always key off ids.
+- **Forms rebuilt from scratch on save.** Each template branch wrote a fresh object, so every
+  field the current template did not render was dropped. Spread the existing record first.
+- **Day-scoped views over shared definitions.** Checklist items/sections are global; each day
+  only stores references, and "copy" copies references. A delete must remove the day's
+  reference, not the shared definition, or it erases the item from every other day.
+- **Sync clobber.** Pushes are debounced, so local state runs ahead of the server. Any
+  reconcile in that window must push local rather than overwrite it, and the guard must be
+  per storage key — several components mount the same key and each reconciles on mount.
+- **Silent no-ops.** Several handlers `return` on invalid input with no message, which reads
+  as "the button is broken". Say why instead.
 
 ## Recent commits (latest first)
+- `045215b` Make sidebar folder dragging land where you aim it
+- `b4b10c9` Copy forward from the last day worked, and let it skip finished items
+- `d564b10` Say why a checklist item did not save instead of ignoring the click
+- `6dd1ecf` Never let a reconcile overwrite an edit that has not been pushed yet
+- `7a747a6` Stop serving one stale server snapshot for the whole page load
+- `6496894` Keep checklist deletes scoped to the day you are viewing
+- `89ebfb7` Fix voice input never stopping and portal fields vanishing while typing
+- `0b65f5e` Stop silent data loss in custom folders
 - `28c1119` Redirect to workspace after sign in
 - `7d763d7` Show sign-in dialog from welcome page
 - `f2a6e6a` Fix welcome page section navigation
