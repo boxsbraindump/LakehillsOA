@@ -1,6 +1,7 @@
 import {
   Fragment,
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type DragEvent,
@@ -34,7 +35,7 @@ import { slugify } from "../lib/slugify";
 import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
   filterDeletedCustomCategories,
-  normalizeCustomCategoryTemplates,
+  migrateLegacyCustomCategoryTemplates,
   normalizeCategoryTitle,
 } from "../lib/customCategories";
 import ProfileMenu from "./ProfileMenu";
@@ -128,7 +129,7 @@ export default function Sidebar() {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { trash, setTrash, addToTrash, removeFromTrash } = useTrash();
+  const { trash, addToTrash, removeFromTrash } = useTrash();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
   const { trackUsage } = useUsageStats();
@@ -158,7 +159,12 @@ export default function Sidebar() {
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
 
-  const normalizedCustomCategories = normalizeCustomCategoryTemplates(customCategories);
+  // Backfill templates for folders created before templates were stored, once, in storage —
+  // so nothing has to guess a folder's shape from its title at render time.
+  useEffect(() => {
+    setCustomCategories((prev) => migrateLegacyCustomCategoryTemplates(prev));
+  }, [setCustomCategories]);
+
   const deletedCategoriesForSidebar = useMemo(
     () => [
       ...deletedCategories,
@@ -175,8 +181,8 @@ export default function Sidebar() {
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const canRenameWorkspace = Boolean(workspace?.id.startsWith("workspace-"));
   const visibleCustomCategories = useMemo(
-    () => filterDeletedCustomCategories(normalizedCustomCategories, deletedCategoriesForSidebar),
-    [deletedCategoriesForSidebar, normalizedCustomCategories],
+    () => filterDeletedCustomCategories(customCategories, deletedCategoriesForSidebar),
+    [deletedCategoriesForSidebar, customCategories],
   );
   const templateLabels = isPersonalWorkspace ? PERSONAL_TEMPLATE_LABEL_KEY : TEMPLATE_LABEL_KEY;
   const categoryNamePlaceholder = isPersonalWorkspace
@@ -218,30 +224,10 @@ export default function Sidebar() {
       showToast(t("sidebar.duplicateCategoryName"));
       return;
     }
+    // Rename only renames. It must never remove another folder, and never purge a
+    // Trash record — a trashed folder keeps its own id, so reusing its name is safe.
     setCustomCategories((prev) =>
-      prev
-        .filter(
-          (c) =>
-            c.id === categoryId ||
-            normalizeCategoryTitle(c.title) !== normalizedTitle,
-        )
-        .map((c) => (c.id === categoryId ? { ...c, title: renameValue.trim() } : c)),
-    );
-    setDeletedCategories((prev) =>
-      prev.filter(
-        (deleted) =>
-          deleted.id !== categoryId && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
-      ),
-    );
-    setTrash((prev) =>
-      prev.filter(
-        (entry) =>
-          !(
-            entry.category === "custom" &&
-            entry.entryType === "section" &&
-            (entry.itemId === categoryId || normalizeCategoryTitle(entry.title) === normalizedTitle)
-          ),
-      ),
+      prev.map((c) => (c.id === categoryId ? { ...c, title: renameValue.trim() } : c)),
     );
     setEditingCategoryId(null);
   }
@@ -258,11 +244,10 @@ export default function Sidebar() {
       showToast(t("sidebar.duplicateCategoryName"));
       return;
     }
+    // A fresh folder gets a fresh id, so it can never collide with a trashed one.
+    // Creating it must not delete anything — least of all a 30-day Trash backup.
     setCustomCategories((prev) => [
-      ...prev.filter(
-        (category) =>
-          category.id !== id && normalizeCategoryTitle(category.title) !== normalizedTitle,
-      ),
+      ...prev.filter((category) => category.id !== id),
       {
         id,
         title: newCategoryTitle.trim(),
@@ -272,30 +257,9 @@ export default function Sidebar() {
     ]);
     setCustomEntries((prev) => {
       const next = { ...prev };
-      for (const category of customCategories) {
-        if (category.id === id || normalizeCategoryTitle(category.title) === normalizedTitle) {
-          delete next[category.id];
-        }
-      }
       delete next[id];
       return next;
     });
-    setDeletedCategories((prev) =>
-      prev.filter(
-        (deleted) =>
-          deleted.id !== id && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
-      ),
-    );
-    setTrash((prev) =>
-      prev.filter(
-        (entry) =>
-          !(
-            entry.category === "custom" &&
-            entry.entryType === "section" &&
-            (entry.itemId === id || normalizeCategoryTitle(entry.title) === normalizedTitle)
-          ),
-      ),
-    );
     setIsAddingCategory(false);
     setNewCategoryTitle("");
     setNewCategoryIcon("folder");
@@ -378,13 +342,9 @@ export default function Sidebar() {
   }
 
   async function handleDeleteCategory(category: CustomCategory) {
-    const normalizedTitle = normalizeCategoryTitle(category.title);
-    const matchingCategories = normalizedCustomCategories.filter(
-      (c) => c.id === category.id || normalizeCategoryTitle(c.title) === normalizedTitle,
-    );
-    const categoriesToDelete = matchingCategories.length > 0 ? matchingCategories : [category];
-    const idsToDelete = new Set(categoriesToDelete.map((c) => c.id));
-    const entries = categoriesToDelete.flatMap((c) => customEntries[c.id] ?? []);
+    // Delete exactly the folder that was clicked — never every folder that happens
+    // to share its name.
+    const entries = customEntries[category.id] ?? [];
     if (
       !(await confirm({
         message: t("sidebar.deleteCategoryConfirm", { title: category.title, count: entries.length }),
@@ -393,29 +353,15 @@ export default function Sidebar() {
       return;
 
     const trashId = `custom-category:${category.id}`;
-    setCustomCategories((prev) =>
-      prev.filter(
-        (c) => !idsToDelete.has(c.id) && normalizeCategoryTitle(c.title) !== normalizedTitle,
-      ),
-    );
+    setCustomCategories((prev) => prev.filter((c) => c.id !== category.id));
     setCustomEntries((prev) => {
       const next = { ...prev };
-      for (const id of idsToDelete) delete next[id];
-      for (const c of Object.values(customCategories)) {
-        if (normalizeCategoryTitle(c.title) === normalizedTitle) delete next[c.id];
-      }
+      delete next[category.id];
       return next;
     });
     setDeletedCategories((prev) => [
-      ...prev.filter(
-        (deleted) =>
-          !idsToDelete.has(deleted.id) && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
-      ),
-      ...categoriesToDelete.map((deleted) => ({
-        id: deleted.id,
-        title: deleted.title,
-        deletedAt: Date.now(),
-      })),
+      ...prev.filter((deleted) => deleted.id !== category.id),
+      { id: category.id, title: category.title, deletedAt: Date.now() },
     ]);
 
     addToTrash({
@@ -433,21 +379,9 @@ export default function Sidebar() {
     showToast(t("sidebar.deletedCategoryToast", { title: category.title }), {
       label: t("common.undo"),
       onClick: () => {
-        setCustomCategories((prev) => [
-          ...prev.filter(
-            (item) =>
-              item.id !== category.id &&
-              normalizeCategoryTitle(item.title) !== normalizeCategoryTitle(category.title),
-          ),
-          category,
-        ]);
+        setCustomCategories((prev) => [...prev.filter((item) => item.id !== category.id), category]);
         setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
-        setDeletedCategories((prev) =>
-          prev.filter(
-            (deleted) =>
-              deleted.id !== category.id && normalizeCategoryTitle(deleted.title) !== normalizedTitle,
-          ),
-        );
+        setDeletedCategories((prev) => prev.filter((deleted) => deleted.id !== category.id));
         removeFromTrash(trashId);
       },
     });

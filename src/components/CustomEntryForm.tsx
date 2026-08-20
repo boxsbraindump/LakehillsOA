@@ -84,14 +84,19 @@ export default function CustomEntryForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // Spread `initial` first in every branch: a template only edits its own fields,
+    // so anything it doesn't render must survive the save untouched. Rebuilding the
+    // entry from scratch silently destroyed fields whenever the folder's template
+    // differed from the one an entry was created under.
     if (template === "checklist") {
       if (!title.trim()) return;
       onSave({
+        ...initial,
         id: initial?.id ?? slugify(title, "item"),
         title: title.trim(),
         detail: detail.trim() || undefined,
         notes: detail.trim() || undefined,
-        tags: [],
+        tags: initial?.tags ?? [],
       });
       return;
     }
@@ -103,10 +108,11 @@ export default function CustomEntryForm({
         .filter((p) => p.name || p.url);
 
       onSave({
+        ...initial,
         id: initial?.id ?? slugify(paymentPayer, "payer"),
         title: paymentPayer.trim(),
         notes: notes.trim() || undefined,
-        tags: [],
+        tags: initial?.tags ?? [],
         portals: cleanPortals.length > 0 ? cleanPortals : [{ name: "", url: "" }],
       });
       return;
@@ -115,6 +121,7 @@ export default function CustomEntryForm({
     if (!title.trim()) return;
 
     onSave({
+      ...initial,
       id: initial?.id ?? slugify(title, "case"),
       title: title.trim(),
       payer: isPersonalWorkspace ? undefined : payer.trim(),

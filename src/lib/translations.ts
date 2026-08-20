@@ -377,6 +377,10 @@ export const translations = {
     en: 'Permanently delete "{title}"? This can\'t be undone.',
   },
   "trash.restoredToast": { zh: "已恢复「{title}」", en: 'Restored "{title}"' },
+  "trash.restoreMissingCategory": {
+    zh: "它所在的分类已被删除，请先恢复该分类",
+    en: "Its folder was deleted — restore the folder first",
+  },
 
   "settings.title": { zh: "设置", en: "Settings" },
   "settings.account": { zh: "账号", en: "Account" },

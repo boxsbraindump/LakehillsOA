@@ -8,7 +8,6 @@ import { daysRemaining, TRASH_RETENTION_DAYS } from "../lib/trash";
 import { categoryLabel, CATEGORY_DOT } from "../lib/searchIndex";
 import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
-  normalizeCategoryTitle,
 } from "../lib/customCategories";
 import type {
   TrashEntry,
@@ -44,7 +43,10 @@ export default function Trash() {
   const [, setOACasesCustom] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
   const [, setPaymentsHidden] = useSyncedStorage<string[]>("lh-payments-hidden", []);
   const [, setPaymentsCustom] = useSyncedStorage<PaymentEntry[]>("lh-payments-custom", []);
-  const [, setCustomCategories] = useSyncedStorage<CustomCategory[]>("lh-custom-categories", []);
+  const [customCategories, setCustomCategories] = useSyncedStorage<CustomCategory[]>(
+    "lh-custom-categories",
+    [],
+  );
   const [, setCustomEntries] = useSyncedStorage<Record<string, CustomEntry[]>>(
     "lh-custom-entries",
     {},
@@ -86,25 +88,25 @@ export default function Trash() {
       }
     } else if (entry.category === "custom" && entry.entryType === "section") {
       const { category, entries } = entry.snapshot as { category: CustomCategory; entries: CustomEntry[] };
-      setCustomCategories((prev) => [
-        ...prev.filter(
-          (item) =>
-            item.id !== category.id &&
-            normalizeCategoryTitle(item.title) !== normalizeCategoryTitle(category.title),
-        ),
-        category,
-      ]);
-      setCustomEntries((prev) => ({ ...prev, [category.id]: entries }));
-      setDeletedCategories((prev) =>
-        prev.filter(
-          (deleted) =>
-            deleted.id !== category.id &&
-            normalizeCategoryTitle(deleted.title) !== normalizeCategoryTitle(category.title),
-        ),
-      );
+      // Restore only this folder; a live folder that merely shares its name is a
+      // different folder and must be left alone.
+      setCustomCategories((prev) => [...prev.filter((item) => item.id !== category.id), category]);
+      // Merge, so entries restored individually before the folder aren't wiped.
+      setCustomEntries((prev) => {
+        const existing = prev[category.id] ?? [];
+        const restored = entries.filter((e) => !existing.some((item) => item.id === e.id));
+        return { ...prev, [category.id]: [...existing, ...restored] };
+      });
+      setDeletedCategories((prev) => prev.filter((deleted) => deleted.id !== category.id));
     } else if (entry.category === "custom") {
       const categoryId = entry.sectionId;
       if (!categoryId) return;
+      // Refuse to restore into a folder that no longer exists — it would vanish
+      // from the sidebar and from search with no way back.
+      if (!customCategories.some((category) => category.id === categoryId)) {
+        showToast(t("trash.restoreMissingCategory"));
+        return;
+      }
       setCustomEntries((prev) => ({
         ...prev,
         [categoryId]: [...(prev[categoryId] ?? []), entry.snapshot as CustomEntry],
@@ -124,26 +126,14 @@ export default function Trash() {
     )
       return;
     if (entry.category === "custom" && entry.entryType === "section") {
-      const normalizedTitle = normalizeCategoryTitle(entry.title);
-      setCustomCategories((prev) =>
-        prev.filter(
-          (category) =>
-            category.id !== entry.itemId &&
-            normalizeCategoryTitle(category.title) !== normalizedTitle,
-        ),
-      );
+      // Purging a trashed folder must not touch a live folder that shares its name.
+      setCustomCategories((prev) => prev.filter((category) => category.id !== entry.itemId));
       setCustomEntries((prev) => {
         const next = { ...prev };
         delete next[entry.itemId];
         return next;
       });
-      setDeletedCategories((prev) =>
-        prev.filter(
-          (deleted) =>
-            deleted.id !== entry.itemId &&
-            normalizeCategoryTitle(deleted.title) !== normalizedTitle,
-        ),
-      );
+      setDeletedCategories((prev) => prev.filter((deleted) => deleted.id !== entry.itemId));
     }
     removeFromTrash(entry.trashId);
   }
