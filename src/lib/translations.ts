@@ -243,6 +243,20 @@ export const translations = {
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
   "checklistItemForm.titleRequired": { zh: "请先填写事项内容", en: "Enter the item text first" },
+  "checklist.copyFromLabel": { zh: "从这一天复制", en: "Copy from" },
+  "checklist.copyOnlyUnfinished": { zh: "只复制未完成的", en: "Only copy unfinished items" },
+  "checklist.copyOnlyUnfinishedHint": {
+    zh: "那天还有 {count} 项没做完",
+    en: "{count} still unfinished that day",
+  },
+  "checklist.nothingUnfinishedToast": {
+    zh: "{date} 的事项都已完成，没有需要复制的",
+    en: "Everything on {date} was finished — nothing to copy",
+  },
+  "checklist.noEarlierDayToast": {
+    zh: "还没有更早的 Checklist 可以复制",
+    en: "There's no earlier checklist to copy from yet",
+  },
   "checklistItemForm.detailPlaceholder": {
     zh: "补充说明（可选）",
     en: "Additional detail (optional)",

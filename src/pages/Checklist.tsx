@@ -73,6 +73,8 @@ export default function Checklist() {
   const [selectedDate, setSelectedDate] = useState(searchParams.get("date") ?? todayKey());
   const [noteQuery, setNoteQuery] = useState("");
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
+  const [isCopyPanelOpen, setIsCopyPanelOpen] = useState(false);
+  const [copyOnlyUnfinished, setCopyOnlyUnfinished] = useState(true);
   const [customItems, setCustomItems] = useSyncedStorage<Record<string, ChecklistItem[]>>(
     "lh-checklist-custom-items",
     {},
@@ -303,14 +305,40 @@ export default function Checklist() {
     return getDaySectionIds(date).length > 0 || getDayItemIds(date).length > 0 || hasDayContent(state[date]);
   }
 
-  async function copyPreviousDay() {
-    const sourceDate = shiftDateKey(selectedDate, -1);
-    const sourceDay = compactDayState(state[sourceDate]);
-    const sourceItemIds = getDayItemIds(sourceDate);
-    const sourceSectionIds = getDaySectionIds(sourceDate, sourceItemIds);
+  /**
+   * The most recent earlier day that actually has a checklist. Copying was hard-wired to
+   * "yesterday", so with the clinic closed midweek you had to hop through each closed day
+   * to carry work forward.
+   */
+  function findLatestDayWithContent(before: string) {
+    const candidates = new Set([...Object.keys(dayItemIds), ...Object.keys(state)]);
+    let latest: string | null = null;
+    for (const date of candidates) {
+      if (date >= before) continue;
+      if (getDayItemIds(date).length === 0 && !hasDayContent(state[date])) continue;
+      if (!latest || date > latest) latest = date;
+    }
+    return latest;
+  }
 
-    if (sourceSectionIds.length === 0 && sourceItemIds.length === 0 && Object.keys(sourceDay).length === 0) {
-      showToast(t("checklist.noPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }));
+  const copySourceDate = findLatestDayWithContent(selectedDate);
+  const copySourceUnfinishedCount = copySourceDate
+    ? getDayItemIds(copySourceDate).filter((id) => !state[copySourceDate]?.[id]?.checked).length
+    : 0;
+
+  async function copyFromDay(sourceDate: string, onlyUnfinished: boolean) {
+    const sourceState = state[sourceDate] ?? {};
+    const allSourceItemIds = getDayItemIds(sourceDate);
+    const itemIds = onlyUnfinished
+      ? allSourceItemIds.filter((id) => !sourceState[id]?.checked)
+      : allSourceItemIds;
+
+    if (itemIds.length === 0) {
+      showToast(
+        onlyUnfinished
+          ? t("checklist.nothingUnfinishedToast", { date: formatDisplayDate(sourceDate, lang) })
+          : t("checklist.noPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }),
+      );
       return;
     }
 
@@ -328,10 +356,26 @@ export default function Checklist() {
     )
       return;
 
-    setState((prev) => ({ ...prev, [selectedDate]: sourceDay }));
-    setDayItemIds((prev) => ({ ...prev, [selectedDate]: sourceItemIds }));
-    setDaySectionIds((prev) => ({ ...prev, [selectedDate]: sourceSectionIds }));
+    // Keep only the sections that still have something in them after filtering, so a
+    // fully-finished section doesn't arrive as an empty header.
+    const copiedIds = new Set(itemIds);
+    const sectionIds = getDaySectionIds(sourceDate, allSourceItemIds).filter((sectionId) =>
+      (customItems[sectionId] ?? []).some((item) => copiedIds.has(item.id)),
+    );
+
+    // A copied item starts as work still to do: carry its note across for context, but
+    // never its tick — otherwise the new day arrives already marked complete.
+    const carriedState: DayState = {};
+    for (const id of itemIds) {
+      const note = sourceState[id]?.note ?? "";
+      if (note.trim()) carriedState[id] = { checked: false, note };
+    }
+
+    setState((prev) => ({ ...prev, [selectedDate]: carriedState }));
+    setDayItemIds((prev) => ({ ...prev, [selectedDate]: itemIds }));
+    setDaySectionIds((prev) => ({ ...prev, [selectedDate]: sectionIds }));
     setOpenNoteId(null);
+    setIsCopyPanelOpen(false);
     showToast(
       t("checklist.copiedPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }),
     );
@@ -828,13 +872,69 @@ export default function Checklist() {
               {t("checklist.today")}
             </button>
           )}
-          <button
-            onClick={copyPreviousDay}
-            className="flex items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
-          >
-            <Copy size={14} />
-            {t("checklist.copyPreviousDay")}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsCopyPanelOpen((open) => !open)}
+              aria-expanded={isCopyPanelOpen}
+              className="flex items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+            >
+              <Copy size={14} />
+              {t("checklist.copyPreviousDay")}
+            </button>
+
+            {isCopyPanelOpen && (
+              <div className="fade-in-up absolute top-[calc(100%+6px)] left-0 z-20 w-72 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-3 shadow-(--shadow-level-2)">
+                {copySourceDate ? (
+                  <>
+                    <p className="text-[12px] text-(--color-ink-muted)">
+                      {t("checklist.copyFromLabel")}
+                    </p>
+                    <p className="mt-0.5 text-[14px] font-medium text-(--color-ink)">
+                      {formatDisplayDate(copySourceDate, lang)}
+                    </p>
+
+                    <label className="mt-3 flex cursor-pointer items-start gap-2 text-[13px] text-(--color-ink-secondary)">
+                      <input
+                        type="checkbox"
+                        checked={copyOnlyUnfinished}
+                        onChange={(e) => setCopyOnlyUnfinished(e.target.checked)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <span>
+                        {t("checklist.copyOnlyUnfinished")}
+                        <span className="block text-[12px] text-(--color-ink-faint)">
+                          {t("checklist.copyOnlyUnfinishedHint", {
+                            count: copySourceUnfinishedCount,
+                          })}
+                        </span>
+                      </span>
+                    </label>
+
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCopyPanelOpen(false)}
+                        className="rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+                      >
+                        {t("common.cancel")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished)}
+                        className="rounded-(--radius-md) bg-(--color-primary) px-2.5 py-1 text-[12px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                      >
+                        {t("checklist.copyPreviousDay")}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[13px] text-(--color-ink-muted)">
+                    {t("checklist.noEarlierDayToast")}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <p className="text-[13px] text-(--color-ink-muted)">
           {formatDisplayDate(selectedDate, lang)} · {t("checklist.completedCount", { done, total })}
