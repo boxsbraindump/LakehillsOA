@@ -14,7 +14,9 @@ import type {
   OACase,
   PaymentEntry,
   ChecklistItem,
+  ChecklistSection,
   ChecklistSectionMeta,
+  ClearedChecklistDay,
   CustomCategory,
   CustomEntry,
   DeletedCustomCategory,
@@ -39,6 +41,17 @@ export default function Trash() {
     "lh-checklist-custom-sections",
     [],
   );
+  const [, setChecklistDayItemIds] = useSyncedStorage<Record<string, string[]>>(
+    "lh-checklist-day-item-ids",
+    {},
+  );
+  const [, setChecklistDaySectionIds] = useSyncedStorage<Record<string, string[]>>(
+    "lh-checklist-day-section-ids",
+    {},
+  );
+  const [, setChecklistState] = useSyncedStorage<
+    Record<string, Record<string, { checked: boolean; note: string }>>
+  >("lh-checklist-state", {});
   const [, setOACasesHidden] = useSyncedStorage<string[]>("lh-oacases-hidden", []);
   const [, setOACasesCustom] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
   const [, setPaymentsHidden] = useSyncedStorage<string[]>("lh-payments-hidden", []);
@@ -56,24 +69,54 @@ export default function Trash() {
     [],
   );
 
+  /** Put restored content back on the day it was removed from, so it's actually visible again. */
+  function addToDay(date: string | undefined, sectionIds: string[], itemIds: string[]) {
+    if (!date) return;
+    if (sectionIds.length) {
+      setChecklistDaySectionIds((prev) => ({
+        ...prev,
+        [date]: Array.from(new Set([...(prev[date] ?? []), ...sectionIds])),
+      }));
+    }
+    if (itemIds.length) {
+      setChecklistDayItemIds((prev) => ({
+        ...prev,
+        [date]: Array.from(new Set([...(prev[date] ?? []), ...itemIds])),
+      }));
+    }
+  }
+
   function handleRestore(entry: TrashEntry) {
-    if (entry.category === "checklist" && entry.entryType === "section") {
+    if (entry.category === "checklist" && entry.entryType === "day") {
+      const day = entry.snapshot as ClearedChecklistDay;
+      setChecklistState((prev) => ({ ...prev, [day.date]: day.state }));
+      setChecklistDayItemIds((prev) => ({ ...prev, [day.date]: day.itemIds }));
+      setChecklistDaySectionIds((prev) => ({ ...prev, [day.date]: day.sectionIds }));
+    } else if (entry.category === "checklist" && entry.entryType === "section") {
+      const section = entry.snapshot as ChecklistSection;
       if (entry.wasCustom) {
-        setChecklistCustomSections((prev) => [...prev, { id: entry.itemId, title: entry.title }]);
+        setChecklistCustomSections((prev) =>
+          prev.some((s) => s.id === entry.itemId)
+            ? prev
+            : [...prev, { id: entry.itemId, title: entry.title }],
+        );
       } else {
         setChecklistHiddenSections((prev) => prev.filter((id) => id !== entry.itemId));
       }
+      addToDay(entry.date, [entry.itemId], (section.items ?? []).map((i) => i.id));
     } else if (entry.category === "checklist") {
       const sectionId = entry.sectionId;
       if (!sectionId) return;
       if (entry.wasCustom) {
-        setChecklistCustom((prev) => ({
-          ...prev,
-          [sectionId]: [...(prev[sectionId] ?? []), entry.snapshot as ChecklistItem],
-        }));
+        setChecklistCustom((prev) =>
+          (prev[sectionId] ?? []).some((i) => i.id === entry.itemId)
+            ? prev
+            : { ...prev, [sectionId]: [...(prev[sectionId] ?? []), entry.snapshot as ChecklistItem] },
+        );
       } else {
         setChecklistHidden((prev) => prev.filter((id) => id !== entry.itemId));
       }
+      addToDay(entry.date, [sectionId], [entry.itemId]);
     } else if (entry.category === "oa-cases") {
       if (entry.wasCustom) {
         setOACasesCustom((prev) => [...prev, entry.snapshot as OACase]);
@@ -173,7 +216,8 @@ export default function Trash() {
                   {entry.category === "custom"
                     ? (entry.categoryTitle ?? categoryLabel(entry.category, lang))
                     : categoryLabel(entry.category, lang)}
-                  {entry.entryType === "section" ? ` ${t("trash.wholeSection")}` : ""} ·{" "}
+                  {entry.entryType === "section" ? ` ${t("trash.wholeSection")}` : ""}
+                  {entry.entryType === "day" ? ` ${t("trash.wholeDay")}` : ""} ·{" "}
                   {t("trash.daysLeft", { days: daysRemaining(entry) })}
                 </p>
               </div>

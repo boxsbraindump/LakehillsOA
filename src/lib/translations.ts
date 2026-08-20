@@ -377,6 +377,8 @@ export const translations = {
     en: 'Permanently delete "{title}"? This can\'t be undone.',
   },
   "trash.restoredToast": { zh: "已恢复「{title}」", en: 'Restored "{title}"' },
+  "checklist.clearedDayToast": { zh: "已清空 {date}", en: "Cleared {date}" },
+  "trash.wholeDay": { zh: "· 整天", en: "· Whole day" },
   "trash.restoreMissingCategory": {
     zh: "它所在的分类已被删除，请先恢复该分类",
     en: "Its folder was deleted — restore the folder first",

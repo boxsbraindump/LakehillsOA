@@ -179,6 +179,21 @@ export default function Checklist() {
     }));
   }
 
+  /**
+   * Items and sections are shared definitions; each day only stores references to them,
+   * and "copy yesterday" copies references rather than duplicating content. So a delete
+   * made while viewing one day must only drop that day's reference — dropping the shared
+   * definition erased the item from every other day that still listed it.
+   * The definition is only discarded once no day refers to it any more.
+   */
+  function isReferencedByOtherDay(
+    ids: Record<string, string[]>,
+    id: string,
+    exceptDate: string,
+  ) {
+    return Object.entries(ids).some(([date, list]) => date !== exceptDate && list.includes(id));
+  }
+
   function toggle(id: string) {
     setState((prev) => {
       const day = prev[selectedDate] ?? {};
@@ -222,6 +237,13 @@ export default function Checklist() {
     )
       return;
 
+    // Snapshot the day before clearing it. This used to be a hard delete with no Trash
+    // record at all, so a mis-click wiped a day's work with nothing to restore from.
+    const clearedItemIds = dayItemIds[selectedDate] ?? getDayItemIds(selectedDate);
+    const clearedSectionIds = daySectionIds[selectedDate] ?? getDaySectionIds(selectedDate);
+    const clearedState = state[selectedDate];
+    const trashId = `checklist-day:${selectedDate}`;
+
     setState((prev) => {
       const { [selectedDate]: _removed, ...rest } = prev;
       return rest;
@@ -235,6 +257,36 @@ export default function Checklist() {
       return rest;
     });
     setOpenNoteId(null);
+
+    function restoreClearedDay() {
+      if (clearedState) setState((prev) => ({ ...prev, [selectedDate]: clearedState }));
+      setDayItemIds((prev) => ({ ...prev, [selectedDate]: clearedItemIds }));
+      setDaySectionIds((prev) => ({ ...prev, [selectedDate]: clearedSectionIds }));
+    }
+
+    addToTrash({
+      trashId,
+      category: "checklist",
+      entryType: "day",
+      itemId: selectedDate,
+      wasCustom: true,
+      deletedAt: Date.now(),
+      title: formatDisplayDate(selectedDate, lang),
+      snapshot: {
+        date: selectedDate,
+        itemIds: clearedItemIds,
+        sectionIds: clearedSectionIds,
+        state: clearedState ?? {},
+      },
+    });
+
+    showToast(t("checklist.clearedDayToast", { date: formatDisplayDate(selectedDate, lang) }), {
+      label: t("common.undo"),
+      onClick: () => {
+        restoreClearedDay();
+        removeFromTrash(trashId);
+      },
+    });
   }
 
   function compactDayState(day: DayState | undefined) {
@@ -457,16 +509,21 @@ export default function Checklist() {
     if (!(await confirm({ message: t("checklist.deleteItemConfirm", { label: item.label }) }))) return;
     const trashId = `checklist:${item.id}`;
 
-    setCustomItems((prev) => ({
-      ...prev,
-      [sectionId]: (prev[sectionId] ?? []).filter((i) => i.id !== item.id),
-    }));
+    // Drop the shared definition only when no other day still lists this item.
+    const keepDefinition = isReferencedByOtherDay(dayItemIds, item.id, selectedDate);
+    if (!keepDefinition) {
+      setCustomItems((prev) => ({
+        ...prev,
+        [sectionId]: (prev[sectionId] ?? []).filter((i) => i.id !== item.id),
+      }));
+    }
 
     addToTrash({
       trashId,
       category: "checklist",
       itemId: item.id,
       sectionId,
+      date: selectedDate,
       wasCustom: true,
       deletedAt: Date.now(),
       title: item.label,
@@ -476,10 +533,11 @@ export default function Checklist() {
     showToast(t("checklist.deletedItemToast", { label: item.label }), {
       label: t("common.undo"),
       onClick: () => {
-        setCustomItems((prev) => ({
-          ...prev,
-          [sectionId]: [...(prev[sectionId] ?? []), item],
-        }));
+        setCustomItems((prev) =>
+          (prev[sectionId] ?? []).some((i) => i.id === item.id)
+            ? prev
+            : { ...prev, [sectionId]: [...(prev[sectionId] ?? []), item] },
+        );
         addItemsToDay(selectedDate, [item.id]);
         addSectionsToDay(selectedDate, [sectionId]);
         removeFromTrash(trashId);
@@ -553,27 +611,38 @@ export default function Checklist() {
     const wasCustom = isCustomSection(section.id);
     const trashId = `checklist-section:${section.id}`;
 
-    setCustomSections((prev) => prev.filter((s) => s.id !== section.id));
+    // Remove this section from the day being viewed only. This used to map over every
+    // date and strip the section from all of them, so deleting it on one day silently
+    // erased it from every earlier day too — and Undo below only restored it to the
+    // current day, which made that loss permanent.
     const removedItemIds = new Set(section.items.map((item) => item.id));
-    setDaySectionIds((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([date, ids]) => [date, ids.filter((id) => id !== section.id)]),
+    const dayItemIdsAfter = {
+      ...dayItemIds,
+      [selectedDate]: (dayItemIds[selectedDate] ?? getDayItemIds(selectedDate)).filter(
+        (id) => !removedItemIds.has(id),
       ),
-    );
-    setDayItemIds((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([date, ids]) => [
-          date,
-          ids.filter((id) => !removedItemIds.has(id)),
-        ]),
+    };
+    const stillUsedElsewhere = isReferencedByOtherDay(dayItemIdsAfter, section.id, selectedDate)
+      || Object.entries(dayItemIdsAfter).some(
+        ([date, ids]) => date !== selectedDate && ids.some((id) => removedItemIds.has(id)),
+      );
+    if (!stillUsedElsewhere) {
+      setCustomSections((prev) => prev.filter((s) => s.id !== section.id));
+    }
+    setDaySectionIds((prev) => ({
+      ...prev,
+      [selectedDate]: (prev[selectedDate] ?? getDaySectionIds(selectedDate)).filter(
+        (id) => id !== section.id,
       ),
-    );
+    }));
+    setDayItemIds(dayItemIdsAfter);
 
     addToTrash({
       trashId,
       category: "checklist",
       entryType: "section",
       itemId: section.id,
+      date: selectedDate,
       wasCustom,
       deletedAt: Date.now(),
       title: section.title,
@@ -583,7 +652,11 @@ export default function Checklist() {
     showToast(t("checklist.deletedSectionToast", { title: section.title }), {
       label: t("common.undo"),
       onClick: () => {
-        setCustomSections((prev) => [...prev, { id: section.id, title: section.title }]);
+        setCustomSections((prev) =>
+          prev.some((s) => s.id === section.id)
+            ? prev
+            : [...prev, { id: section.id, title: section.title }],
+        );
         addSectionsToDay(selectedDate, [section.id]);
         addItemsToDay(selectedDate, section.items.map((item) => item.id));
         removeFromTrash(trashId);

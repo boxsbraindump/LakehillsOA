@@ -95,16 +95,33 @@ export interface SearchDoc {
 export interface TrashEntry {
   trashId: string;
   category: Category;
-  /** "section" means a whole top-level group was deleted rather than one item — used for both checklist sections and whole custom categories. Defaults to "item". */
-  entryType?: "item" | "section";
+  /** "section" means a whole top-level group was deleted rather than one item — used for both checklist sections and whole custom categories. "day" is a cleared checklist day. Defaults to "item". */
+  entryType?: "item" | "section" | "day";
   itemId: string;
   /** Which checklist section / custom category an item-entry came from — only set for "checklist" and "custom" item entries. */
   sectionId?: string;
+  /** Which checklist day the deletion was made from, so restoring puts it back on that day rather than reviving a definition no day shows. */
+  date?: string;
   /** Snapshot of the custom category's title at delete time — only set for category "custom" (both item and whole-category entries), since the live category may be renamed or gone by the time this is displayed. */
   categoryTitle?: string;
   /** Whether the item was user-added (its data lives only in this trash record) vs. built-in (just hidden). Always true for category "custom", since there's no seed data to hide. */
   wasCustom: boolean;
   deletedAt: number;
   title: string;
-  snapshot: ChecklistItem | OACase | PaymentEntry | ChecklistSection | CustomEntry | { category: CustomCategory; entries: CustomEntry[] };
+  snapshot:
+    | ChecklistItem
+    | OACase
+    | PaymentEntry
+    | ChecklistSection
+    | CustomEntry
+    | { category: CustomCategory; entries: CustomEntry[] }
+    | ClearedChecklistDay;
+}
+
+/** A whole checklist day removed by "clear day" — kept so it can be restored from Trash. */
+export interface ClearedChecklistDay {
+  date: string;
+  itemIds: string[];
+  sectionIds: string[];
+  state: Record<string, { checked: boolean; note: string }>;
 }
