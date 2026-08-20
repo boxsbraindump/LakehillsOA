@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, Square } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
 import { useVoiceGlossaryTerms } from "../hooks/useVoiceGlossaryTerms";
@@ -52,6 +52,17 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
   const [isListening, setIsListening] = useState(false);
   const Recognition = typeof window === "undefined" ? undefined : getSpeechRecognition();
 
+  // Without this, closing the form left the recogniser running: `onend` restarted it
+  // every 250ms forever, so the mic stayed live and each reopened form added another one.
+  useEffect(
+    () => () => {
+      shouldKeepListeningRef.current = false;
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+    },
+    [],
+  );
+
   if (!Recognition) return null;
   const RecognitionCtor = Recognition;
 
@@ -86,11 +97,13 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
       if (transcript) onTranscript(transcript);
     };
     recognition.onerror = (event) => {
-      if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
-        shouldKeepListeningRef.current = false;
-        recognitionRef.current = null;
-        setIsListening(false);
-      }
+      // "no-speech" is just a pause — that's the one case worth resuming for.
+      // Anything else (network, aborted, permissions) used to fall through to the
+      // restart loop, leaving the button stuck listening and transcribing nothing.
+      if (event.error === "no-speech") return;
+      shouldKeepListeningRef.current = false;
+      recognitionRef.current = null;
+      setIsListening(false);
     };
     recognition.onend = () => {
       if (!shouldKeepListeningRef.current) {
@@ -112,8 +125,17 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
         }
       }, 250);
     };
-    recognition.start();
-    setIsListening(true);
+    // If start() throws, the "should keep listening" flag must not stay set — otherwise
+    // the button reads as idle while a live recogniser lingers, and the next click
+    // starts a second one on top of it.
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      shouldKeepListeningRef.current = false;
+      recognitionRef.current = null;
+      setIsListening(false);
+    }
   }
 
   return (

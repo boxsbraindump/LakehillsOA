@@ -59,7 +59,6 @@ export default function PortalFields({
       <div className="flex flex-col gap-2">
         {portals.map((portal, i) => {
           const selectedPlatform = platforms.find((platform) => platform.name === portal.name);
-          const isCustomPlatform = platforms.length === 0 || !selectedPlatform;
 
           return (
             <div
@@ -102,41 +101,41 @@ export default function PortalFields({
                   </div>
                 )}
 
-                {isCustomPlatform && (
-                  <>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-(--color-ink-faint)">
-                        {t(
-                          personalCopy
-                            ? "paymentEntryForm.personalPortalNamePlaceholder"
-                            : "paymentEntryForm.portalNamePlaceholder",
-                        )}
-                      </label>
-                      <input
-                        value={portal.name}
-                        onChange={(e) => updatePortal(i, "name", e.target.value)}
-                        placeholder={t(
-                          personalCopy
-                            ? "paymentEntryForm.personalPortalNamePlaceholder"
-                            : "paymentEntryForm.portalNamePlaceholder",
-                        )}
-                        className={inputClass}
-                      />
-                    </div>
+                {/* Both fields stay mounted. They used to render only while the typed name
+                    matched no known platform, so typing "Availity" made the inputs vanish on
+                    the last keystroke, and picking a platform left no way to enter that
+                    payer's own link. The dropdown above is now just a quick-fill helper. */}
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-(--color-ink-faint)">
+                    {t(
+                      personalCopy
+                        ? "paymentEntryForm.personalPortalNamePlaceholder"
+                        : "paymentEntryForm.portalNamePlaceholder",
+                    )}
+                  </label>
+                  <input
+                    value={portal.name}
+                    onChange={(e) => updatePortal(i, "name", e.target.value)}
+                    placeholder={t(
+                      personalCopy
+                        ? "paymentEntryForm.personalPortalNamePlaceholder"
+                        : "paymentEntryForm.portalNamePlaceholder",
+                    )}
+                    className={inputClass}
+                  />
+                </div>
 
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-(--color-ink-faint)">
-                        {t("platforms.url")}
-                      </label>
-                      <input
-                        value={portal.url}
-                        onChange={(e) => updatePortal(i, "url", e.target.value)}
-                        placeholder="https://..."
-                        className={inputClass}
-                      />
-                    </div>
-                  </>
-                )}
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-(--color-ink-faint)">
+                    {t("platforms.url")}
+                  </label>
+                  <input
+                    value={portal.url}
+                    onChange={(e) => updatePortal(i, "url", e.target.value)}
+                    placeholder="https://..."
+                    className={inputClass}
+                  />
+                </div>
               </div>
             </div>
           );

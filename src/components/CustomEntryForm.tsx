@@ -55,6 +55,8 @@ export default function CustomEntryForm({
   );
 
   const [paymentPayer, setPaymentPayer] = useState(initial?.title ?? "");
+  const showPaymentPayerInput =
+    isPersonalWorkspace || payers.length === 0 || selectedPaymentPayerValue === CUSTOM_PAYER_VALUE;
   const [portals, setPortals] = useState<PaymentPortal[]>(
     initial?.portals ?? [{ name: "", url: "" }],
   );
@@ -280,7 +282,11 @@ export default function CustomEntryForm({
             <label className="text-[12px] font-semibold text-(--color-ink-faint)">
               {isPersonalWorkspace ? t("linkEntryForm.title") : t("paymentEntryForm.payer")}
             </label>
-            <VoiceInputButton onTranscript={(text) => setPaymentPayer((current) => appendVoiceText(current, text))} />
+            {/* Only offer the mic when the field it types into is actually on screen —
+                otherwise dictation silently appended to the payer picked from the dropdown. */}
+            {showPaymentPayerInput && (
+              <VoiceInputButton onTranscript={(text) => setPaymentPayer((current) => appendVoiceText(current, text))} />
+            )}
           </div>
           {!isPersonalWorkspace && payers.length > 0 && (
             <select
@@ -296,7 +302,7 @@ export default function CustomEntryForm({
               ))}
             </select>
           )}
-          {(isPersonalWorkspace || payers.length === 0 || selectedPaymentPayerValue === CUSTOM_PAYER_VALUE) && (
+          {showPaymentPayerInput && (
             <input
               autoFocus
               value={paymentPayer}

@@ -34,6 +34,7 @@ export default function PaymentEntryForm({
     initial?.portals ?? [{ name: "", url: "" }],
   );
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const showPayerInput = payers.length === 0 || selectedPayerValue === CUSTOM_PAYER_VALUE;
 
   function appendVoiceText(current: string, text: string, multiline = false) {
     if (!current.trim()) return text;
@@ -73,7 +74,11 @@ export default function PaymentEntryForm({
         <label className="text-[12px] font-semibold text-(--color-ink-faint)">
           {t("paymentEntryForm.payer")}
         </label>
-        <VoiceInputButton onTranscript={(text) => setPayer((current) => appendVoiceText(current, text))} />
+        {/* Mic follows the free-text field: with a payer chosen from the dropdown the
+            input isn't rendered, and dictation was silently appended to its value. */}
+        {showPayerInput && (
+          <VoiceInputButton onTranscript={(text) => setPayer((current) => appendVoiceText(current, text))} />
+        )}
       </div>
       {payers.length > 0 && (
         <select
@@ -89,7 +94,7 @@ export default function PaymentEntryForm({
           ))}
         </select>
       )}
-      {(payers.length === 0 || selectedPayerValue === CUSTOM_PAYER_VALUE) && (
+      {showPayerInput && (
         <input
           autoFocus
           value={payer}
