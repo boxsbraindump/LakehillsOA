@@ -313,6 +313,47 @@ export function logoutRemote(): Promise<void> {
 
 let cachedStatePromise: Promise<Record<string, unknown>> | null = null;
 
+const REMOTE_REFRESH_EVENT = "lh-remote-refresh";
+/** How long a fetched snapshot may be reused before another device's edits would go unseen. */
+const STATE_CACHE_TTL_MS = 30_000;
+let cachedStateAt = 0;
+
+/**
+ * Drop the cached snapshot so the next read goes to the server.
+ *
+ * The cache used to live for the whole page load, only cleared on login/logout. A front
+ * desk leaves this open all day, so every later read replayed the morning's snapshot:
+ * edits made on another machine never appeared, and worse, that stale snapshot was
+ * written back to localStorage and pushed again, overwriting the other machine's work.
+ */
+export function invalidateRemoteState() {
+  cachedStatePromise = null;
+  cachedStateAt = 0;
+}
+
+/** Ask every mounted useSyncedStorage to reconcile with the server again. */
+export function requestRemoteRefresh() {
+  invalidateRemoteState();
+  window.dispatchEvent(new CustomEvent(REMOTE_REFRESH_EVENT));
+}
+
+export function subscribeRemoteRefresh(listener: () => void) {
+  window.addEventListener(REMOTE_REFRESH_EVENT, listener);
+  return () => window.removeEventListener(REMOTE_REFRESH_EVENT, listener);
+}
+
+if (typeof window !== "undefined" && syncEnabled) {
+  // Coming back to the tab is the moment another machine's work is most likely waiting.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") requestRemoteRefresh();
+  });
+  window.addEventListener("focus", () => requestRemoteRefresh());
+  window.addEventListener("online", () => requestRemoteRefresh());
+  window.setInterval(() => {
+    if (document.visibilityState === "visible") requestRemoteRefresh();
+  }, STATE_CACHE_TTL_MS);
+}
+
 export function fetchAllRemoteState(): Promise<Record<string, unknown>> {
   if (!syncEnabled) {
     setSyncStatus("local");
@@ -320,7 +361,11 @@ export function fetchAllRemoteState(): Promise<Record<string, unknown>> {
   }
   const token = getAuthToken();
   if (!token) return Promise.resolve({});
+  if (cachedStatePromise && Date.now() - cachedStateAt > STATE_CACHE_TTL_MS) {
+    invalidateRemoteState();
+  }
   if (!cachedStatePromise) {
+    cachedStateAt = Date.now();
     setSyncStatus("syncing");
     cachedStatePromise = fetch(`${API_BASE}/api/state`, {
       headers: authHeaders(),

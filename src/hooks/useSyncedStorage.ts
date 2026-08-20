@@ -4,6 +4,7 @@ import {
   fetchAllRemoteState,
   getScopedStorageKey,
   pushRemoteValue,
+  subscribeRemoteRefresh,
   syncEnabled,
 } from "../lib/syncApi";
 
@@ -46,8 +47,8 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
     [setStoredValue],
   );
 
-  useEffect(() => {
-    if (!syncEnabled) return;
+  const reconcile = useCallback(() => {
+    if (!syncEnabled) return () => {};
     let cancelled = false;
     fetchAllRemoteState().then((remote) => {
       if (cancelled) return;
@@ -57,15 +58,34 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
         localEditBeforeHydration.current = false;
         return;
       }
-      if (Object.prototype.hasOwnProperty.call(remote, key)) {
-        skipNextPush.current = true;
-        setStoredValue(remote[key] as T);
-      }
+      if (!Object.prototype.hasOwnProperty.call(remote, key)) return;
+      // Only take the server's copy when it actually differs, so a routine refresh
+      // doesn't churn state or bounce an identical value straight back.
+      if (JSON.stringify(remote[key]) === JSON.stringify(latestValue.current)) return;
+      skipNextPush.current = true;
+      setStoredValue(remote[key] as T);
     });
     return () => {
       cancelled = true;
     };
-  }, [key, setStoredValue, storageKey]);
+  }, [key, setStoredValue]);
+
+  useEffect(() => reconcile(), [reconcile, storageKey]);
+
+  // Re-check the server when the tab regains focus, comes back online, or on a timer —
+  // otherwise a tab left open all day never sees another machine's edits.
+  useEffect(() => {
+    if (!syncEnabled) return;
+    let cancelPending: (() => void) | undefined;
+    const unsubscribe = subscribeRemoteRefresh(() => {
+      cancelPending?.();
+      cancelPending = reconcile();
+    });
+    return () => {
+      cancelPending?.();
+      unsubscribe();
+    };
+  }, [reconcile]);
 
   useEffect(() => {
     if (!hydrated.current) return;
