@@ -15,17 +15,23 @@ import {
  * Last write wins — fine for a handful of front-desk computers, not built for
  * simultaneous conflicting edits.
  */
+/**
+ * Tracked per storage key, not per hook instance: the same key is read by several
+ * components at once (a page, the sidebar, the search index). Each instance runs its own
+ * reconcile on mount, so an instance mounting moments after another one's edit would pull
+ * the server's older copy and broadcast it over the edit that hadn't been pushed yet.
+ */
+const pendingLocalEdits = new Set<string>();
+
 export function useSyncedStorage<T>(key: string, initialValue: T) {
   const storageKey = getScopedStorageKey(key);
   const [value, setStoredValue] = useLocalStorage<T>(storageKey, initialValue);
   const hydrated = useRef(!syncEnabled);
-  const localEditBeforeHydration = useRef(false);
   const latestValue = useRef(value);
   const skipNextPush = useRef(false);
 
   useEffect(() => {
     hydrated.current = !syncEnabled;
-    localEditBeforeHydration.current = false;
     skipNextPush.current = false;
   }, [storageKey]);
 
@@ -38,8 +44,11 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
       setStoredValue((prev) => {
         const resolved =
           typeof next === "function" ? (next as (previous: T) => T)(prev) : next;
-        if (JSON.stringify(resolved) !== JSON.stringify(prev) && !hydrated.current) {
-          localEditBeforeHydration.current = true;
+        if (JSON.stringify(resolved) !== JSON.stringify(prev)) {
+          // Stays set until this edit is confirmed on the server. Pushes are debounced,
+          // so without it a reconcile landing in that window would pull the server's older
+          // copy over what was just typed — and never push it back.
+          pendingLocalEdits.add(storageKey);
         }
         return resolved;
       });
@@ -53,9 +62,9 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
     fetchAllRemoteState().then((remote) => {
       if (cancelled) return;
       hydrated.current = true;
-      if (localEditBeforeHydration.current) {
+      // Unsaved local work always wins over the server copy; send it instead of losing it.
+      if (pendingLocalEdits.has(storageKey)) {
         void pushRemoteValue(key, latestValue.current);
-        localEditBeforeHydration.current = false;
         return;
       }
       if (!Object.prototype.hasOwnProperty.call(remote, key)) return;
@@ -94,7 +103,14 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
       return;
     }
     const timer = setTimeout(() => {
-      pushRemoteValue(key, value);
+      const pushed = value;
+      void pushRemoteValue(key, pushed).then(() => {
+        // Only stop protecting this edit once the server has it and nothing newer
+        // has been typed since.
+        if (JSON.stringify(latestValue.current) === JSON.stringify(pushed)) {
+          pendingLocalEdits.delete(storageKey);
+        }
+      });
     }, 600);
     return () => clearTimeout(timer);
   }, [key, storageKey, value]);
