@@ -76,6 +76,7 @@ export default function CustomCategory() {
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [draggedEntryId, setDraggedEntryId] = useState<string | null>(null);
   const [dragOverEntryId, setDragOverEntryId] = useState<string | null>(null);
+  const [dragOverAfter, setDragOverAfter] = useState(false);
 
   useEffect(() => {
     setQuery("");
@@ -176,27 +177,32 @@ export default function CustomCategory() {
     setEditingId(null);
   }
 
-  function moveEntryBefore(draggedId: string, beforeId: string) {
-    if (draggedId === beforeId) return;
+  /**
+   * `placeAfter` comes from which half of the target card the pointer is over. Inserting
+   * always before meant dragging a card onto the one below it put it back where it
+   * started, and the last position could never be reached.
+   */
+  function moveEntryRelativeTo(draggedId: string, targetId: string, placeAfter: boolean) {
+    if (draggedId === targetId) return;
 
     setAllEntries((prev) => {
       const current = prev[categoryId] ?? [];
       const dragged = current.find((entry) => entry.id === draggedId);
-      const target = current.find((entry) => entry.id === beforeId);
+      const target = current.find((entry) => entry.id === targetId);
       if (!dragged || !target) return prev;
 
       const withoutDragged = current.filter((entry) => entry.id !== draggedId);
-      const targetIndex = withoutDragged.findIndex((entry) => entry.id === beforeId);
+      const targetIndex = withoutDragged.findIndex((entry) => entry.id === targetId);
       if (targetIndex < 0) return prev;
 
-      const movedEntry =
-        Boolean(dragged.pinned) === Boolean(target.pinned)
-          ? dragged
-          : { ...dragged, pinned: target.pinned };
+      // Reordering reorders. It used to rewrite the dragged card's pinned flag to match
+      // whatever it was dropped next to, so moving a card past the pinned block silently
+      // pinned or unpinned it.
+      const insertAt = placeAfter ? targetIndex + 1 : targetIndex;
       const next = [
-        ...withoutDragged.slice(0, targetIndex),
-        movedEntry,
-        ...withoutDragged.slice(targetIndex),
+        ...withoutDragged.slice(0, insertAt),
+        dragged,
+        ...withoutDragged.slice(insertAt),
       ];
 
       return { ...prev, [categoryId]: next };
@@ -219,6 +225,11 @@ export default function CustomCategory() {
     });
   }
 
+  function isAfterMidpoint(event: DragEvent<HTMLElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return event.clientY > rect.top + rect.height / 2;
+  }
+
   function entryDropProps(entry: CustomEntry) {
     const isSearchActive = query.trim().length > 0;
 
@@ -227,11 +238,18 @@ export default function CustomCategory() {
         if (!draggedEntryId || draggedEntryId === entry.id || isSearchActive) return;
         event.preventDefault();
         setDragOverEntryId(entry.id);
+        setDragOverAfter(isAfterMidpoint(event));
+      },
+      onDragLeave: (event: DragEvent<HTMLElement>) => {
+        // Without this the inserted gap stayed painted while dragging over areas that
+        // can't accept a drop, leaving the list displaced for the rest of the drag.
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setDragOverEntryId((current) => (current === entry.id ? null : current));
       },
       onDrop: (event: DragEvent<HTMLElement>) => {
         event.preventDefault();
         if (draggedEntryId && draggedEntryId !== entry.id && !isSearchActive) {
-          moveEntryBefore(draggedEntryId, entry.id);
+          moveEntryRelativeTo(draggedEntryId, entry.id, isAfterMidpoint(event));
         }
         setDraggedEntryId(null);
         setDragOverEntryId(null);
@@ -317,23 +335,27 @@ export default function CustomCategory() {
       entry.id === justAddedId ? "fade-in-up" : "",
       draggedEntryId === entry.id ? "scale-[0.99] border-(--color-primary)/45 opacity-45 shadow-(--shadow-level-2)" : "",
       dragOverEntryId === entry.id && draggedEntryId !== entry.id
-        ? "translate-y-2 border-(--color-primary)/45"
+        ? "border-(--color-primary)/45"
         : "",
     ].join(" ");
   }
 
-  function dropPreview(entry: CustomEntry) {
+  /**
+   * An overlay on the card, not a spacer above it. The old spacer pushed the card ~36px
+   * down the moment you hovered it — out from under the cursor — and, having no drop
+   * handlers of its own, made the browser reject the very drop being aimed at.
+   */
+  function dropIndicator(entry: CustomEntry) {
     if (!draggedEntryId || dragOverEntryId !== entry.id || draggedEntryId === entry.id) return null;
 
     return (
-      <div
+      <span
+        aria-hidden
         className={[
-          "drag-drop-preview relative h-3 transition-all duration-200",
-          template === "payments" ? "sm:col-span-2" : "",
+          "pointer-events-none absolute right-0 left-0 h-[2px] rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]",
+          dragOverAfter ? "-bottom-2" : "-top-2",
         ].join(" ")}
-      >
-        <span className="absolute top-1/2 right-0 left-0 h-[2px] -translate-y-1/2 rounded-full bg-(--color-primary) shadow-[0_0_0_3px_rgba(40,175,165,0.10)]" />
-      </div>
+      />
     );
   }
 
@@ -461,7 +483,6 @@ export default function CustomCategory() {
         )}
         {filtered.map((entry) => (
           <Fragment key={entry.id}>
-            {dropPreview(entry)}
             {editingId === entry.id ? (
             <div key={entry.id} className={template === "payments" ? "sm:col-span-2" : ""}>
               <CustomEntryForm
@@ -479,6 +500,7 @@ export default function CustomCategory() {
               className={cardClassName(entry)}
               {...entryDropProps(entry)}
             >
+              {dropIndicator(entry)}
               <div className="flex items-start gap-3 pr-16">
                 <button
                   role="checkbox"
@@ -554,6 +576,7 @@ export default function CustomCategory() {
               className={cardClassName(entry)}
               {...entryDropProps(entry)}
             >
+              {dropIndicator(entry)}
               {entryActions(entry)}
 
               <div className="mb-2 flex flex-wrap items-center gap-2 pr-16">
@@ -596,6 +619,7 @@ export default function CustomCategory() {
               className={cardClassName(entry)}
               {...entryDropProps(entry)}
             >
+              {dropIndicator(entry)}
               {entryActions(entry)}
 
               <div className="mb-2 flex flex-wrap items-center gap-2 pr-16">
