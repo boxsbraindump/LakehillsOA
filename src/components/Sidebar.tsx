@@ -219,7 +219,11 @@ export default function Sidebar() {
 
   function handleRenameSubmit(e: React.FormEvent, categoryId: string) {
     e.preventDefault();
-    if (!renameValue.trim()) return;
+    // A duplicate name already explained itself; a blank one said nothing at all.
+    if (!renameValue.trim()) {
+      showToast(t("sidebar.categoryNameRequired"));
+      return;
+    }
     const normalizedTitle = normalizeCategoryTitle(renameValue);
     const hasDuplicateName = visibleCustomCategories
       .filter((category) => category.id !== categoryId)
@@ -238,7 +242,10 @@ export default function Sidebar() {
 
   function handleAddCategory(e: React.FormEvent) {
     e.preventDefault();
-    if (!newCategoryTitle.trim()) return;
+    if (!newCategoryTitle.trim()) {
+      showToast(t("sidebar.categoryNameRequired"));
+      return;
+    }
     const id = slugify(newCategoryTitle, "category");
     const normalizedTitle = normalizeCategoryTitle(newCategoryTitle);
     const hasDuplicateName = visibleCustomCategories.some(

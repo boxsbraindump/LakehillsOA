@@ -34,6 +34,7 @@ export default function PaymentEntryForm({
     initial?.portals ?? [{ name: "", url: "" }],
   );
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [error, setError] = useState(false);
   const showPayerInput = payers.length === 0 || selectedPayerValue === CUSTOM_PAYER_VALUE;
 
   function appendVoiceText(current: string, text: string, multiline = false) {
@@ -52,7 +53,11 @@ export default function PaymentEntryForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!payer.trim()) return;
+    // Was a silent return: no message, form still open, nothing saved.
+    if (!payer.trim()) {
+      setError(true);
+      return;
+    }
     const cleanPortals = portals
       .map((p) => ({ name: p.name.trim(), url: p.url.trim() }))
       .filter((p) => p.name || p.url);
@@ -119,6 +124,10 @@ export default function PaymentEntryForm({
         placeholder={t("paymentEntryForm.notesPlaceholder")}
         className={inputClass}
       />
+
+      {error && (
+        <p className="mt-3 text-[12px] text-red-500">{t("paymentEntryForm.payerRequired")}</p>
+      )}
 
       <div className="mt-4 flex justify-end gap-2">
         <button

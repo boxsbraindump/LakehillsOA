@@ -46,7 +46,10 @@ export default function Home() {
     for (const entry of usageEntries) {
       if (entry.path === "/" || entry.path === "/settings" || entry.path === "/trash") continue;
       const indexedDoc = docsByPath.get(entry.path);
-      if (isPersonalWorkspace && !indexedDoc) continue;
+      // A recently-used record whose target is no longer in the index points at something
+      // that has since been deleted; the chip used to survive and lead to a page where
+      // nothing was highlighted. Custom folders have no entry-level doc, so keep those.
+      if (!indexedDoc && !entry.path.startsWith("/custom/")) continue;
       const chip = indexedDoc ?? entry;
       if (seenPaths.has(chip.path)) continue;
       chips.push(chip);

@@ -32,7 +32,7 @@ function getTemplate(category?: CustomCategoryType): CustomCategoryTemplate {
   return category?.template ?? "oa-case";
 }
 
-function getEntrySearchText(entry: CustomEntry) {
+function getEntrySearchText(entry: CustomEntry, dayNotes: string[] = []) {
   return [
     entry.title,
     entry.detail ?? "",
@@ -42,6 +42,9 @@ function getEntrySearchText(entry: CustomEntry) {
     entry.resolution ?? "",
     ...entry.tags,
     ...(entry.portals ?? []).flatMap((portal) => [portal.name, portal.url]),
+    // The box says it searches notes, so it has to include the per-day sticky notes on
+    // checklist entries — they were the one thing it silently skipped.
+    ...dayNotes,
   ]
     .join(" ")
     .toLowerCase();
@@ -320,7 +323,15 @@ export default function CustomCategory() {
     ...entries.filter((entry) => entry.pinned),
     ...entries.filter((entry) => !entry.pinned),
   ];
-  const filtered = q ? orderedEntries.filter((e) => getEntrySearchText(e).includes(q)) : orderedEntries;
+  // Notes are stored per day, so gather every day's note for an entry, not just today's.
+  function notesForEntry(entryId: string) {
+    return Object.values(checklistState[categoryId] ?? {})
+      .map((day) => day[entryId]?.note ?? "")
+      .filter(Boolean);
+  }
+  const filtered = q
+    ? orderedEntries.filter((e) => getEntrySearchText(e, notesForEntry(e.id)).includes(q))
+    : orderedEntries;
   const done = entries.filter((entry) => dayState[entry.id]?.checked).length;
 
   function addButtonLabel() {

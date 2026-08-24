@@ -91,10 +91,14 @@ export function useSearchIndex() {
       customCategories,
       deletedCategoriesForSearch,
     );
+    // Only index items some day actually lists. The index was built from the definitions
+    // alone, so an item left behind by "clear day" stayed searchable forever while no day
+    // rendered it — the result opened a page where it simply wasn't there.
+    const referencedItemIds = new Set(Object.values(checklistDayItemIds).flat());
     const liveChecklistSections: ChecklistSection[] = checklistSections.map((section) => ({
       id: section.id,
       title: section.title,
-      items: checklistItems[section.id] ?? [],
+      items: (checklistItems[section.id] ?? []).filter((item) => referencedItemIds.has(item.id)),
     }));
     const visibleOACases = [
       ...(includeSeedData ? seedCases.map((item) => oaCaseOverrides[item.id] ?? item) : []),

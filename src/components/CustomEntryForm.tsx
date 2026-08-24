@@ -9,6 +9,7 @@ import type {
 import { slugify } from "../lib/slugify";
 import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { defaultPayers } from "../data/payers";
 import { defaultPlatforms } from "../data/platforms";
 import PortalFields from "./PortalFields";
 import { useAuth } from "./AuthProvider";
@@ -33,11 +34,18 @@ export default function CustomEntryForm({
   const { t } = useLanguage();
   const { syncEnabled, workspace } = useAuth();
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
-  const [payers] = useSyncedStorage<Payer[]>("lh-payers", []);
+  // Defaulting to an empty list meant a clinic that had never edited the payer directory
+  // got the full dropdown on the Payments page but free text only in a custom folder,
+  // because nothing had persisted `lh-payers` yet. Match the other forms.
+  const [payers] = useSyncedStorage<Payer[]>(
+    "lh-payers",
+    isPersonalWorkspace ? [] : defaultPayers,
+  );
   const [platforms] = useSyncedStorage<Platform[]>(
     "lh-platforms",
     isPersonalWorkspace ? [] : defaultPlatforms,
   );
+  const [error, setError] = useState(false);
   const [title, setTitle] = useState(initial?.title ?? "");
   const [detail, setDetail] = useState(initial?.detail ?? initial?.notes ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
@@ -90,8 +98,13 @@ export default function CustomEntryForm({
     // so anything it doesn't render must survive the save untouched. Rebuilding the
     // entry from scratch silently destroyed fields whenever the folder's template
     // differed from the one an entry was created under.
+    // Every branch used to `return` silently on a blank required field: no message, form
+    // left open, nothing saved — which reads as a dead Save button.
     if (template === "checklist") {
-      if (!title.trim()) return;
+      if (!title.trim()) {
+        setError(true);
+        return;
+      }
       onSave({
         ...initial,
         id: initial?.id ?? slugify(title, "item"),
@@ -104,7 +117,10 @@ export default function CustomEntryForm({
     }
 
     if (template === "payments") {
-      if (!paymentPayer.trim()) return;
+      if (!paymentPayer.trim()) {
+        setError(true);
+        return;
+      }
       const cleanPortals = portals
         .map((p) => ({ name: p.name.trim(), url: p.url.trim() }))
         .filter((p) => p.name || p.url);
@@ -120,7 +136,10 @@ export default function CustomEntryForm({
       return;
     }
 
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setError(true);
+      return;
+    }
 
     onSave({
       ...initial,
@@ -341,6 +360,16 @@ export default function CustomEntryForm({
             className={inputClass}
           />
         </>
+      )}
+
+      {error && (
+        <p className="mt-3 text-[12px] text-red-500">
+          {t(
+            template === "payments"
+              ? "customEntryForm.payerRequired"
+              : "customEntryForm.titleRequired",
+          )}
+        </p>
       )}
 
       <div className="mt-4 flex justify-end gap-2">

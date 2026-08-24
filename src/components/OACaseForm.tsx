@@ -29,6 +29,7 @@ export default function OACaseForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [payer, setPayer] = useState(initial?.payer ?? "");
   const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
+  const [error, setError] = useState(false);
   const [summary, setSummary] = useState(initial?.summary ?? "");
   const [resolution, setResolution] = useState(initial?.resolution ?? "");
 
@@ -48,7 +49,11 @@ export default function OACaseForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    // Was a silent return: no message, form still open, nothing saved.
+    if (!title.trim()) {
+      setError(true);
+      return;
+    }
 
     onSave({
       id: initial?.id ?? slugify(title, "case"),
@@ -145,6 +150,8 @@ export default function OACaseForm({
         placeholder={t("oaCaseForm.tagsPlaceholder")}
         className={inputClass}
       />
+
+      {error && <p className="mt-3 text-[12px] text-red-500">{t("oaCaseForm.titleRequired")}</p>}
 
       <div className="mt-4 flex justify-end gap-2">
         <button

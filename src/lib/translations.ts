@@ -9,6 +9,7 @@ export const translations = {
   "sidebar.groupDaily": { zh: "日常", en: "Daily" },
   "sidebar.groupFolders": { zh: "我的文件夹", en: "My folders" },
   "sidebar.addCategory": { zh: "添加分类", en: "Add category" },
+  "sidebar.categoryNameRequired": { zh: "请先填写名称", en: "Enter a name first" },
   "sidebar.categoryNamePlaceholder": { zh: "例如 查保险", en: "e.g. Check insurance" },
   "sidebar.personalCategoryNamePlaceholder": { zh: "例如 SOP、客户资料、链接库", en: "e.g. SOP, client notes, link hub" },
   "sidebar.deleteCategoryConfirm": {
@@ -245,6 +246,13 @@ export const translations = {
 
   "checklistItemForm.contentPlaceholder": { zh: "事项内容", en: "Item text" },
   "checklistItemForm.titleRequired": { zh: "请先填写事项内容", en: "Enter the item text first" },
+  "customEntryForm.titleRequired": { zh: "请先填写标题", en: "Enter a title first" },
+  "customEntryForm.payerRequired": { zh: "请先填写名称", en: "Enter a name first" },
+  "oaCaseForm.titleRequired": { zh: "请先填写标题", en: "Enter a title first" },
+  "paymentEntryForm.payerRequired": {
+    zh: "请先填写保险公司名称",
+    en: "Enter the payer name first",
+  },
   "checklist.copyFromLabel": { zh: "从这一天复制", en: "Copy from" },
   "checklist.copyOnlyUnfinished": { zh: "只复制未完成的", en: "Only copy unfinished items" },
   "checklist.copyOnlyUnfinishedHint": {

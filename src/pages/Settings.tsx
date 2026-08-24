@@ -51,7 +51,11 @@ export default function Settings() {
       const missingPayers = defaultPayers.filter(
         (payer) => !existingKeys.has(`${payer.name.toLowerCase()}|${payer.payerId.toLowerCase()}`),
       );
-      return missingPayers.length > 0 ? [...prev, ...missingPayers] : prev;
+      // Return a new array even when nothing is missing. On a fresh workspace `prev` is
+      // already the in-memory defaults, so returning it unchanged made React bail out and
+      // the value was never written to storage or pushed — while the seed version below
+      // was still recorded, permanently marking a seeding that never happened.
+      return missingPayers.length > 0 ? [...prev, ...missingPayers] : [...prev];
     });
     setPayerSeedVersion(PAYER_SEED_VERSION);
   }, [isPersonalWorkspace, payerSeedVersion, setPayerSeedVersion, setPayers]);
