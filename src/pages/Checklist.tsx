@@ -26,6 +26,7 @@ import EmptyState from "../components/EmptyState";
 import VoiceInputButton from "../components/VoiceInputButton";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
+import { matchesSearch } from "../lib/searchIndex";
 import type { ChecklistItem, ChecklistSectionMeta } from "../lib/types";
 
 interface ItemState {
@@ -750,9 +751,9 @@ export default function Checklist() {
           { key: "section" as const, value: sectionTitle },
           { key: "date" as const, value: displayDate },
         ];
-        const haystack = fields.map((field) => field.value).join(" ").toLowerCase();
-        if (!haystack.includes(q)) continue;
-        const matched = fields.find((field) => field.value.toLowerCase().includes(q)) ?? fields[0];
+        const haystack = fields.map((field) => field.value).join(" ");
+        if (!matchesSearch(haystack, q)) continue;
+        const matched = fields.find((field) => matchesSearch(field.value, q)) ?? fields[0];
         results.push({
           date,
           itemId,

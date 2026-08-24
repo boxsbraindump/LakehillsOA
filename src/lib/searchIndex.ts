@@ -1,3 +1,4 @@
+import type Fuse from "fuse.js";
 import type { IFuseOptions } from "fuse.js";
 import { checklistSections } from "../data/checklist";
 import { oaCases } from "../data/oaCases";
@@ -11,6 +12,23 @@ import type {
   PaymentEntry,
   SearchDoc,
 } from "./types";
+
+/**
+ * Lowercased with all whitespace removed. A name typed "PanZhongjuan" and the same name
+ * stored "Pan Zhongjuan" are the same name to the person searching, but a plain substring
+ * test misses across that space — which made records impossible to find by name.
+ */
+export function compactForSearch(text: string) {
+  return text.toLowerCase().replace(/\s+/g, "");
+}
+
+/** Substring match that ignores where the spaces fall on either side. */
+export function matchesSearch(haystack: string, query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  if (haystack.toLowerCase().includes(q)) return true;
+  return compactForSearch(haystack).includes(compactForSearch(query));
+}
 
 export function buildSeedSearchDocs(): SearchDoc[] {
   return [
@@ -108,10 +126,34 @@ export const FUSE_OPTIONS: IFuseOptions<SearchDoc> = {
     { name: "title", weight: 3 },
     { name: "snippet", weight: 1.5 },
     { name: "keywords", weight: 1 },
+    // Space-stripped copy of the text above, so a query typed without spaces still lands.
+    { name: "compact", weight: 2, getFn: (doc) => compactForSearch(searchableText(doc)) },
   ],
   threshold: 0.35,
   ignoreLocation: true,
 };
+
+function searchableText(doc: SearchDoc) {
+  return [doc.title, doc.snippet, ...doc.keywords].join(" ");
+}
+
+/**
+ * Runs the query as typed and with its spaces removed, so the same record is found
+ * whether the name was stored "Pan Zhongjuan" and searched "PanZhongjuan" or the reverse.
+ */
+export function searchDocs(fuse: Fuse<SearchDoc>, query: string, limit = 8): SearchDoc[] {
+  const results = fuse.search(query, { limit }).map((r) => r.item);
+  const compact = compactForSearch(query);
+  if (compact === query.trim().toLowerCase()) return results;
+
+  const seen = new Set(results.map((doc) => doc.id));
+  for (const { item } of fuse.search(compact, { limit })) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    results.push(item);
+  }
+  return results.slice(0, limit);
+}
 
 const CATEGORY_LABEL_KEY: Record<
   SearchDoc["category"],

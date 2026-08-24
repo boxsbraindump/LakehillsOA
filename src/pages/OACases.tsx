@@ -11,6 +11,7 @@ import OACaseForm from "../components/OACaseForm";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../components/AuthProvider";
 import type { OACase } from "../lib/types";
+import { matchesSearch } from "../lib/searchIndex";
 
 export default function OACases() {
   useHashHighlight();
@@ -94,7 +95,7 @@ export default function OACases() {
   const q = query.trim().toLowerCase();
   const filtered = q
     ? cases.filter((c) =>
-        [c.title, c.payer, c.summary, c.resolution, ...c.tags].join(" ").toLowerCase().includes(q),
+        matchesSearch([c.title, c.payer, c.summary, c.resolution, ...c.tags].join(" "), q),
       )
     : cases;
 

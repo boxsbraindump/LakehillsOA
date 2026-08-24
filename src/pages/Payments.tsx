@@ -11,6 +11,7 @@ import PaymentEntryForm from "../components/PaymentEntryForm";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../components/AuthProvider";
 import type { PaymentEntry } from "../lib/types";
+import { matchesSearch } from "../lib/searchIndex";
 
 export default function Payments() {
   useHashHighlight();
@@ -41,14 +42,14 @@ export default function Payments() {
   const q = query.trim().toLowerCase();
   const filtered = q
     ? entries.filter((entry) =>
-        [
-          entry.payer,
-          entry.notes ?? "",
-          ...entry.portals.flatMap((portal) => [portal.name, portal.url]),
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(q),
+        matchesSearch(
+          [
+            entry.payer,
+            entry.notes ?? "",
+            ...entry.portals.flatMap((portal) => [portal.name, portal.url]),
+          ].join(" "),
+          q,
+        ),
       )
     : entries;
 

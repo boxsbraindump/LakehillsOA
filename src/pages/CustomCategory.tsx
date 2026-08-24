@@ -14,6 +14,7 @@ import {
   CUSTOM_CATEGORY_DELETIONS_KEY,
   filterDeletedCustomCategories,
 } from "../lib/customCategories";
+import { matchesSearch } from "../lib/searchIndex";
 import type {
   CustomCategory as CustomCategoryType,
   CustomCategoryTemplate,
@@ -334,7 +335,7 @@ export default function CustomCategory() {
       .filter(Boolean);
   }
   const filtered = q
-    ? orderedEntries.filter((e) => getEntrySearchText(e, notesForEntry(e.id)).includes(q))
+    ? orderedEntries.filter((e) => matchesSearch(getEntrySearchText(e, notesForEntry(e.id)), q))
     : orderedEntries;
   const done = entries.filter((entry) => dayState[entry.id]?.checked).length;
 

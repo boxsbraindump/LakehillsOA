@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
-import { CATEGORY_DOT } from "../lib/searchIndex";
+import { CATEGORY_DOT, searchDocs } from "../lib/searchIndex";
 import { useSearchIndex } from "../hooks/useSearchIndex";
 import { useUsageStats } from "../hooks/useUsageStats";
 import SearchResults from "../components/SearchResults";
@@ -32,7 +32,7 @@ export default function Home() {
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    return fuse.search(query, { limit: 8 }).map((r) => r.item);
+    return searchDocs(fuse, query);
   }, [query, fuse]);
 
   const quickChips = useMemo(() => {
