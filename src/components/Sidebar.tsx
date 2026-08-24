@@ -116,9 +116,12 @@ const PERSONAL_TEMPLATE_LABEL_KEY: Record<
   payments: "template.linkDirectory",
 };
 
-function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
+function navLinkClass({ isActive }: { isActive: boolean }, extra = "", collapsed = false) {
   return [
-    "group flex shrink-0 items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] whitespace-nowrap transition-colors",
+    "group flex shrink-0 items-center rounded-(--radius-md) text-[14px] whitespace-nowrap transition-colors",
+    // On the rail the row is a centred square, not a full-width bar with a left-hugging
+    // icon — otherwise the highlight is far wider than the thing it is highlighting.
+    collapsed ? "md:h-10 md:w-10 md:justify-center md:gap-0 md:p-0 gap-2.5 px-2 py-2" : "gap-2.5 px-2 py-2",
     isActive
       ? "active bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
       : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
@@ -524,17 +527,29 @@ export default function Sidebar() {
         onClick={() => setIsCollapsed((open) => !open)}
         aria-label={t(isCollapsed ? "sidebar.expand" : "sidebar.collapse")}
         title={t(isCollapsed ? "sidebar.expand" : "sidebar.collapse")}
-        className="mb-2 hidden items-center gap-2 self-start rounded-(--radius-md) p-1.5 text-(--color-ink-faint) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary) md:flex"
+        className={[
+          "mb-2 hidden items-center rounded-(--radius-md) text-(--color-ink-faint) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary) md:flex",
+          isCollapsed ? "h-10 w-10 justify-center self-center" : "gap-2 self-start p-1.5",
+        ].join(" ")}
       >
         {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
       </button>
+
+      {/* Stands in for the group headings, which are hidden on the rail — without it the
+          fixed sections and the folders run together as one undifferentiated column. */}
+      {isCollapsed && <div className="mb-1 hidden h-px bg-(--color-sidebar-border) md:block" />}
 
       {!isCollapsed && (
         <p className="hidden px-2 pb-1 text-[11px] font-semibold tracking-[0.06em] text-(--color-ink-faint) uppercase md:block">
           {t("sidebar.groupDaily")}
         </p>
       )}
-      <nav className="no-scrollbar flex shrink-0 gap-0.5 overflow-x-auto md:flex-col md:overflow-visible">
+      <nav
+        className={[
+          "no-scrollbar flex shrink-0 gap-0.5 overflow-x-auto md:flex-col md:overflow-visible",
+          isCollapsed ? "md:items-center" : "",
+        ].join(" ")}
+      >
         {(isPersonalWorkspace ? PERSONAL_NAV_ITEMS : NAV_ITEMS).map(({ to, key, category, icon: Icon }) => (
           <NavLink
             key={to}
@@ -548,7 +563,7 @@ export default function Sidebar() {
               })
             }
             title={t(key)}
-            className={navLinkClass}
+            className={(props) => navLinkClass(props, "", isCollapsed)}
           >
             <Icon size={16} strokeWidth={2} className="shrink-0" />
             <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>{t(key)}</span>
@@ -578,9 +593,15 @@ export default function Sidebar() {
           />
         </div>
       )}
+      {isCollapsed && <div className="my-1 hidden h-px bg-(--color-sidebar-border) md:block" />}
       {/* The only region allowed to grow: it takes the leftover height and scrolls, which
           is what keeps the trash/profile footer on screen no matter how many folders exist. */}
-      <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:mt-0 md:min-h-0 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
+      <nav
+        className={[
+          "no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:mt-0 md:min-h-0 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto",
+          isCollapsed ? "md:items-center" : "",
+        ].join(" ")}
+      >
         {filteredCustomCategories.map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
@@ -617,6 +638,7 @@ export default function Sidebar() {
                 {...categoryDropProps(category)}
                 className={[
                   "group/cat relative flex shrink-0 cursor-grab items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
+                  isCollapsed ? "md:h-10 md:w-10 md:justify-center" : "",
                   draggedCategoryId === category.id ? "opacity-60" : "",
                   isCategoryActive
                     ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
@@ -637,9 +659,25 @@ export default function Sidebar() {
                   })
                 }
                 title={category.title}
-                className="flex min-w-0 flex-1 items-center gap-2.5 px-2 py-2 text-[14px] whitespace-nowrap text-inherit"
+                className={[
+                  "flex min-w-0 flex-1 items-center gap-2.5 px-2 py-2 text-[14px] whitespace-nowrap text-inherit",
+                  isCollapsed ? "md:h-10 md:w-10 md:flex-none md:justify-center md:gap-0 md:p-0" : "",
+                ].join(" ")}
               >
-                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                {isCollapsed && category.icon === "folder" ? (
+                  <>
+                    {/* Most folders keep the default icon, so a rail of them was six
+                        identical shapes with no way to tell which was which. Fall back to
+                        the first character of the name; a chosen icon still wins. The rail
+                        only exists from md up, so the narrow layout keeps the icon. */}
+                    <span className="hidden text-[13px] font-semibold md:inline">
+                      {[...category.title.trim()][0] ?? "?"}
+                    </span>
+                    <Icon size={16} strokeWidth={2} className="shrink-0 md:hidden" />
+                  </>
+                ) : (
+                  <Icon size={16} strokeWidth={2} className="shrink-0" />
+                )}
                 <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>
                   {category.title}
                 </span>
@@ -795,7 +833,12 @@ export default function Sidebar() {
           <button
             onClick={() => setIsAddingCategory(true)}
             title={t("sidebar.addCategory")}
-            className="flex items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)"
+            className={[
+              "flex items-center rounded-(--radius-md) text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
+              isCollapsed
+                ? "gap-2.5 px-2 py-2 md:h-10 md:w-10 md:justify-center md:gap-0 md:p-0"
+                : "gap-2.5 px-2 py-2",
+            ].join(" ")}
           >
             <Plus size={16} strokeWidth={2} className="shrink-0" />
             <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>
@@ -805,9 +848,19 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <nav className="no-scrollbar mt-2 flex shrink-0 gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-2 md:flex-col md:overflow-visible md:border-t">
+      <nav
+        className={[
+          "no-scrollbar mt-2 flex shrink-0 gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-2 md:flex-col md:overflow-visible md:border-t",
+          isCollapsed ? "md:items-center" : "",
+        ].join(" ")}
+      >
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
-          <NavLink key={to} to={to} title={t(key)} className={navLinkClass}>
+          <NavLink
+            key={to}
+            to={to}
+            title={t(key)}
+            className={(props) => navLinkClass(props, "", isCollapsed)}
+          >
             <Icon size={16} strokeWidth={2} className="shrink-0" />
             <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>{t(key)}</span>
           </NavLink>
