@@ -431,6 +431,12 @@ export const translations = {
   "payers.payerIdPlaceholder": { zh: "例如 91051", en: "e.g. 91051" },
   "payers.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
   "payers.empty": { zh: "还没有添加保险公司", en: "No payers added yet" },
+  "payers.deletedToast": { zh: "已删除「{name}」", en: 'Deleted "{name}"' },
+  "payers.nameRequired": { zh: "请先填写保险公司名称", en: "Enter the payer name first" },
+  "payers.duplicateName": {
+    zh: "已经有同名的保险公司了",
+    en: "A payer with this name already exists",
+  },
 
   "platforms.addNew": { zh: "添加平台", en: "Add platform" },
   "platforms.name": { zh: "平台名称", en: "Platform name" },
@@ -439,6 +445,12 @@ export const translations = {
   "platforms.urlPlaceholder": { zh: "https://...", en: "https://..." },
   "platforms.deleteConfirm": { zh: "删除「{name}」？", en: 'Delete "{name}"?' },
   "platforms.empty": { zh: "还没有添加平台", en: "No platforms added yet" },
+  "platforms.deletedToast": { zh: "已删除「{name}」", en: 'Deleted "{name}"' },
+  "platforms.nameRequired": { zh: "请先填写平台名称", en: "Enter the platform name first" },
+  "platforms.duplicateName": {
+    zh: "已经有同名的平台了",
+    en: "A platform with this name already exists",
+  },
   "empty.addFirst": { zh: "添加第一条", en: "Add first item" },
   "checklist.defaultSectionTitle": { zh: "Checklist", en: "Checklist" },
   "checklist.emptyTitle": { zh: "这一天还没有 Checklist", en: "This day has no checklist yet" },

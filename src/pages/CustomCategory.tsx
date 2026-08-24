@@ -128,19 +128,35 @@ export default function CustomCategory() {
     });
   }
 
-  function resetSelectedDay() {
+  async function resetSelectedDay() {
+    const day = checklistState[categoryId]?.[selectedDate];
+    if (!day || Object.keys(day).length === 0) return;
+    if (
+      !(await confirm({
+        title: t("checklist.clearDayConfirmTitle"),
+        message: t("checklist.clearDayConfirm", { date: formatDisplayDate(selectedDate, lang) }),
+        confirmLabel: t("checklist.clearDay"),
+        tone: "default",
+      }))
+    )
+      return;
+
+    // Drop the date outright rather than rewriting every item as unchecked. Keeping the
+    // row meant each folder accumulated one record per item per day forever — and because
+    // the whole map is stringified on every keystroke and pushed as one blob, typing in a
+    // note got slower as the history grew.
     setChecklistState((prev) => {
-      const categoryState = prev[categoryId] ?? {};
-      const day = categoryState[selectedDate] ?? {};
-      return {
-        ...prev,
-        [categoryId]: {
-          ...categoryState,
-          [selectedDate]: Object.fromEntries(
-            Object.entries(day).map(([id, state]) => [id, { ...state, checked: false }]),
-          ),
-        },
-      };
+      const categoryState = { ...(prev[categoryId] ?? {}) };
+      delete categoryState[selectedDate];
+      return { ...prev, [categoryId]: categoryState };
+    });
+    showToast(t("checklist.clearedDayToast", { date: formatDisplayDate(selectedDate, lang) }), {
+      label: t("common.undo"),
+      onClick: () =>
+        setChecklistState((prev) => ({
+          ...prev,
+          [categoryId]: { ...(prev[categoryId] ?? {}), [selectedDate]: day },
+        })),
     });
   }
 

@@ -56,6 +56,9 @@ export default function Trash() {
   const [, setOACasesCustom] = useSyncedStorage<OACase[]>("lh-oacases-custom", []);
   const [, setPaymentsHidden] = useSyncedStorage<string[]>("lh-payments-hidden", []);
   const [, setPaymentsCustom] = useSyncedStorage<PaymentEntry[]>("lh-payments-custom", []);
+  const [, setCustomChecklistState] = useSyncedStorage<
+    Record<string, Record<string, Record<string, { checked: boolean; note: string }>>>
+  >("lh-custom-checklist-state", {});
   const [customCategories, setCustomCategories] = useSyncedStorage<CustomCategory[]>(
     "lh-custom-categories",
     [],
@@ -205,7 +208,33 @@ export default function Trash() {
         delete next[entry.itemId];
         return next;
       });
+      // Per-day ticks and notes live in their own map that nothing else cleans up, so
+      // "delete permanently" used to leave the note bodies behind in the synced payload.
+      setCustomChecklistState((prev) => {
+        if (!(entry.itemId in prev)) return prev;
+        const next = { ...prev };
+        delete next[entry.itemId];
+        return next;
+      });
       setDeletedCategories((prev) => prev.filter((deleted) => deleted.id !== entry.itemId));
+    } else if (entry.category === "custom" && entry.sectionId) {
+      const categoryId = entry.sectionId;
+      setCustomChecklistState((prev) => {
+        const categoryState = prev[categoryId];
+        if (!categoryState) return prev;
+        let changed = false;
+        const nextCategory: typeof categoryState = {};
+        for (const [date, day] of Object.entries(categoryState)) {
+          if (!(entry.itemId in day)) {
+            nextCategory[date] = day;
+            continue;
+          }
+          changed = true;
+          const { [entry.itemId]: _removed, ...rest } = day;
+          if (Object.keys(rest).length > 0) nextCategory[date] = rest;
+        }
+        return changed ? { ...prev, [categoryId]: nextCategory } : prev;
+      });
     }
     removeFromTrash(entry.trashId);
   }

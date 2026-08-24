@@ -3,6 +3,7 @@ import { ExternalLink, LogOut, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../components/AuthProvider";
 import { useLanguage } from "../components/LanguageProvider";
 import { useConfirm } from "../components/ConfirmProvider";
+import { useToast } from "../components/ToastProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { defaultPayers } from "../data/payers";
 import { defaultPlatforms } from "../data/platforms";
@@ -19,6 +20,7 @@ export default function Settings() {
   const { email, logout, syncEnabled, workspace } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const isPersonalWorkspace = Boolean(syncEnabled && workspace && !workspace.isPrimary);
   const [payers, setPayers] = useSyncedStorage<Payer[]>(
     "lh-payers",
@@ -79,10 +81,21 @@ export default function Settings() {
 
   function handleAddPayer(e: React.FormEvent) {
     e.preventDefault();
-    if (!newName.trim()) return;
+    const name = newName.trim();
+    // Pressing Add with a blank name used to do nothing at all — no message, form still
+    // open — which reads as a broken button. Same for a duplicate, which silently created
+    // a second indistinguishable row in every payer dropdown.
+    if (!name) {
+      showToast(t("payers.nameRequired"));
+      return;
+    }
+    if (payers.some((p) => p.name.trim().toLowerCase() === name.toLowerCase())) {
+      showToast(t("payers.duplicateName"));
+      return;
+    }
     setPayers((prev) => [
       ...prev,
-      { id: slugify(newName, "payer"), name: newName.trim(), payerId: newPayerId.trim() },
+      { id: slugify(name, "payer"), name, payerId: newPayerId.trim() },
     ]);
     setNewName("");
     setNewPayerId("");
@@ -90,13 +103,34 @@ export default function Settings() {
 
   async function handleDeletePayer(payer: Payer) {
     if (!(await confirm({ message: t("payers.deleteConfirm", { name: payer.name }) }))) return;
+    const index = payers.findIndex((p) => p.id === payer.id);
     setPayers((prev) => prev.filter((p) => p.id !== payer.id));
+    // These were the only destructive actions in the app with no way back: the delete
+    // syncs to every machine and the seed effect never re-adds it, so a mis-click meant
+    // retyping the entry by hand.
+    showToast(t("payers.deletedToast", { name: payer.name }), {
+      label: t("common.undo"),
+      onClick: () =>
+        setPayers((prev) => {
+          if (prev.some((p) => p.id === payer.id)) return prev;
+          const next = [...prev];
+          next.splice(index < 0 ? next.length : index, 0, payer);
+          return next;
+        }),
+    });
   }
 
   function handleAddPlatform(e: React.FormEvent) {
     e.preventDefault();
     const name = newPlatformName.trim();
-    if (!name) return;
+    if (!name) {
+      showToast(t("platforms.nameRequired"));
+      return;
+    }
+    if (platforms.some((p) => p.name.trim().toLowerCase() === name.toLowerCase())) {
+      showToast(t("platforms.duplicateName"));
+      return;
+    }
     setPlatforms((prev) => [...prev, { id: slugify(name, "platform"), name, url: newPlatformUrl.trim() }]);
     setNewPlatformName("");
     setNewPlatformUrl("");
@@ -104,7 +138,18 @@ export default function Settings() {
 
   async function handleDeletePlatform(platform: Platform) {
     if (!(await confirm({ message: t("platforms.deleteConfirm", { name: platform.name }) }))) return;
+    const index = platforms.findIndex((p) => p.id === platform.id);
     setPlatforms((prev) => prev.filter((p) => p.id !== platform.id));
+    showToast(t("platforms.deletedToast", { name: platform.name }), {
+      label: t("common.undo"),
+      onClick: () =>
+        setPlatforms((prev) => {
+          if (prev.some((p) => p.id === platform.id)) return prev;
+          const next = [...prev];
+          next.splice(index < 0 ? next.length : index, 0, platform);
+          return next;
+        }),
+    });
   }
 
   function updatePlatform(platformId: string, updates: Partial<Pick<Platform, "name" | "url">>) {
