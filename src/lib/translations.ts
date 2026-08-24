@@ -10,6 +10,10 @@ export const translations = {
   "sidebar.groupFolders": { zh: "我的文件夹", en: "My folders" },
   "sidebar.addCategory": { zh: "添加分类", en: "Add category" },
   "sidebar.categoryNameRequired": { zh: "请先填写名称", en: "Enter a name first" },
+  "sidebar.collapse": { zh: "收起侧边栏", en: "Collapse sidebar" },
+  "sidebar.expand": { zh: "展开侧边栏", en: "Expand sidebar" },
+  "sidebar.filterFolders": { zh: "筛选文件夹…", en: "Filter folders…" },
+  "sidebar.noFolderMatches": { zh: "没有匹配的文件夹", en: "No folders match" },
   "sidebar.categoryNamePlaceholder": { zh: "例如 查保险", en: "e.g. Check insurance" },
   "sidebar.personalCategoryNamePlaceholder": { zh: "例如 SOP、客户资料、链接库", en: "e.g. SOP, client notes, link hub" },
   "sidebar.deleteCategoryConfirm": {
