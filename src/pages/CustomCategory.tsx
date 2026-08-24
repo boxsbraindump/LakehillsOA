@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState, type DragEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, GripVertical, Pencil, Pin, Plus, Search, StickyNote, Trash2 } from "lucide-react";
 import { useHashHighlight } from "../hooks/useHashHighlight";
-import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { useSyncedStorage, updateSyncedStorage } from "../hooks/useSyncedStorage";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
 import { useLanguage } from "../components/LanguageProvider";
@@ -295,10 +295,14 @@ export default function CustomCategory() {
     showToast(t("customCategory.deletedToast", { title: entry.title }), {
       label: t("common.undo"),
       onClick: () => {
-        setAllEntries((prev) => ({
-          ...prev,
-          [categoryId]: [...(prev[categoryId] ?? []), entry],
-        }));
+        // Written through storage rather than this page's state: the toast outlives the
+        // page, and once it unmounted the setter was a no-op, so undoing after navigating
+        // away silently did nothing.
+        updateSyncedStorage<Record<string, CustomEntry[]>>("lh-custom-entries", {}, (prev) => {
+          const existing = prev[categoryId] ?? [];
+          if (existing.some((e) => e.id === entry.id)) return prev;
+          return { ...prev, [categoryId]: [...existing, entry] };
+        });
         removeFromTrash(trashId);
       },
     });

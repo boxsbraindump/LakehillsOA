@@ -39,6 +39,9 @@ export default function Settings() {
   const [newPayerId, setNewPayerId] = useState("");
   const [newPlatformName, setNewPlatformName] = useState("");
   const [newPlatformUrl, setNewPlatformUrl] = useState("");
+  const [platformDrafts, setPlatformDrafts] = useState<Record<string, { name: string; url: string }>>(
+    {},
+  );
 
   useEffect(() => {
     if (isPersonalWorkspace) return;
@@ -156,9 +159,54 @@ export default function Settings() {
     });
   }
 
-  function updatePlatform(platformId: string, updates: Partial<Pick<Platform, "name" | "url">>) {
+  /**
+   * Edits are held locally until the field is left. They used to be written straight to
+   * synced storage on every keystroke, so each character was pushed to the server and to
+   * every other machine, and there was no way to back out of a change. A name cleared
+   * mid-edit also left a blank-labelled option in the portal dropdown.
+   */
+  function platformFieldValue(platform: Platform, field: "name" | "url") {
+    return platformDrafts[platform.id]?.[field] ?? (field === "name" ? platform.name : platform.url ?? "");
+  }
+
+  function editPlatformDraft(platform: Platform, field: "name" | "url", value: string) {
+    setPlatformDrafts((prev) => ({
+      ...prev,
+      [platform.id]: {
+        name: prev[platform.id]?.name ?? platform.name,
+        url: prev[platform.id]?.url ?? platform.url ?? "",
+        [field]: value,
+      },
+    }));
+  }
+
+  function discardPlatformDraft(platform: Platform) {
+    setPlatformDrafts((prev) => {
+      const next = { ...prev };
+      delete next[platform.id];
+      return next;
+    });
+  }
+
+  function commitPlatformDraft(platform: Platform) {
+    const draft = platformDrafts[platform.id];
+    if (!draft) return;
+    const name = draft.name.trim();
+    const url = draft.url.trim();
+    setPlatformDrafts((prev) => {
+      const next = { ...prev };
+      delete next[platform.id];
+      return next;
+    });
+    // A blank name would leave an unlabelled row in every portal dropdown, so keep the
+    // previous one rather than accepting it.
+    if (!name) {
+      showToast(t("platforms.nameRequired"));
+      return;
+    }
+    if (name === platform.name && url === (platform.url ?? "")) return;
     setPlatforms((prev) =>
-      prev.map((platform) => (platform.id === platformId ? { ...platform, ...updates } : platform)),
+      prev.map((p) => (p.id === platform.id ? { ...p, name, url } : p)),
     );
   }
 
@@ -303,8 +351,13 @@ export default function Settings() {
                   <li key={platform.id} className="group grid gap-2 rounded-(--radius-md) border border-(--color-hairline) p-3">
                     <div className="flex items-center gap-2">
                       <input
-                        value={platform.name}
-                        onChange={(e) => updatePlatform(platform.id, { name: e.target.value })}
+                        value={platformFieldValue(platform, "name")}
+                        onChange={(e) => editPlatformDraft(platform, "name", e.target.value)}
+                        onBlur={() => commitPlatformDraft(platform)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Escape") discardPlatformDraft(platform);
+                        }}
                         aria-label={t("platforms.name")}
                         className={`${inputClass} flex-1`}
                       />
@@ -318,8 +371,13 @@ export default function Settings() {
                     </div>
                     <div className="flex items-center gap-2">
                       <input
-                        value={platform.url ?? ""}
-                        onChange={(e) => updatePlatform(platform.id, { url: e.target.value })}
+                        value={platformFieldValue(platform, "url")}
+                        onChange={(e) => editPlatformDraft(platform, "url", e.target.value)}
+                        onBlur={() => commitPlatformDraft(platform)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Escape") discardPlatformDraft(platform);
+                        }}
                         placeholder={t("platforms.urlPlaceholder")}
                         aria-label={t("platforms.url")}
                         className={inputClass}

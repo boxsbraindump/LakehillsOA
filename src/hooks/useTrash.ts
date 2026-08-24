@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSyncedStorage } from "./useSyncedStorage";
+import { useSyncedStorage, updateSyncedStorage } from "./useSyncedStorage";
 import { purgeExpiredTrash, TRASH_KEY } from "../lib/trash";
 import type { TrashEntry } from "../lib/types";
 
@@ -14,12 +14,19 @@ export function useTrash() {
     });
   }, [setTrash]);
 
+  // Written through storage rather than this hook's state, because these are called from
+  // Undo handlers on toasts that outlive the page that raised them — a state setter from
+  // an unmounted page is a no-op, which left an undone deletion still sitting in Trash.
   function addToTrash(entry: TrashEntry) {
-    setTrash((prev) => [...prev, entry]);
+    updateSyncedStorage<TrashEntry[]>(TRASH_KEY, [], (prev) =>
+      prev.some((e) => e.trashId === entry.trashId) ? prev : [...prev, entry],
+    );
   }
 
   function removeFromTrash(trashId: string) {
-    setTrash((prev) => prev.filter((e) => e.trashId !== trashId));
+    updateSyncedStorage<TrashEntry[]>(TRASH_KEY, [], (prev) =>
+      prev.filter((e) => e.trashId !== trashId),
+    );
   }
 
   return { trash, setTrash, addToTrash, removeFromTrash };

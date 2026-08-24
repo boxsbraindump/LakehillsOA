@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const LOCAL_STORAGE_CHANGE_EVENT = "lh-local-storage-change";
+export const LOCAL_STORAGE_CHANGE_EVENT = "lh-local-storage-change";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const skipNextWrite = useRef(false);

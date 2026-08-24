@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type SetStateAction } from "react";
-import { useLocalStorage } from "./useLocalStorage";
+import { useLocalStorage, LOCAL_STORAGE_CHANGE_EVENT } from "./useLocalStorage";
 import {
   fetchAllRemoteState,
   getScopedStorageKey,
@@ -22,6 +22,39 @@ import {
  * the server's older copy and broadcast it over the edit that hadn't been pushed yet.
  */
 const pendingLocalEdits = new Set<string>();
+
+/**
+ * Write a synced key without going through a mounted component.
+ *
+ * A toast outlives the page that raised it, but its Undo handler closed over React state
+ * setters — once that page unmounted the setter was a no-op, so undoing after navigating
+ * away silently did nothing. Writing storage directly and announcing it lets whichever
+ * components are mounted pick the change up, and the push still happens either way.
+ */
+export function updateSyncedStorage<T>(key: string, fallback: T, updater: (prev: T) => T) {
+  const storageKey = getScopedStorageKey(key);
+  let current = fallback;
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored !== null) current = JSON.parse(stored) as T;
+  } catch {
+    // unreadable storage — fall back to the caller's default
+  }
+
+  const next = updater(current);
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(next));
+  } catch {
+    // storage unavailable; the remote push below is still worth attempting
+  }
+  window.dispatchEvent(
+    new CustomEvent(LOCAL_STORAGE_CHANGE_EVENT, { detail: { key: storageKey, value: next } }),
+  );
+
+  if (!syncEnabled) return;
+  pendingLocalEdits.add(storageKey);
+  void pushRemoteValue(key, next).then(() => pendingLocalEdits.delete(storageKey));
+}
 
 export function useSyncedStorage<T>(key: string, initialValue: T) {
   const storageKey = getScopedStorageKey(key);
