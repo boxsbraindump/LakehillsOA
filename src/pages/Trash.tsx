@@ -37,7 +37,7 @@ export default function Trash() {
     "lh-checklist-hidden-sections",
     [],
   );
-  const [, setChecklistCustomSections] = useSyncedStorage<ChecklistSectionMeta[]>(
+  const [checklistCustomSections, setChecklistCustomSections] = useSyncedStorage<ChecklistSectionMeta[]>(
     "lh-checklist-custom-sections",
     [],
   );
@@ -89,9 +89,21 @@ export default function Trash() {
   function handleRestore(entry: TrashEntry) {
     if (entry.category === "checklist" && entry.entryType === "day") {
       const day = entry.snapshot as ClearedChecklistDay;
-      setChecklistState((prev) => ({ ...prev, [day.date]: day.state }));
-      setChecklistDayItemIds((prev) => ({ ...prev, [day.date]: day.itemIds }));
-      setChecklistDaySectionIds((prev) => ({ ...prev, [day.date]: day.sectionIds }));
+      // Merge rather than overwrite. This used to assign the snapshot straight onto the
+      // date, so restoring a day that had since been rebuilt destroyed the rebuilt work
+      // with no confirmation and nothing to undo it with.
+      const merge = (restored: string[], current: string[] = []) =>
+        Array.from(new Set([...restored, ...current]));
+      setChecklistDayItemIds((prev) => ({ ...prev, [day.date]: merge(day.itemIds, prev[day.date]) }));
+      setChecklistDaySectionIds((prev) => ({
+        ...prev,
+        [day.date]: merge(day.sectionIds, prev[day.date]),
+      }));
+      // Anything ticked or noted on the date today wins over the restored copy.
+      setChecklistState((prev) => ({
+        ...prev,
+        [day.date]: { ...day.state, ...(prev[day.date] ?? {}) },
+      }));
     } else if (entry.category === "checklist" && entry.entryType === "section") {
       const section = entry.snapshot as ChecklistSection;
       if (entry.wasCustom) {
@@ -106,7 +118,16 @@ export default function Trash() {
       addToDay(entry.date, [entry.itemId], (section.items ?? []).map((i) => i.id));
     } else if (entry.category === "checklist") {
       const sectionId = entry.sectionId;
-      if (!sectionId) return;
+      if (!sectionId) {
+        showToast(t("trash.restoreMissingSection"));
+        return;
+      }
+      // Refuse when the section is gone, instead of writing the item back somewhere no
+      // page renders and consuming its only Trash record while reporting success.
+      if (!checklistCustomSections.some((s) => s.id === sectionId)) {
+        showToast(t("trash.restoreMissingSection"));
+        return;
+      }
       if (entry.wasCustom) {
         setChecklistCustom((prev) =>
           (prev[sectionId] ?? []).some((i) => i.id === entry.itemId)
@@ -119,13 +140,20 @@ export default function Trash() {
       addToDay(entry.date, [sectionId], [entry.itemId]);
     } else if (entry.category === "oa-cases") {
       if (entry.wasCustom) {
-        setOACasesCustom((prev) => [...prev, entry.snapshot as OACase]);
+        // Guard against a double restore — undo on the toast, or the same record restored
+        // from a second machine — which otherwise produced two cards sharing one id that
+        // could only ever be edited together.
+        setOACasesCustom((prev) =>
+          prev.some((c) => c.id === entry.itemId) ? prev : [...prev, entry.snapshot as OACase],
+        );
       } else {
         setOACasesHidden((prev) => prev.filter((id) => id !== entry.itemId));
       }
     } else if (entry.category === "payments") {
       if (entry.wasCustom) {
-        setPaymentsCustom((prev) => [...prev, entry.snapshot as PaymentEntry]);
+        setPaymentsCustom((prev) =>
+          prev.some((p) => p.id === entry.itemId) ? prev : [...prev, entry.snapshot as PaymentEntry],
+        );
       } else {
         setPaymentsHidden((prev) => prev.filter((id) => id !== entry.itemId));
       }
@@ -150,10 +178,11 @@ export default function Trash() {
         showToast(t("trash.restoreMissingCategory"));
         return;
       }
-      setCustomEntries((prev) => ({
-        ...prev,
-        [categoryId]: [...(prev[categoryId] ?? []), entry.snapshot as CustomEntry],
-      }));
+      setCustomEntries((prev) => {
+        const existing = prev[categoryId] ?? [];
+        if (existing.some((e) => e.id === entry.itemId)) return prev;
+        return { ...prev, [categoryId]: [...existing, entry.snapshot as CustomEntry] };
+      });
     }
     removeFromTrash(entry.trashId);
     showToast(t("trash.restoredToast", { title: entry.title }));

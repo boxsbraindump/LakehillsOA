@@ -396,6 +396,10 @@ export const translations = {
   "trash.restoredToast": { zh: "已恢复「{title}」", en: 'Restored "{title}"' },
   "checklist.clearedDayToast": { zh: "已清空 {date}", en: "Cleared {date}" },
   "trash.wholeDay": { zh: "· 整天", en: "· Whole day" },
+  "trash.restoreMissingSection": {
+    zh: "它所在的 Section 已被删除，请先恢复该 Section",
+    en: "Its section was deleted — restore the section first",
+  },
   "trash.restoreMissingCategory": {
     zh: "它所在的分类已被删除，请先恢复该分类",
     en: "Its folder was deleted — restore the folder first",

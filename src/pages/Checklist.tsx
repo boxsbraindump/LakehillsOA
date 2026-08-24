@@ -226,8 +226,12 @@ export default function Checklist() {
   }
 
   async function resetSelectedDay() {
+    // Nothing to clear means nothing to record. Clearing an already-empty day used to skip
+    // the confirm but still file an empty Trash snapshot, and restoring that weeks later
+    // wiped whatever the date held by then.
+    if (!hasSelectedDayContent(selectedDate)) return;
+
     if (
-      hasSelectedDayContent(selectedDate) &&
       !(await confirm({
         title: t("checklist.clearDayConfirmTitle"),
         message: t("checklist.clearDayConfirm", {
@@ -244,7 +248,7 @@ export default function Checklist() {
     const clearedItemIds = dayItemIds[selectedDate] ?? getDayItemIds(selectedDate);
     const clearedSectionIds = daySectionIds[selectedDate] ?? getDaySectionIds(selectedDate);
     const clearedState = state[selectedDate];
-    const trashId = `checklist-day:${selectedDate}`;
+    const trashId = `checklist-day:${selectedDate}:${Date.now()}`;
 
     setState((prev) => {
       const { [selectedDate]: _removed, ...rest } = prev;
@@ -551,7 +555,10 @@ export default function Checklist() {
 
   async function handleDeleteItem(sectionId: string, item: ChecklistItem) {
     if (!(await confirm({ message: t("checklist.deleteItemConfirm", { label: item.label }) }))) return;
-    const trashId = `checklist:${item.id}`;
+    // Deletion is per-day, so the same item can legitimately be deleted on more than one
+    // day. A trash id of just the item id collided: restoring one record removed every
+    // record sharing that id, so the other day's copy became unrecoverable.
+    const trashId = `checklist:${selectedDate}:${item.id}:${Date.now()}`;
 
     // Drop the shared definition only when no other day still lists this item.
     const keepDefinition = isReferencedByOtherDay(dayItemIds, item.id, selectedDate);
@@ -653,7 +660,7 @@ export default function Checklist() {
     )
       return;
     const wasCustom = isCustomSection(section.id);
-    const trashId = `checklist-section:${section.id}`;
+    const trashId = `checklist-section:${selectedDate}:${section.id}:${Date.now()}`;
 
     // Remove this section from the day being viewed only. This used to map over every
     // date and strip the section from all of them, so deleting it on one day silently
