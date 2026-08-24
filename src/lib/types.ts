@@ -51,11 +51,13 @@ export interface Platform {
   url?: string;
 }
 
-/** A label/value pair kept to hand for phone calls — NPI, tax ID, callback number. */
-export interface QuickFact {
+/** A record copied onto the call board, so it can be read out without leaving the page. */
+export interface CallCard {
   id: string;
-  label: string;
-  value: string;
+  title: string;
+  body: string;
+  /** Which folder it came from, shown so two similar records stay tellable apart. */
+  source?: string;
 }
 
 export type CustomCategoryIcon = "folder" | "shield" | "book-open" | "landmark" | "help-circle";
