@@ -38,7 +38,21 @@ export default function QuickFactsPanel() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  const cards = useMemo(() => [...pinned, ...scratch], [pinned, scratch]);
+  // Re-read each card from the live index, so a card added before an edit still shows the
+  // current text; the stored copy is only a fallback for records since deleted.
+  const cards = useMemo(() => {
+    const byId = new Map(docs.map((doc) => [doc.id, doc]));
+    return [...pinned, ...scratch].map((card) => {
+      const live = byId.get(card.id);
+      if (!live) return card;
+      return {
+        ...card,
+        title: live.title,
+        body: live.body ?? live.snippet ?? card.body,
+        source: live.categoryTitle ?? card.source,
+      };
+    });
+  }, [pinned, scratch, docs]);
   const onBoard = useMemo(() => new Set(cards.map((card) => card.id)), [cards]);
 
   const results = useMemo(() => {
@@ -52,7 +66,10 @@ export default function QuickFactsPanel() {
     setScratch((prev) =>
       prev.some((card) => card.id === doc.id)
         ? prev
-        : [...prev, { id: doc.id, title: doc.title, body: doc.snippet, source: doc.categoryTitle }],
+        : [
+            ...prev,
+            { id: doc.id, title: doc.title, body: doc.body ?? doc.snippet, source: doc.categoryTitle },
+          ],
     );
     setQuery("");
   }

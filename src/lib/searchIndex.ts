@@ -48,10 +48,11 @@ export function buildChecklistSearchDocs(
       const query = date ? `?date=${encodeURIComponent(date)}` : "";
       return {
         id: item.id,
+        body: joinBody([item.detail]),
         category: "checklist",
         path: `/checklist${query}#${item.id}`,
         title: item.label,
-        snippet: `Checklist · ${section.title}`,
+        snippet: item.detail?.trim() || `Checklist · ${section.title}`,
         keywords: [section.title, item.detail ?? ""],
       };
     }),
@@ -62,10 +63,11 @@ export function buildOACaseSearchDocs(cases: OACase[]): SearchDoc[] {
   return cases.map(
     (c): SearchDoc => ({
       id: c.id,
+      body: joinBody([c.payer, c.summary, c.resolution]),
       category: "oa-cases",
       path: `/oa-cases#${c.id}`,
       title: c.title,
-      snippet: c.summary,
+      snippet: c.summary || c.resolution || c.payer,
       keywords: [c.payer, c.resolution, ...c.tags],
     }),
   );
@@ -75,16 +77,26 @@ export function buildPaymentSearchDocs(entries: PaymentEntry[]): SearchDoc[] {
   return entries.map(
     (p): SearchDoc => {
       const portalText = p.portals.flatMap((portal) => [portal.name, portal.url]);
+      const body = joinBody([
+        p.portals.map((portal) => [portal.name, portal.url].filter(Boolean).join(": ")).join("\n"),
+        p.notes,
+      ]);
       return {
         id: p.id,
+        body,
         category: "payments",
         path: `/payments#${p.id}`,
         title: p.payer,
-        snippet: p.portals.map((portal) => portal.name).join(" · "),
+        snippet: p.portals.map((portal) => portal.name).filter(Boolean).join(" · ") || p.notes || "",
         keywords: [p.notes ?? "", ...portalText],
       };
     },
   );
+}
+
+/** Non-empty parts, in reading order, as one block of text. */
+function joinBody(parts: (string | undefined)[]) {
+  return parts.map((part) => part?.trim()).filter(Boolean).join("\n");
 }
 
 export function buildCustomSearchDocs(
@@ -95,18 +107,28 @@ export function buildCustomSearchDocs(
     (customEntries[cat.id] ?? []).map(
       (entry): SearchDoc => {
         const portalText = (entry.portals ?? []).flatMap((portal) => [portal.name, portal.url]);
+        // Everything readable, in the order it appears on the card. `resolution` was
+        // missing from the preview chain below, and it is where these entries actually
+        // keep their contents — so anything written there looked blank outside its folder.
+        const body = joinBody([
+          entry.payer,
+          entry.summary,
+          entry.resolution,
+          entry.detail,
+          entry.notes,
+          (entry.portals ?? [])
+            .map((portal) => [portal.name, portal.url].filter(Boolean).join(": "))
+            .filter(Boolean)
+            .join("\n"),
+        ]);
         return {
           id: entry.id,
+          body,
           category: "custom",
           categoryTitle: cat.title,
           path: `/custom/${cat.id}#${entry.id}`,
           title: entry.title,
-          snippet:
-            entry.summary ??
-            entry.notes ??
-            entry.detail ??
-            (entry.portals ?? []).map((portal) => portal.name).join(" · ") ??
-            cat.title,
+          snippet: body.split("\n")[0] || cat.title,
           keywords: [
             cat.title,
             entry.detail ?? "",

@@ -92,6 +92,8 @@ export interface CustomEntry {
 
 export interface SearchDoc {
   id: string;
+  /** Every readable field joined, for places that show the whole record rather than a preview. */
+  body?: string;
   category: Category;
   /** Only set when category is "custom" — the live folder name, since it has no static translation. */
   categoryTitle?: string;
