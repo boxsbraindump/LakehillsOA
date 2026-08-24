@@ -25,13 +25,10 @@ import {
   Check,
   X,
   Search,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
-import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useUsageStats } from "../hooks/useUsageStats";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "./ToastProvider";
@@ -116,12 +113,9 @@ const PERSONAL_TEMPLATE_LABEL_KEY: Record<
   payments: "template.linkDirectory",
 };
 
-function navLinkClass({ isActive }: { isActive: boolean }, extra = "", collapsed = false) {
+function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
   return [
-    "group flex shrink-0 items-center rounded-(--radius-md) text-[14px] whitespace-nowrap transition-colors",
-    // On the rail the row is a centred square, not a full-width bar with a left-hugging
-    // icon — otherwise the highlight is far wider than the thing it is highlighting.
-    collapsed ? "md:h-10 md:w-10 md:justify-center md:gap-0 md:p-0 gap-2.5 px-2 py-2" : "gap-2.5 px-2 py-2",
+    "group flex shrink-0 items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] whitespace-nowrap transition-colors",
     isActive
       ? "active bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
       : "text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
@@ -168,9 +162,6 @@ export default function Sidebar() {
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
   const [dragOverAfter, setDragOverAfter] = useState(false);
   const [folderQuery, setFolderQuery] = useState("");
-  // Kept out of the synced payload: which width one person prefers on one screen isn't
-  // something the rest of the team should inherit — same reasoning as the language choice.
-  const [isCollapsed, setIsCollapsed] = useLocalStorage("lh-sidebar-collapsed", false);
   /** Set while the pointer is held on a row's icons, so pressing one can't start a drag. */
   const pointerOnControlRef = useRef(false);
 
@@ -454,14 +445,7 @@ export default function Sidebar() {
     // stay put. The whole sidebar used to be `md:overflow-visible` at a fixed `md:h-svh`,
     // so once there were enough folders the footer simply ran off-screen with no scrollbar
     // and "add folder" and Trash became unreachable.
-    <aside
-      className={[
-        "flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:overflow-hidden md:border-r md:border-b-0 md:py-4",
-        // Collapsing only applies from md up; the narrow layout is a horizontal bar, where
-        // there is no width to reclaim.
-        isCollapsed ? "md:w-[68px] md:px-2" : "md:w-64",
-      ].join(" ")}
-    >
+    <aside className="flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:w-64 md:overflow-hidden md:border-r md:border-b-0 md:py-4">
       {isEditingWorkspaceName ? (
         <form onSubmit={handleWorkspaceRenameSubmit} className="flex items-center gap-1 px-2 py-1.5">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
@@ -499,11 +483,9 @@ export default function Sidebar() {
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
               <Sparkles size={15} strokeWidth={2.25} />
             </span>
-            <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>
-              {workspace?.name ?? "Lake Hills OA"}
-            </span>
+            <span className="truncate">{workspace?.name ?? "Lake Hills OA"}</span>
           </NavLink>
-          {canRenameWorkspace && !isCollapsed && (
+          {canRenameWorkspace && (
             <button
               type="button"
               onClick={startWorkspaceRename}
@@ -516,38 +498,16 @@ export default function Sidebar() {
         </div>
       )}
 
-      {!isCollapsed && (
-        <div className="hidden px-2 pb-4 text-[12px] text-(--color-ink-muted) md:block">
-          {isPersonalWorkspace ? t("workspace.personalSubtitle") : "Lake Hills Acupuncture · Internal"}
-        </div>
-      )}
+      <div className="hidden px-2 pb-4 text-[12px] text-(--color-ink-muted) md:block">
+        {isPersonalWorkspace ? t("workspace.personalSubtitle") : "Lake Hills Acupuncture · Internal"}
+      </div>
 
-      <button
-        type="button"
-        onClick={() => setIsCollapsed((open) => !open)}
-        aria-label={t(isCollapsed ? "sidebar.expand" : "sidebar.collapse")}
-        title={t(isCollapsed ? "sidebar.expand" : "sidebar.collapse")}
-        className={[
-          "mb-2 hidden items-center rounded-(--radius-md) text-(--color-ink-faint) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary) md:flex",
-          isCollapsed ? "h-10 w-10 justify-center self-center" : "gap-2 self-start p-1.5",
-        ].join(" ")}
-      >
-        {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-      </button>
-
-      {/* Stands in for the group headings, which are hidden on the rail — without it the
-          fixed sections and the folders run together as one undifferentiated column. */}
-      {isCollapsed && <div className="mb-1 hidden h-px bg-(--color-sidebar-border) md:block" />}
-
-      {!isCollapsed && (
-        <p className="hidden px-2 pb-1 text-[11px] font-semibold tracking-[0.06em] text-(--color-ink-faint) uppercase md:block">
-          {t("sidebar.groupDaily")}
-        </p>
-      )}
+      <p className="hidden px-2 pb-1 text-[11px] font-semibold tracking-[0.06em] text-(--color-ink-faint) uppercase md:block">
+        {t("sidebar.groupDaily")}
+      </p>
       <nav
         className={[
           "no-scrollbar flex shrink-0 gap-0.5 overflow-x-auto md:flex-col md:overflow-visible",
-          isCollapsed ? "md:items-center" : "",
         ].join(" ")}
       >
         {(isPersonalWorkspace ? PERSONAL_NAV_ITEMS : NAV_ITEMS).map(({ to, key, category, icon: Icon }) => (
@@ -562,23 +522,20 @@ export default function Sidebar() {
                 title: t(key),
               })
             }
-            title={t(key)}
-            className={(props) => navLinkClass(props, "", isCollapsed)}
+            className={navLinkClass}
           >
             <Icon size={16} strokeWidth={2} className="shrink-0" />
-            <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>{t(key)}</span>
+            <span className="truncate">{t(key)}</span>
           </NavLink>
         ))}
       </nav>
 
-      {!isCollapsed && (
-        <p className="mt-4 hidden px-2 pb-1 text-[11px] font-semibold tracking-[0.06em] text-(--color-ink-faint) uppercase md:block">
-          {t("sidebar.groupFolders")}
-        </p>
-      )}
+      <p className="mt-4 hidden px-2 pb-1 text-[11px] font-semibold tracking-[0.06em] text-(--color-ink-faint) uppercase md:block">
+        {t("sidebar.groupFolders")}
+      </p>
 
       {/* Only worth the space once scanning the list by eye stops being quick. */}
-      {!isCollapsed && visibleCustomCategories.length >= 8 && (
+      {visibleCustomCategories.length >= 8 && (
         <div className="relative mb-1 hidden md:block">
           <Search
             size={13}
@@ -593,15 +550,9 @@ export default function Sidebar() {
           />
         </div>
       )}
-      {isCollapsed && <div className="my-1 hidden h-px bg-(--color-sidebar-border) md:block" />}
       {/* The only region allowed to grow: it takes the leftover height and scrolls, which
           is what keeps the trash/profile footer on screen no matter how many folders exist. */}
-      <nav
-        className={[
-          "no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:mt-0 md:min-h-0 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto",
-          isCollapsed ? "md:items-center" : "",
-        ].join(" ")}
-      >
+      <nav className="no-scrollbar mt-2 flex gap-0.5 overflow-x-auto md:mt-0 md:min-h-0 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
         {filteredCustomCategories.map((category) => {
           const Icon = ICON_MAP[category.icon];
           if (editingCategoryId === category.id) {
@@ -638,7 +589,6 @@ export default function Sidebar() {
                 {...categoryDropProps(category)}
                 className={[
                   "group/cat relative flex shrink-0 cursor-grab items-center rounded-(--radius-md) transition-[background-color,color,box-shadow,opacity] active:cursor-grabbing md:shrink",
-                  isCollapsed ? "md:h-10 md:w-10 md:justify-center" : "",
                   draggedCategoryId === category.id ? "opacity-60" : "",
                   isCategoryActive
                     ? "bg-(--color-sidebar-active) font-medium text-white shadow-[0_6px_16px_rgba(40,175,165,0.18)]"
@@ -659,35 +609,13 @@ export default function Sidebar() {
                   })
                 }
                 title={category.title}
-                className={[
-                  "flex min-w-0 flex-1 items-center gap-2.5 px-2 py-2 text-[14px] whitespace-nowrap text-inherit",
-                  isCollapsed ? "md:h-10 md:w-10 md:flex-none md:justify-center md:gap-0 md:p-0" : "",
-                ].join(" ")}
+                className="flex min-w-0 flex-1 items-center gap-2.5 px-2 py-2 text-[14px] whitespace-nowrap text-inherit"
               >
-                {isCollapsed && category.icon === "folder" ? (
-                  <>
-                    {/* Most folders keep the default icon, so a rail of them was six
-                        identical shapes with no way to tell which was which. Fall back to
-                        the first character of the name; a chosen icon still wins. The rail
-                        only exists from md up, so the narrow layout keeps the icon. */}
-                    <span className="hidden text-[13px] font-semibold md:inline">
-                      {[...category.title.trim()][0] ?? "?"}
-                    </span>
-                    <Icon size={16} strokeWidth={2} className="shrink-0 md:hidden" />
-                  </>
-                ) : (
-                  <Icon size={16} strokeWidth={2} className="shrink-0" />
-                )}
-                <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>
-                  {category.title}
-                </span>
+                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                <span className="truncate">{category.title}</span>
               </NavLink>
               <div
-                className={[
-                  "flex shrink-0 items-center gap-0.5 pr-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/cat:opacity-100",
-                  // No room for hover actions on the icon rail; expand to rename or delete.
-                  isCollapsed ? "md:hidden" : "",
-                ].join(" ")}
+                className="flex shrink-0 items-center gap-0.5 pr-1 opacity-100 transition-opacity md:opacity-0 md:group-hover/cat:opacity-100"
                 onPointerDown={() => {
                   pointerOnControlRef.current = true;
                 }}
@@ -832,37 +760,19 @@ export default function Sidebar() {
         ) : (
           <button
             onClick={() => setIsAddingCategory(true)}
-            title={t("sidebar.addCategory")}
-            className={[
-              "flex items-center rounded-(--radius-md) text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)",
-              isCollapsed
-                ? "gap-2.5 px-2 py-2 md:h-10 md:w-10 md:justify-center md:gap-0 md:p-0"
-                : "gap-2.5 px-2 py-2",
-            ].join(" ")}
+            className="flex items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)"
           >
             <Plus size={16} strokeWidth={2} className="shrink-0" />
-            <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>
-              {t("sidebar.addCategory")}
-            </span>
+            <span className="truncate">{t("sidebar.addCategory")}</span>
           </button>
         )}
       </nav>
 
-      <nav
-        className={[
-          "no-scrollbar mt-2 flex shrink-0 gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-2 md:flex-col md:overflow-visible md:border-t",
-          isCollapsed ? "md:items-center" : "",
-        ].join(" ")}
-      >
+      <nav className="no-scrollbar mt-2 flex shrink-0 gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-2 md:flex-col md:overflow-visible md:border-t">
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            title={t(key)}
-            className={(props) => navLinkClass(props, "", isCollapsed)}
-          >
+          <NavLink key={to} to={to} className={navLinkClass}>
             <Icon size={16} strokeWidth={2} className="shrink-0" />
-            <span className={["truncate", isCollapsed ? "md:hidden" : ""].join(" ")}>{t(key)}</span>
+            <span className="truncate">{t(key)}</span>
           </NavLink>
         ))}
       </nav>
