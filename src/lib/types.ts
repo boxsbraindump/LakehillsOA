@@ -69,6 +69,8 @@ export interface CustomCategory {
   icon: CustomCategoryIcon;
   /** Older custom categories may not have this; treat them as OA-case style for compatibility. */
   template?: CustomCategoryTemplate;
+  /** What this folder is for — so a name like "查保险" doesn't have to carry all the meaning. */
+  description?: string;
 }
 
 export interface DeletedCustomCategory {

@@ -12,6 +12,17 @@ export const translations = {
   "sidebar.categoryNameRequired": { zh: "请先填写名称", en: "Enter a name first" },
   "sidebar.filterFolders": { zh: "筛选文件夹…", en: "Filter folders…" },
 
+  "customCategory.addDescription": {
+    zh: "＋ 加一句说明（这个文件夹放什么）",
+    en: "+ Add a note about what goes in this folder",
+  },
+  "customCategory.descriptionPlaceholder": {
+    zh: "例如：打电话给保险公司时要用到的号码",
+    en: "e.g. Numbers needed when calling insurance",
+  },
+  "oaCases.filterByTag": { zh: "按标签筛选", en: "Filter by tag" },
+  "oaCases.clearTagFilter": { zh: "全部", en: "All" },
+
   "entry.showMore": { zh: "展开全部", en: "Show more" },
   "entry.showLess": { zh: "收起", en: "Show less" },
 

@@ -56,7 +56,10 @@ export default function CustomCategory() {
   const { categoryId = "" } = useParams();
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
-  const [categories] = useSyncedStorage<CustomCategoryType[]>("lh-custom-categories", []);
+  const [categories, setCategories] = useSyncedStorage<CustomCategoryType[]>(
+    "lh-custom-categories",
+    [],
+  );
   const [allEntries, setAllEntries] = useSyncedStorage<Record<string, CustomEntry[]>>(
     "lh-custom-entries",
     {},
@@ -82,6 +85,16 @@ export default function CustomCategory() {
   const [dragOverEntryId, setDragOverEntryId] = useState<string | null>(null);
   const [dragOverAfter, setDragOverAfter] = useState(false);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [descriptionValue, setDescriptionValue] = useState("");
+
+  function saveDescription() {
+    setIsEditingDescription(false);
+    const next = descriptionValue.trim();
+    setCategories((prev) =>
+      prev.map((c) => (c.id === categoryId ? { ...c, description: next || undefined } : c)),
+    );
+  }
 
   /** Long enough that leaving it open would push the next entry off the screen. */
   function isLongText(text: string) {
@@ -452,6 +465,40 @@ export default function CustomCategory() {
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           {category.title}
         </h1>
+        {/* A folder name has to be short, which leaves "what goes in here" unsaid — and
+            whoever opens it next has to infer it from the contents. */}
+        {isEditingDescription ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveDescription();
+            }}
+            className="mt-2"
+          >
+            <input
+              autoFocus
+              value={descriptionValue}
+              onChange={(e) => setDescriptionValue(e.target.value)}
+              onBlur={saveDescription}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setIsEditingDescription(false);
+              }}
+              placeholder={t("customCategory.descriptionPlaceholder")}
+              className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)"
+            />
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setDescriptionValue(category.description ?? "");
+              setIsEditingDescription(true);
+            }}
+            className="mt-1 block max-w-full text-left text-[14px] text-(--color-ink-muted) hover:text-(--color-ink-secondary)"
+          >
+            {category.description?.trim() || t("customCategory.addDescription")}
+          </button>
+        )}
       </div>
 
       <div className="relative mb-6">

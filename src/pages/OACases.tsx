@@ -31,6 +31,7 @@ export default function OACases() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const cases = [
     ...(includeSeedData ? seedCases.map((c) => overrides[c.id] ?? c) : []),
@@ -93,11 +94,15 @@ export default function OACases() {
   }
 
   const q = query.trim().toLowerCase();
+  // Cases already carry tags, but they were decoration — there was no way to see just the
+  // denials, or just one payer's cases, without reading the whole list.
+  const allTags = Array.from(new Set(cases.flatMap((c) => c.tags))).sort();
+  const byTag = activeTag ? cases.filter((c) => c.tags.includes(activeTag)) : cases;
   const filtered = q
-    ? cases.filter((c) =>
+    ? byTag.filter((c) =>
         matchesSearch([c.title, c.payer, c.summary, c.resolution, ...c.tags].join(" "), q),
       )
-    : cases;
+    : byTag;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
@@ -126,6 +131,38 @@ export default function OACases() {
           </button>
         )}
       </div>
+
+      {allTags.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveTag(null)}
+            className={[
+              "rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors",
+              activeTag === null
+                ? "border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary)"
+                : "border-(--color-hairline) text-(--color-ink-muted) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
+            ].join(" ")}
+          >
+            {t("oaCases.clearTagFilter")}
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setActiveTag((current) => (current === tag ? null : tag))}
+              className={[
+                "rounded-full border px-2.5 py-1 text-[12px] transition-colors",
+                activeTag === tag
+                  ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
+                  : "border-(--color-hairline) text-(--color-ink-muted) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
+              ].join(" ")}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col gap-4">
         {query.trim() && filtered.length === 0 && (
@@ -202,12 +239,14 @@ export default function OACases() {
               {c.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {c.tags.map((tag) => (
-                    <span
+                    <button
                       key={tag}
-                      className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted)"
+                      type="button"
+                      onClick={() => setActiveTag((current) => (current === tag ? null : tag))}
+                      className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted) transition-colors hover:border-(--color-primary)/40 hover:text-(--color-primary)"
                     >
                       #{tag}
-                    </span>
+                    </button>
                   ))}
                 </div>
               )}
