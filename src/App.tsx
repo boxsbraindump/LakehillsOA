@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import { ToastProvider } from "./components/ToastProvider";
 import { ConfirmProvider } from "./components/ConfirmProvider";
 import ClickSpark from "./components/ClickSpark";
+import QuickFactsPanel from "./components/QuickFactsPanel";
 import { useAuth } from "./components/AuthProvider";
 import WorkspaceOnboarding from "./pages/WorkspaceOnboarding";
 import { useSyncedStorage } from "./hooks/useSyncedStorage";
@@ -15,6 +16,9 @@ function WorkspaceShell() {
       <main className="min-w-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.58)_0%,rgba(244,248,247,0.88)_52%,rgba(247,250,249,1)_100%)]">
         <Outlet />
       </main>
+      {/* Outside <main> so it stays put on every page — the point is not having to leave
+          whatever you are typing on to look up a number mid-call. */}
+      <QuickFactsPanel />
       <ClickSpark />
     </div>
   );

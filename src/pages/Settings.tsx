@@ -8,7 +8,7 @@ import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { defaultPayers } from "../data/payers";
 import { defaultPlatforms } from "../data/platforms";
 import { slugify } from "../lib/slugify";
-import type { Payer, Platform } from "../lib/types";
+import type { Payer, Platform, QuickFact } from "../lib/types";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -42,6 +42,9 @@ export default function Settings() {
   const [platformDrafts, setPlatformDrafts] = useState<Record<string, { name: string; url: string }>>(
     {},
   );
+  const [quickFacts, setQuickFacts] = useSyncedStorage<QuickFact[]>("lh-quick-facts", []);
+  const [newFactLabel, setNewFactLabel] = useState("");
+  const [newFactValue, setNewFactValue] = useState("");
 
   useEffect(() => {
     if (isPersonalWorkspace) return;
@@ -106,6 +109,35 @@ export default function Settings() {
     ]);
     setNewName("");
     setNewPayerId("");
+  }
+
+  function handleAddQuickFact(e: React.FormEvent) {
+    e.preventDefault();
+    const label = newFactLabel.trim();
+    const value = newFactValue.trim();
+    if (!label || !value) {
+      showToast(t("quickFacts.labelRequired"));
+      return;
+    }
+    setQuickFacts((prev) => [...prev, { id: slugify(label, "fact"), label, value }]);
+    setNewFactLabel("");
+    setNewFactValue("");
+  }
+
+  async function handleDeleteQuickFact(fact: QuickFact) {
+    if (!(await confirm({ message: t("quickFacts.deleteConfirm", { label: fact.label }) }))) return;
+    const index = quickFacts.findIndex((f) => f.id === fact.id);
+    setQuickFacts((prev) => prev.filter((f) => f.id !== fact.id));
+    showToast(t("quickFacts.deletedToast", { label: fact.label }), {
+      label: t("common.undo"),
+      onClick: () =>
+        setQuickFacts((prev) => {
+          if (prev.some((f) => f.id === fact.id)) return prev;
+          const next = [...prev];
+          next.splice(index < 0 ? next.length : index, 0, fact);
+          return next;
+        }),
+    });
   }
 
   async function handleDeletePayer(payer: Payer) {
@@ -271,6 +303,71 @@ export default function Settings() {
           </div>
         </section>
       </div>
+
+      <section className="mb-6 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
+        <h2 className="text-[16px] font-bold text-(--color-ink)">{t("quickFacts.settingsTitle")}</h2>
+        <p className="mt-1 mb-4 text-[13px] text-(--color-ink-muted)">
+          {t("quickFacts.settingsHint")}
+        </p>
+
+        {quickFacts.length === 0 ? (
+          <p className="mb-4 text-[13px] text-(--color-ink-faint)">{t("quickFacts.empty")}</p>
+        ) : (
+          <ul className="mb-4 flex flex-col divide-y divide-(--color-hairline)">
+            {quickFacts.map((fact) => (
+              <li key={fact.id} className="group flex items-center justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] tracking-[0.04em] text-(--color-ink-faint) uppercase">
+                    {fact.label}
+                  </p>
+                  <p className="truncate text-[14px] text-(--color-ink) [font-variant-numeric:tabular-nums]">
+                    {fact.value}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDeleteQuickFact(fact)}
+                  aria-label={t("common.delete")}
+                  className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form onSubmit={handleAddQuickFact} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("quickFacts.label")}
+            </label>
+            <input
+              value={newFactLabel}
+              onChange={(e) => setNewFactLabel(e.target.value)}
+              placeholder={t("quickFacts.labelPlaceholder")}
+              className={inputClass}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <label className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+              {t("quickFacts.value")}
+            </label>
+            <input
+              value={newFactValue}
+              onChange={(e) => setNewFactValue(e.target.value)}
+              placeholder={t("quickFacts.valuePlaceholder")}
+              className={inputClass}
+            />
+          </div>
+          <button
+            type="submit"
+            className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-white hover:bg-(--color-primary-active)"
+          >
+            <Plus size={14} />
+            {t("quickFacts.add")}
+          </button>
+        </form>
+      </section>
 
       <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
         <h2 className="text-[16px] font-bold text-(--color-ink)">

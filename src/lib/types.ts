@@ -51,6 +51,13 @@ export interface Platform {
   url?: string;
 }
 
+/** A label/value pair kept to hand for phone calls — NPI, tax ID, callback number. */
+export interface QuickFact {
+  id: string;
+  label: string;
+  value: string;
+}
+
 export type CustomCategoryIcon = "folder" | "shield" | "book-open" | "landmark" | "help-circle";
 export type CustomCategoryTemplate = "checklist" | "oa-case" | "payments";
 
