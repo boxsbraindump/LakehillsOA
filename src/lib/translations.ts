@@ -12,6 +12,9 @@ export const translations = {
   "sidebar.categoryNameRequired": { zh: "请先填写名称", en: "Enter a name first" },
   "sidebar.filterFolders": { zh: "筛选文件夹…", en: "Filter folders…" },
 
+  "entry.showMore": { zh: "展开全部", en: "Show more" },
+  "entry.showLess": { zh: "收起", en: "Show less" },
+
   "callBoard.title": { zh: "通话面板", en: "Call board" },
   "callBoard.open": { zh: "打开通话面板", en: "Open call board" },
   "callBoard.searchPlaceholder": {

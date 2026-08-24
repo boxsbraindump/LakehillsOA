@@ -25,6 +25,7 @@ export default function QuickFactsPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const copyResetRef = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(copyResetRef.current), []);
@@ -220,9 +221,37 @@ export default function QuickFactsPanel() {
                               {card.title}
                             </p>
                             {card.body && (
-                              <p className="mt-1 text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary) [font-variant-numeric:tabular-nums]">
-                                {card.body}
-                              </p>
+                              <>
+                                {/* One long record would otherwise bury every card under
+                                    it — the same reason folders are hard to scroll. */}
+                                <p
+                                  className={[
+                                    "mt-1 text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary) [font-variant-numeric:tabular-nums]",
+                                    expandedIds.includes(card.id) ? "" : "line-clamp-6",
+                                  ].join(" ")}
+                                >
+                                  {card.body}
+                                </p>
+                                {(card.body.length > 300 || card.body.split("\n").length > 6) && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExpandedIds((prev) =>
+                                        prev.includes(card.id)
+                                          ? prev.filter((x) => x !== card.id)
+                                          : [...prev, card.id],
+                                      )
+                                    }
+                                    className="mt-1 text-[12px] font-medium text-(--color-primary) hover:underline"
+                                  >
+                                    {t(
+                                      expandedIds.includes(card.id)
+                                        ? "entry.showLess"
+                                        : "entry.showMore",
+                                    )}
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                           <div className="flex shrink-0 items-center gap-0.5">

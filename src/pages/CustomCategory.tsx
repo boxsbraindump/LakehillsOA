@@ -81,6 +81,20 @@ export default function CustomCategory() {
   const [draggedEntryId, setDraggedEntryId] = useState<string | null>(null);
   const [dragOverEntryId, setDragOverEntryId] = useState<string | null>(null);
   const [dragOverAfter, setDragOverAfter] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+
+  /** Long enough that leaving it open would push the next entry off the screen. */
+  function isLongText(text: string) {
+    return text.length > 220 || text.split("\n").length > 4;
+  }
+
+  function isEntryExpanded(id: string) {
+    return expandedIds.includes(id);
+  }
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   useEffect(() => {
     setQuery("");
@@ -649,8 +663,13 @@ export default function CustomCategory() {
               </div>
 
               {(entry.summary || entry.notes) && (
-                <p className="text-[14px] leading-relaxed text-(--color-ink-secondary)">
-                  {entry.summary ?? entry.notes}
+                <p
+                  className={[
+                    "text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink-secondary)",
+                    isEntryExpanded(entry.id) ? "" : "line-clamp-4",
+                  ].join(" ")}
+                >
+                  {entry.summary || entry.notes}
                 </p>
               )}
 
@@ -659,9 +678,26 @@ export default function CustomCategory() {
                   <p className="mb-1 text-[12px] font-semibold text-(--color-ink-faint)">
                     {t("oaCases.resolutionLabel")}
                   </p>
-                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink)">
+                  {/* A few long entries, not many entries, are what make a folder hard to
+                      scroll: one of these can run past a screenful on its own and bury
+                      everything below it. Long ones start clipped. */}
+                  <p
+                    className={[
+                      "text-[14px] leading-relaxed whitespace-pre-wrap text-(--color-ink)",
+                      isEntryExpanded(entry.id) ? "" : "line-clamp-4",
+                    ].join(" ")}
+                  >
                     {entry.resolution}
                   </p>
+                  {isLongText(entry.resolution) && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(entry.id)}
+                      className="mt-1.5 text-[12px] font-medium text-(--color-primary) hover:underline"
+                    >
+                      {t(isEntryExpanded(entry.id) ? "entry.showLess" : "entry.showMore")}
+                    </button>
+                  )}
                 </div>
               )}
 
