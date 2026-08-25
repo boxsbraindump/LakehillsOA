@@ -29,6 +29,7 @@ import {
 import { useAuth } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useUsageStats } from "../hooks/useUsageStats";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "./ToastProvider";
@@ -123,6 +124,11 @@ function navLinkClass({ isActive }: { isActive: boolean }, extra = "") {
   ].join(" ");
 }
 
+const DEFAULT_SIDEBAR_WIDTH = 256;
+/** Narrow enough to reclaim real space, wide enough that folder names stay readable. */
+const MIN_SIDEBAR_WIDTH = 200;
+const MAX_SIDEBAR_WIDTH = 420;
+
 const inlineInputClass =
   "w-full rounded-(--radius-xs) border border-(--color-sidebar-border) bg-white/80 px-2 py-1 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary) focus:shadow-(--shadow-level-1)";
 
@@ -162,6 +168,34 @@ export default function Sidebar() {
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
   const [dragOverAfter, setDragOverAfter] = useState(false);
   const [folderQuery, setFolderQuery] = useState("");
+  // Stays on this machine: how much width one person gives the sidebar on one screen is
+  // not something the rest of the team should inherit.
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage(
+    "lh-sidebar-width",
+    DEFAULT_SIDEBAR_WIDTH,
+  );
+  function startResize(event: React.PointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = sidebarWidth;
+
+    function onMove(moveEvent: PointerEvent) {
+      const next = startWidth + (moveEvent.clientX - startX);
+      setSidebarWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, next)));
+    }
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.removeProperty("user-select");
+      document.body.style.removeProperty("cursor");
+    }
+    // Without these the drag selects the sidebar's text and the cursor flickers as it
+    // crosses back over the page.
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
   /** Set while the pointer is held on a row's icons, so pressing one can't start a drag. */
   const pointerOnControlRef = useRef(false);
 
@@ -445,7 +479,23 @@ export default function Sidebar() {
     // stay put. The whole sidebar used to be `md:overflow-visible` at a fixed `md:h-svh`,
     // so once there were enough folders the footer simply ran off-screen with no scrollbar
     // and "add folder" and Trash became unreachable.
-    <aside className="flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:w-64 md:overflow-hidden md:border-r md:border-b-0 md:py-4">
+    <aside
+      // The width rides on a CSS variable so the breakpoint stays in CSS: below md the
+      // sidebar is a horizontal bar and never reads the variable at all.
+      style={{ "--sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}
+      className="relative flex max-h-[46svh] shrink-0 flex-col overflow-y-auto border-b border-(--color-sidebar-border) bg-(--color-sidebar) px-3 py-3 md:h-svh md:max-h-none md:w-(--sidebar-w) md:overflow-hidden md:border-r md:border-b-0 md:py-4"
+    >
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={t("sidebar.resize")}
+        title={t("sidebar.resizeHint")}
+        onPointerDown={startResize}
+        onDoubleClick={() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH)}
+        className="group/resize absolute inset-y-0 -right-1 z-20 hidden w-2 cursor-col-resize md:block"
+      >
+        <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover/resize:bg-(--color-primary)/50" />
+      </div>
       {isEditingWorkspaceName ? (
         <form onSubmit={handleWorkspaceRenameSubmit} className="flex items-center gap-1 px-2 py-1.5">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">

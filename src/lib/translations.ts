@@ -11,6 +11,8 @@ export const translations = {
   "sidebar.addCategory": { zh: "添加分类", en: "Add category" },
   "sidebar.categoryNameRequired": { zh: "请先填写名称", en: "Enter a name first" },
   "sidebar.filterFolders": { zh: "筛选文件夹…", en: "Filter folders…" },
+  "sidebar.resize": { zh: "调整侧边栏宽度", en: "Resize sidebar" },
+  "sidebar.resizeHint": { zh: "拖动调整宽度，双击恢复默认", en: "Drag to resize, double-click to reset" },
 
   "customCategory.addDescription": {
     zh: "＋ 加一句说明（这个文件夹放什么）",
