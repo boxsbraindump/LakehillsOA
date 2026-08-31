@@ -201,7 +201,7 @@ Worth checking first when something "won't save" or "disappeared":
   as "the button is broken". Say why instead.
 
 ## Recent commits (latest first)
-- `b9758d9` Add the billing worklist: import balances, triage once, print statements
+- `f96fb76` Add the billing worklist: import balances, triage once, print statements
 - `e111988` Let the sidebar be dragged wider
 - `045215b` Make sidebar folder dragging land where you aim it
 - `b4b10c9` Copy forward from the last day worked, and let it skip finished items
