@@ -89,6 +89,16 @@ person by person who gets a bill → open Square once per patient. The expensive
 the sending; it was that **nothing remembered the previous round**, so every run re-triaged the
 same people already judged "coming back next week". That is why the task kept getting deferred.
 
+- **UP cannot export CSV.** The clinic reported it can only screenshot, so the import has two
+  routes and both feed the same `mergeImport` path with the same `acct:` keys — a hand-typed
+  round and a pasted round merge with each other rather than duplicating.
+  - *Type it in* mode: a name/account/amount grid that auto-appends a blank row, with a running
+    total shown so it can be checked against the total on the UP report. That total check is the
+    only defence against a mistyped digit, so do not remove it.
+  - *Paste* mode, below. `detectDelimiter` also handles space-aligned text, because a table
+    dragged across on screen and copied arrives as gaps, not tabs. Commas and gaps can both be
+    present ("Alvarez, Marisol" is a comma *inside* a field), so whichever split yields more
+    columns wins, ties going to gaps. Single spaces never split — that would halve every name.
 - **Import** — paste a tab- or comma-delimited export. `parseTable` detects the delimiter and
   whether row 0 is a header (a row containing money or a date is data, not a header).
   `guessRoles` pre-fills the column mapping from header text; the user can override every

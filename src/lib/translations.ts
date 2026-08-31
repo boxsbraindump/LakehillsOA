@@ -808,6 +808,23 @@ export const translations = {
     zh: "写清楚病人该怎么付，比如「点 Square 邮件里的付款按钮，或致电前台刷卡」。",
     en: "Say how to pay — e.g. use the button in the Square email, or call the front desk with a card.",
   },
+
+  "billing.modePaste": { zh: "粘贴", en: "Paste" },
+  "billing.modeManual": { zh: "手动输入", en: "Type it in" },
+  "billing.manualHelp": {
+    zh: "对着 UP 的画面一行行敲。第一次麻烦，之后每轮只用敲新出现的人。",
+    en: "Type straight off the UP screen. Only the first round is long — after that you only add the new ones.",
+  },
+  "billing.manualName": { zh: "姓名", en: "Name" },
+  "billing.manualNamePlaceholder": { zh: "姓, 名", en: "Last, First" },
+  "billing.manualAccount": { zh: "账号", en: "Account" },
+  "billing.manualAmount": { zh: "金额", en: "Amount" },
+  "billing.manualEmpty": { zh: "还没有输入任何人。", en: "Nothing entered yet." },
+  "billing.removeRow": { zh: "删掉这行", en: "Remove this row" },
+  "billing.totalCheckHint": {
+    zh: "和 UP 上的合计对一下 —— 数字对得上就说明没敲错也没漏人。",
+    en: "Check this against the total on the UP report — if they match, nothing was mistyped or missed.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -56,6 +56,16 @@ function mappingSignature(headers: string[] | null): string {
   return headers ? headers.map((header) => header.trim().toLowerCase()).join("|") : "";
 }
 
+type ImportMode = "paste" | "manual";
+
+interface ManualRow {
+  name: string;
+  account: string;
+  amount: string;
+}
+
+const EMPTY_MANUAL_ROW: ManualRow = { name: "", account: "", amount: "" };
+
 function lineIsBlank(line: BillingLine) {
   return !line.serviceDate && !line.description;
 }
@@ -91,7 +101,9 @@ export default function Billing() {
 
   const [activeBucket, setActiveBucket] = useState<BillingBucket>("todo");
   const [isImporting, setIsImporting] = useState(false);
+  const [importMode, setImportMode] = useState<ImportMode>("paste");
   const [pasted, setPasted] = useState("");
+  const [manualRows, setManualRows] = useState<ManualRow[]>([{ ...EMPTY_MANUAL_ROW }]);
   const [roles, setRoles] = useState<ColumnRole[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [printing, setPrinting] = useState<BillingPatient[] | null>(null);
@@ -111,6 +123,19 @@ export default function Billing() {
     () => (parsed && roles.length ? buildImportedPatients(parsed.rows, roles) : []),
     [parsed, roles],
   );
+  // Typed rows go through the same grouping and merge path as a paste, so a hand-entered
+  // list behaves identically from here on — including carrying decisions forward.
+  const manualPreview = useMemo(
+    () =>
+      buildImportedPatients(
+        manualRows
+          .filter((row) => row.name.trim() || row.account.trim())
+          .map((row) => [row.account, row.name, row.amount]),
+        ["account", "name", "balance"],
+      ),
+    [manualRows],
+  );
+  const effectivePreview = importMode === "manual" ? manualPreview : preview;
 
   const buckets = useMemo(() => {
     const map: Record<BillingBucket, BillingPatient[]> = {
@@ -163,13 +188,33 @@ export default function Billing() {
     setIsImporting(false);
     setPasted("");
     setRoles([]);
+    setManualRows([{ ...EMPTY_MANUAL_ROW }]);
+  }
+
+  /** Keeps exactly one blank row at the end, so typing never needs an "add row" click. */
+  function editManualRow(index: number, changes: Partial<ManualRow>) {
+    setManualRows((prev) => {
+      const next = prev.map((row, i) => (i === index ? { ...row, ...changes } : row));
+      const last = next[next.length - 1];
+      if (last.name.trim() || last.account.trim() || last.amount.trim()) {
+        next.push({ ...EMPTY_MANUAL_ROW });
+      }
+      return next;
+    });
+  }
+
+  function removeManualRow(index: number) {
+    setManualRows((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      return next.length ? next : [{ ...EMPTY_MANUAL_ROW }];
+    });
   }
 
   function commitImport() {
-    if (preview.length === 0) return;
-    const result = mergeImport(patients, preview, Date.now());
+    if (effectivePreview.length === 0) return;
+    const result = mergeImport(patients, effectivePreview, Date.now());
     setPatients(result.merged);
-    if (parsed?.headers) {
+    if (importMode === "paste" && parsed?.headers) {
       setSavedMappings((prev) => ({ ...prev, [mappingSignature(parsed.headers)]: roles }));
     }
     closeImport();
@@ -381,10 +426,15 @@ export default function Billing() {
 
       {isImporting && (
         <ImportPanel
+          mode={importMode}
+          onSetMode={setImportMode}
           pasted={pasted}
           parsed={parsed}
           roles={roles}
-          preview={preview}
+          preview={effectivePreview}
+          manualRows={manualRows}
+          onEditManualRow={editManualRow}
+          onRemoveManualRow={removeManualRow}
           onPaste={handlePaste}
           onSetRole={setRole}
           onCancel={closeImport}
@@ -646,10 +696,15 @@ function DecisionButton({
 }
 
 interface ImportPanelProps {
+  mode: ImportMode;
+  onSetMode: (mode: ImportMode) => void;
   pasted: string;
   parsed: ReturnType<typeof parseTable> | null;
   roles: ColumnRole[];
   preview: ReturnType<typeof buildImportedPatients>;
+  manualRows: ManualRow[];
+  onEditManualRow: (index: number, changes: Partial<ManualRow>) => void;
+  onRemoveManualRow: (index: number) => void;
   onPaste: (text: string) => void;
   onSetRole: (index: number, role: ColumnRole) => void;
   onCancel: () => void;
@@ -657,10 +712,15 @@ interface ImportPanelProps {
 }
 
 function ImportPanel({
+  mode,
+  onSetMode,
   pasted,
   parsed,
   roles,
   preview,
+  manualRows,
+  onEditManualRow,
+  onRemoveManualRow,
   onPaste,
   onSetRole,
   onCancel,
@@ -669,15 +729,14 @@ function ImportPanel({
   const { t } = useLanguage();
   const hasBalance = roles.includes("balance");
   const hasIdentity = roles.includes("name") || roles.includes("account");
+  const mappingUsable = mode === "manual" || (hasIdentity && hasBalance);
+  const previewTotal = preview.reduce((sum, patient) => sum + patient.balance, 0);
 
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
       <div className="w-full max-w-3xl rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-3) sm:p-6">
         <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-[18px] font-bold text-(--color-ink)">{t("billing.importTitle")}</h2>
-            <p className="mt-1 text-[13px] text-(--color-ink-muted)">{t("billing.importHelp")}</p>
-          </div>
+          <h2 className="text-[18px] font-bold text-(--color-ink)">{t("billing.importTitle")}</h2>
           <button
             type="button"
             onClick={onCancel}
@@ -688,82 +747,160 @@ function ImportPanel({
           </button>
         </div>
 
-        <textarea
-          autoFocus
-          value={pasted}
-          onChange={(e) => onPaste(e.target.value)}
-          placeholder={t("billing.importPlaceholder")}
-          rows={6}
-          className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2 font-mono text-[12px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
-        />
+        <div className="mb-3 flex gap-1.5">
+          {(["paste", "manual"] as ImportMode[]).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onSetMode(option)}
+              className={[
+                "rounded-full border px-3 py-1.5 text-[13px] transition-colors",
+                mode === option
+                  ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
+                  : "border-(--color-hairline) text-(--color-ink-muted) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
+              ].join(" ")}
+            >
+              {t(option === "paste" ? "billing.modePaste" : "billing.modeManual")}
+            </button>
+          ))}
+        </div>
 
-        {parsed && parsed.rows.length > 0 && (
+        <p className="mb-3 text-[13px] text-(--color-ink-muted)">
+          {t(mode === "paste" ? "billing.importHelp" : "billing.manualHelp")}
+        </p>
+
+        {mode === "paste" ? (
           <>
-            <p className="mt-4 mb-2 text-[13px] font-semibold text-(--color-ink)">
-              {t("billing.mapColumns")}
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {roles.map((role, index) => (
-                <label
-                  key={index}
-                  className="flex items-center gap-2 rounded-(--radius-sm) border border-(--color-hairline) px-2.5 py-1.5"
-                >
-                  <span className="min-w-0 flex-1 truncate text-[12px] text-(--color-ink-muted)">
-                    {parsed.headers?.[index]?.trim() ||
-                      t("billing.columnN", { n: String(index + 1) })}
-                    <span className="ml-1 text-(--color-ink-faint)">
-                      {parsed.rows[0]?.[index] ? `· ${parsed.rows[0][index]}` : ""}
-                    </span>
-                  </span>
-                  <select
-                    value={role}
-                    onChange={(e) => onSetRole(index, e.target.value as ColumnRole)}
-                    className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
-                  >
-                    {COLUMN_ROLES.map((option) => (
-                      <option key={option} value={option}>
-                        {t(`billing.role.${option}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-            </div>
+            <textarea
+              autoFocus
+              value={pasted}
+              onChange={(e) => onPaste(e.target.value)}
+              placeholder={t("billing.importPlaceholder")}
+              rows={6}
+              className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2 font-mono text-[12px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+            />
 
-            <div className="mt-4 rounded-(--radius-md) bg-(--color-canvas-soft) p-3.5">
-              {!hasIdentity || !hasBalance ? (
-                <p className="text-[13px] text-amber-700">{t("billing.mapIncomplete")}</p>
-              ) : (
-                <>
-                  <p className="text-[13px] font-medium text-(--color-ink)">
-                    {t("billing.previewSummary", {
-                      count: String(preview.length),
-                      amount: formatUSD(preview.reduce((sum, p) => sum + p.balance, 0)),
-                    })}
-                  </p>
-                  <ul className="mt-2 flex flex-col gap-0.5">
-                    {preview.slice(0, 5).map((patient) => (
-                      <li
-                        key={patient.key}
-                        className="flex justify-between gap-3 text-[12px] text-(--color-ink-secondary)"
-                      >
-                        <span className="truncate">
-                          {patient.name || patient.account}
-                          {patient.lines.length > 1 ? ` (${patient.lines.length})` : ""}
+            {parsed && parsed.rows.length > 0 && (
+              <>
+                <p className="mt-4 mb-2 text-[13px] font-semibold text-(--color-ink)">
+                  {t("billing.mapColumns")}
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {roles.map((role, index) => (
+                    <label
+                      key={index}
+                      className="flex items-center gap-2 rounded-(--radius-sm) border border-(--color-hairline) px-2.5 py-1.5"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[12px] text-(--color-ink-muted)">
+                        {parsed.headers?.[index]?.trim() ||
+                          t("billing.columnN", { n: String(index + 1) })}
+                        <span className="ml-1 text-(--color-ink-faint)">
+                          {parsed.rows[0]?.[index] ? `· ${parsed.rows[0][index]}` : ""}
                         </span>
-                        <span className="tabular-nums">{formatUSD(patient.balance)}</span>
-                      </li>
-                    ))}
-                    {preview.length > 5 && (
-                      <li className="text-[12px] text-(--color-ink-faint)">
-                        {t("billing.previewMore", { count: String(preview.length - 5) })}
-                      </li>
-                    )}
-                  </ul>
-                </>
-              )}
-            </div>
+                      </span>
+                      <select
+                        value={role}
+                        onChange={(e) => onSetRole(index, e.target.value as ColumnRole)}
+                        className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+                      >
+                        {COLUMN_ROLES.map((option) => (
+                          <option key={option} value={option}>
+                            {t(`billing.role.${option}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
           </>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-[1fr_88px_92px_28px] gap-2 px-0.5 text-[12px] font-semibold text-(--color-ink-faint)">
+              <span>{t("billing.manualName")}</span>
+              <span>{t("billing.manualAccount")}</span>
+              <span className="text-right">{t("billing.manualAmount")}</span>
+              <span />
+            </div>
+            {manualRows.map((row, index) => (
+              <div key={index} className="grid grid-cols-[1fr_88px_92px_28px] items-center gap-2">
+                <input
+                  autoFocus={index === 0}
+                  value={row.name}
+                  onChange={(e) => onEditManualRow(index, { name: e.target.value })}
+                  placeholder={t("billing.manualNamePlaceholder")}
+                  className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+                />
+                <input
+                  value={row.account}
+                  onChange={(e) => onEditManualRow(index, { account: e.target.value })}
+                  className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+                />
+                <input
+                  inputMode="decimal"
+                  value={row.amount}
+                  onChange={(e) => onEditManualRow(index, { amount: e.target.value })}
+                  className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-right text-[13px] tabular-nums text-(--color-ink) outline-none focus:border-(--color-primary)"
+                />
+                {manualRows.length > 1 && index < manualRows.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveManualRow(index)}
+                    aria-label={t("billing.removeRow")}
+                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                  >
+                    <X size={14} />
+                  </button>
+                ) : (
+                  <span />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(mode === "manual" || (parsed && parsed.rows.length > 0)) && (
+          <div className="mt-4 rounded-(--radius-md) bg-(--color-canvas-soft) p-3.5">
+            {!mappingUsable ? (
+              <p className="text-[13px] text-amber-700">{t("billing.mapIncomplete")}</p>
+            ) : preview.length === 0 ? (
+              <p className="text-[13px] text-(--color-ink-muted)">{t("billing.manualEmpty")}</p>
+            ) : (
+              <>
+                <p className="text-[13px] font-medium text-(--color-ink)">
+                  {t("billing.previewSummary", {
+                    count: String(preview.length),
+                    amount: formatUSD(previewTotal),
+                  })}
+                </p>
+                {/* The report has its own grand total; matching it is how you catch a
+                    mistyped digit or a row you skipped. */}
+                <p className="mt-0.5 text-[12px] text-(--color-ink-faint)">
+                  {t("billing.totalCheckHint")}
+                </p>
+                <ul className="mt-2 flex flex-col gap-0.5">
+                  {preview.slice(0, 5).map((patient) => (
+                    <li
+                      key={patient.key}
+                      className="flex justify-between gap-3 text-[12px] text-(--color-ink-secondary)"
+                    >
+                      <span className="truncate">
+                        {patient.name || patient.account}
+                        {patient.lines.length > 1 ? ` (${patient.lines.length})` : ""}
+                      </span>
+                      <span className="tabular-nums">{formatUSD(patient.balance)}</span>
+                    </li>
+                  ))}
+                  {preview.length > 5 && (
+                    <li className="text-[12px] text-(--color-ink-faint)">
+                      {t("billing.previewMore", { count: String(preview.length - 5) })}
+                    </li>
+                  )}
+                </ul>
+              </>
+            )}
+          </div>
         )}
 
         <div className="mt-4 flex justify-end gap-2">
@@ -776,7 +913,7 @@ function ImportPanel({
           </button>
           <button
             type="button"
-            disabled={preview.length === 0 || !hasIdentity || !hasBalance}
+            disabled={preview.length === 0 || !mappingUsable}
             onClick={onCommit}
             className="rounded-(--radius-sm) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-white disabled:opacity-40"
           >
@@ -785,7 +922,7 @@ function ImportPanel({
         </div>
       </div>
     </div>
-  );
+);
 }
 
 interface StatementSheetsProps {

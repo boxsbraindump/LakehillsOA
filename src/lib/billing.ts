@@ -31,8 +31,18 @@ export const COLUMN_ROLES: ColumnRole[] = [
   "adjustment",
 ];
 
+/**
+ * A table dragged off a web page and copied arrives space-aligned, not tab-separated, so
+ * this stands in for "the columns are just gaps". Two spaces rather than one, because names
+ * legitimately contain single spaces.
+ */
+export const MULTI_SPACE_DELIMITER = "  ";
+
 /** Splits one delimited line, honouring "quoted, fields" so an address does not become two columns. */
 function splitLine(line: string, delimiter: string): string[] {
+  if (delimiter === MULTI_SPACE_DELIMITER) {
+    return line.trim().split(/\s{2,}/).map((cell) => cell.trim());
+  }
   const out: string[] = [];
   let field = "";
   let inQuotes = false;
@@ -63,10 +73,30 @@ function splitLine(line: string, delimiter: string): string[] {
   return out;
 }
 
-/** Tab when the paste came off a screen or spreadsheet, comma when it came from a CSV export. */
+/**
+ * Tab from a spreadsheet, comma from a CSV export, and column gaps from a table selected on
+ * screen with the mouse — which is the only way out of some practice software.
+ *
+ * Commas and gaps can both be present at once, because "Alvarez, Marisol" is a comma inside a
+ * field, not between two. Whichever split yields more columns is the real delimiter: on a
+ * gap-aligned row the comma only finds the one inside the name, and on a true CSV there are no
+ * double-space gaps to find.
+ */
 export function detectDelimiter(text: string): string {
-  const firstLine = text.split(/\r?\n/).find((line) => line.trim().length > 0) ?? "";
-  return firstLine.includes("\t") ? "\t" : ",";
+  const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (lines.length === 0) return ",";
+  if (lines.some((line) => line.includes("\t"))) return "\t";
+
+  const widestUsing = (delimiter: string) =>
+    Math.max(...lines.map((line) => splitLine(line, delimiter).length));
+  const byComma = lines.some((line) => line.includes(",")) ? widestUsing(",") : 1;
+  const byGap = lines.some((line) => /\S {2,}\S/.test(line))
+    ? widestUsing(MULTI_SPACE_DELIMITER)
+    : 1;
+
+  // Gaps win ties. "Alvarez, Marisol   43.00" splits two ways into two fields, but only the
+  // gap split keeps the name whole, and a genuine CSV does not pad its columns with spaces.
+  return byGap > 1 && byGap >= byComma ? MULTI_SPACE_DELIMITER : ",";
 }
 
 export interface ParsedTable {
@@ -90,6 +120,8 @@ export function parseTable(text: string): ParsedTable {
   // data, and treating it as a header would silently drop a patient from the import.
   const first = padded[0];
   const looksLikeHeader =
+    // Never eat the only line there is: a lone row is the data, however text-like it looks.
+    padded.length > 1 &&
     first.some((cell) => cell.length > 0) &&
     !first.some((cell) => parseMoney(cell) !== undefined) &&
     !first.some((cell) => parseDate(cell) !== undefined);
