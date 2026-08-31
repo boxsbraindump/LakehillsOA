@@ -13,6 +13,8 @@ export type ColumnRole =
   | "account"
   | "name"
   | "balance"
+  | "email"
+  | "phone"
   | "serviceDate"
   | "description"
   | "charge"
@@ -24,6 +26,8 @@ export const COLUMN_ROLES: ColumnRole[] = [
   "account",
   "name",
   "balance",
+  "email",
+  "phone",
   "serviceDate",
   "description",
   "charge",
@@ -166,11 +170,22 @@ const ROLE_HINTS: { role: ColumnRole; patterns: RegExp[] }[] = [
     role: "account",
     patterns: [/\baccount\b/i, /\bacct\b/i, /\bchart\b/i, /\bmrn\b/i, /\bpatient\s*(id|#|no)\b/i],
   },
-  { role: "name", patterns: [/\bname\b/i, /\bpatient\b/i] },
+  { role: "name", patterns: [/\bname\b/i, /^\s*patient\s*$/i, /\bpatient\s*name\b/i] },
   {
     role: "balance",
-    patterns: [/\bbalance\b/i, /\bdue\b/i, /\bowed?\b/i, /\boutstanding\b/i, /\bpatient\s*resp/i],
+    // "Amount Due" is the balance column on the real report, so it has to be claimed here
+    // rather than by "charge", which would otherwise take anything containing "amount".
+    patterns: [
+      /\bbalance\b/i,
+      /\bamount\s*due\b/i,
+      /\bdue\b/i,
+      /\bowed?\b/i,
+      /\boutstanding\b/i,
+      /\bpatient\s*resp/i,
+    ],
   },
+  { role: "email", patterns: [/\be-?mail\b/i] },
+  { role: "phone", patterns: [/\bphone\b/i, /\bmobile\b/i, /\bcell\b/i, /\btel\b/i] },
   {
     role: "serviceDate",
     patterns: [/\bdos\b/i, /date\s*of\s*service/i, /\bservice\s*date\b/i, /\bvisit\b/i],
@@ -179,7 +194,7 @@ const ROLE_HINTS: { role: ColumnRole; patterns: RegExp[] }[] = [
     role: "description",
     patterns: [/\bdescription\b/i, /\bprocedure\b/i, /\bcpt\b/i, /\bservice\b/i, /\bcode\b/i],
   },
-  { role: "charge", patterns: [/\bcharge/i, /\bbilled\b/i, /\bfee\b/i, /\bamount\b/i] },
+  { role: "charge", patterns: [/\bcharge/i, /\bbilled\b/i, /\bfee\b/i] },
   {
     role: "insurancePaid",
     patterns: [/insurance\s*(paid|pmt|payment)/i, /\bins\s*paid\b/i, /\bpayer\s*paid\b/i],
@@ -242,6 +257,17 @@ export function formatUSD(value: number): string {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
+/**
+ * Printing the report to PDF clips anything too wide for its column and marks the cut with an
+ * ellipsis, so a long name arrives as "Alexandra Papadopo…". The data is genuinely gone — it
+ * is worth saying so rather than quietly billing a person whose name is half missing.
+ */
+export function isTruncated(value: string | undefined): boolean {
+  if (!value) return false;
+  const trimmed = value.trim();
+  return trimmed.endsWith("\u2026") || /\.\.\.$/.test(trimmed);
+}
+
 /** Two spellings of the same person should not become two rows to triage. */
 export function normalizeName(name: string): string {
   return name.toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ").trim();
@@ -266,6 +292,8 @@ export interface ImportedPatient {
   key: string;
   account: string;
   name: string;
+  email?: string;
+  phone?: string;
   balance: number;
   lines: BillingLine[];
 }
@@ -280,6 +308,8 @@ export function buildImportedPatients(rows: string[][], roles: ColumnRole[]): Im
   const accountIdx = indexOf("account");
   const nameIdx = indexOf("name");
   const balanceIdx = indexOf("balance");
+  const emailIdx = indexOf("email");
+  const phoneIdx = indexOf("phone");
   const dateIdx = indexOf("serviceDate");
   const descIdx = indexOf("description");
   const chargeIdx = indexOf("charge");
@@ -309,14 +339,28 @@ export function buildImportedPatients(rows: string[][], roles: ColumnRole[]): Im
       balance,
     };
 
+    const email = cell(row, emailIdx).trim() || undefined;
+    const phone = cell(row, phoneIdx).trim() || undefined;
+
     const existing = byKey.get(key);
     if (existing) {
       existing.balance += balance;
       existing.lines.push(line);
       if (!existing.account && account.trim()) existing.account = account.trim();
       if (!existing.name && name.trim()) existing.name = name.trim();
+      // A clipped value on one row loses to a whole one on another.
+      if (email && (!existing.email || isTruncated(existing.email))) existing.email = email;
+      if (phone && (!existing.phone || isTruncated(existing.phone))) existing.phone = phone;
     } else {
-      byKey.set(key, { key, account: account.trim(), name: name.trim(), balance, lines: [line] });
+      byKey.set(key, {
+        key,
+        account: account.trim(),
+        name: name.trim(),
+        email,
+        phone,
+        balance,
+        lines: [line],
+      });
     }
   }
 
@@ -329,6 +373,8 @@ export interface BillingPatient {
   key: string;
   account: string;
   name: string;
+  email?: string;
+  phone?: string;
   balance: number;
   lines: BillingLine[];
   decision: BillingDecision | null;
@@ -379,6 +425,8 @@ export function mergeImport(
         key: incoming.key,
         account: incoming.account,
         name: incoming.name,
+        email: incoming.email,
+        phone: incoming.phone,
         balance: incoming.balance,
         lines: incoming.lines,
         decision: null,
@@ -396,10 +444,21 @@ export function mergeImport(
       Math.abs(prior.balanceAtDecision - incoming.balance) > 0.004;
     if (amountMoved) changedKeys.push(incoming.key);
 
+    const better = (incomingValue?: string, priorValue?: string) => {
+      if (!incomingValue) return priorValue;
+      if (!priorValue) return incomingValue;
+      // A value already whole outranks a freshly clipped one, so a name corrected by hand
+      // survives the next import of the same clipped report.
+      if (isTruncated(incomingValue) && !isTruncated(priorValue)) return priorValue;
+      return incomingValue;
+    };
+
     merged.push({
       ...prior,
       account: incoming.account || prior.account,
-      name: incoming.name || prior.name,
+      name: better(incoming.name, prior.name) ?? prior.name,
+      email: better(incoming.email, prior.email),
+      phone: better(incoming.phone, prior.phone),
       balance: incoming.balance,
       lines: incoming.lines,
       lastSeenAt: now,

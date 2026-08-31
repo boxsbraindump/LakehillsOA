@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ClipboardPaste,
+  FileUp,
+  Pencil,
+  Loader2,
   Printer,
   Send,
   Trash2,
@@ -16,6 +19,7 @@ import { useLanguage } from "../components/LanguageProvider";
 import { useToast } from "../components/ToastProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import EmptyState from "../components/EmptyState";
+import { pdfToTable } from "../lib/pdfTable";
 import { todayKey, shiftDateKey } from "../lib/date";
 import {
   COLUMN_ROLES,
@@ -27,6 +31,7 @@ import {
   guessRoles,
   mergeImport,
   parseTable,
+  isTruncated,
   totalBalance,
   waitingDays,
 } from "../lib/billing";
@@ -104,6 +109,8 @@ export default function Billing() {
   const [importMode, setImportMode] = useState<ImportMode>("paste");
   const [pasted, setPasted] = useState("");
   const [manualRows, setManualRows] = useState<ManualRow[]>([{ ...EMPTY_MANUAL_ROW }]);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [roles, setRoles] = useState<ColumnRole[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [printing, setPrinting] = useState<BillingPatient[] | null>(null);
@@ -189,6 +196,25 @@ export default function Billing() {
     setPasted("");
     setRoles([]);
     setManualRows([{ ...EMPTY_MANUAL_ROW }]);
+    setPdfError(null);
+  }
+
+  /** Reads the PDF here in the browser and hands the result to the ordinary paste path. */
+  async function loadPdf(file: File) {
+    setPdfBusy(true);
+    setPdfError(null);
+    try {
+      const { text } = await pdfToTable(file);
+      if (!text.trim()) {
+        setPdfError(t("billing.pdfNoText"));
+        return;
+      }
+      handlePaste(text);
+    } catch {
+      setPdfError(t("billing.pdfFailed"));
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   /** Keeps exactly one blank row at the end, so typing never needs an "add row" click. */
@@ -427,6 +453,9 @@ export default function Billing() {
       {isImporting && (
         <ImportPanel
           mode={importMode}
+          pdfBusy={pdfBusy}
+          pdfError={pdfError}
+          onPickPdf={loadPdf}
           onSetMode={setImportMode}
           pasted={pasted}
           parsed={parsed}
@@ -495,6 +524,7 @@ function PatientRow({
 }: PatientRowProps) {
   const { t } = useLanguage();
   const [showNote, setShowNote] = useState(false);
+  const [editingContact, setEditingContact] = useState(false);
 
   const amountMoved =
     patient.decision !== null &&
@@ -519,7 +549,13 @@ function PatientRow({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <h2 className="text-[16px] font-bold text-(--color-ink)">
+            <h2
+              className={[
+                "text-[16px] font-bold",
+                isTruncated(patient.name) ? "text-amber-700" : "text-(--color-ink)",
+              ].join(" ")}
+              title={isTruncated(patient.name) ? t("billing.clippedName") : undefined}
+            >
               {patient.name || t("billing.unnamed")}
             </h2>
             <span className="text-[17px] font-bold tabular-nums text-(--color-ink)">
@@ -537,16 +573,68 @@ function PatientRow({
               .filter(Boolean)
               .join(" · ")}
           </p>
+          {/* The email is how a Square invoice actually reaches someone, so it belongs on
+              the card rather than buried in the import. */}
+          {(patient.email || patient.phone) && !editingContact && (
+            <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px]">
+              {patient.email && (
+                <span className={isTruncated(patient.email) ? "text-amber-700" : "text-(--color-ink-secondary)"}>
+                  {patient.email}
+                </span>
+              )}
+              {patient.phone && (
+                <span className={isTruncated(patient.phone) ? "text-amber-700" : "text-(--color-ink-secondary)"}>
+                  {patient.phone}
+                </span>
+              )}
+            </p>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={t("common.delete")}
-          className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
-        >
-          <Trash2 size={14} />
-        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setEditingContact((prev) => !prev)}
+            aria-label={t("billing.editContact")}
+            title={t("billing.editContact")}
+            className={[
+              "rounded-(--radius-sm) p-1 hover:text-(--color-primary)",
+              isTruncated(patient.name) || isTruncated(patient.email) || isTruncated(patient.phone)
+                ? "text-amber-600"
+                : "text-(--color-ink-faint)",
+            ].join(" ")}
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={t("common.delete")}
+            className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
+
+      {editingContact && (
+        <div className="mt-3 grid gap-2 rounded-(--radius-md) bg-(--color-canvas-soft) p-3 sm:grid-cols-3">
+          <ContactField
+            label={t("billing.manualName")}
+            value={patient.name}
+            onChange={(name) => onPatch({ name })}
+          />
+          <ContactField
+            label={t("billing.role.email")}
+            value={patient.email ?? ""}
+            onChange={(email) => onPatch({ email })}
+          />
+          <ContactField
+            label={t("billing.role.phone")}
+            value={patient.phone ?? ""}
+            onChange={(phone) => onPatch({ phone })}
+          />
+        </div>
+      )}
 
       {amountMoved && (
         <p className="mt-2 flex items-center gap-1.5 rounded-(--radius-sm) bg-amber-50 px-2.5 py-1.5 text-[12px] text-amber-800">
@@ -667,6 +755,27 @@ function PatientRow({
   );
 }
 
+function ContactField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-semibold text-(--color-ink-faint)">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+      />
+    </label>
+  );
+}
+
 function DecisionButton({
   active,
   icon: Icon,
@@ -698,6 +807,9 @@ function DecisionButton({
 interface ImportPanelProps {
   mode: ImportMode;
   onSetMode: (mode: ImportMode) => void;
+  pdfBusy: boolean;
+  pdfError: string | null;
+  onPickPdf: (file: File) => void;
   pasted: string;
   parsed: ReturnType<typeof parseTable> | null;
   roles: ColumnRole[];
@@ -714,6 +826,9 @@ interface ImportPanelProps {
 function ImportPanel({
   mode,
   onSetMode,
+  pdfBusy,
+  pdfError,
+  onPickPdf,
   pasted,
   parsed,
   roles,
@@ -731,6 +846,17 @@ function ImportPanel({
   const hasIdentity = roles.includes("name") || roles.includes("account");
   const mappingUsable = mode === "manual" || (hasIdentity && hasBalance);
   const previewTotal = preview.reduce((sum, patient) => sum + patient.balance, 0);
+  const [dragging, setDragging] = useState(false);
+  // Printing clips anything too wide for its column, so some of what arrives is provably
+  // incomplete. Better to say which fields than to let a half-name reach a statement.
+  const clipped = preview.filter(
+    (patient) => isTruncated(patient.name) || isTruncated(patient.email) || isTruncated(patient.phone),
+  ).length;
+
+  function acceptFiles(files: FileList | null) {
+    const file = files?.[0];
+    if (file) onPickPdf(file);
+  }
 
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
@@ -771,6 +897,59 @@ function ImportPanel({
 
         {mode === "paste" ? (
           <>
+            {/* Dropping a file on the page would otherwise make the browser navigate to the
+                PDF and throw the app away, which is exactly what happened the first time. */}
+            <div
+              onDragOver={(e) => {
+                if (!e.dataTransfer.types.includes("Files")) return;
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                if (!e.dataTransfer.types.includes("Files")) return;
+                e.preventDefault();
+                setDragging(false);
+                acceptFiles(e.dataTransfer.files);
+              }}
+              className={[
+                "mb-3 flex flex-col items-center gap-1.5 rounded-(--radius-md) border border-dashed px-4 py-5 text-center transition-colors",
+                dragging
+                  ? "border-(--color-primary) bg-(--color-primary)/5"
+                  : "border-(--color-hairline)",
+              ].join(" ")}
+            >
+              {pdfBusy ? (
+                <>
+                  <Loader2 size={18} className="animate-spin text-(--color-primary)" />
+                  <p className="text-[13px] text-(--color-ink-muted)">{t("billing.pdfReading")}</p>
+                </>
+              ) : (
+                <>
+                  <FileUp size={18} className="text-(--color-ink-faint)" />
+                  <label className="cursor-pointer text-[13px] font-medium text-(--color-primary)">
+                    {t("billing.pdfChoose")}
+                    <input
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        acceptFiles(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <p className="text-[12px] text-(--color-ink-faint)">{t("billing.pdfHint")}</p>
+                </>
+              )}
+            </div>
+
+            {pdfError && (
+              <p className="mb-3 rounded-(--radius-sm) bg-red-50 px-3 py-2 text-[13px] text-red-700">
+                {pdfError}
+              </p>
+            )}
+
             <textarea
               autoFocus
               value={pasted}
@@ -879,6 +1058,11 @@ function ImportPanel({
                 <p className="mt-0.5 text-[12px] text-(--color-ink-faint)">
                   {t("billing.totalCheckHint")}
                 </p>
+                {clipped > 0 && (
+                  <p className="mt-1.5 rounded-(--radius-sm) bg-amber-50 px-2.5 py-1.5 text-[12px] text-amber-800">
+                    {t("billing.clippedWarning", { count: String(clipped) })}
+                  </p>
+                )}
                 <ul className="mt-2 flex flex-col gap-0.5">
                   {preview.slice(0, 5).map((patient) => (
                     <li

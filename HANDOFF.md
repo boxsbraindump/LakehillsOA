@@ -89,6 +89,25 @@ person by person who gets a bill → open Square once per patient. The expensive
 the sending; it was that **nothing remembered the previous round**, so every run re-triaged the
 same people already judged "coming back next week". That is why the task kept getting deferred.
 
+- **The real report columns are `PATIENT | EMAIL | PHONE # | AMOUNT DUE | PRINT`** — read out of
+  an actual printed report. There is **no account number**, so `patientKey` falls back to the
+  normalized name. `guessRoles` maps all four automatically; note that `balance` has to claim
+  "Amount Due" before `charge` does, which is why /amount/ was removed from the charge patterns.
+- **Printing clips cells.** In the sample, 34 of 229 cells ended in an ellipsis: 5 names, 16
+  emails, 11 phones. `isTruncated()` detects it, the import warns with a count, clipped values
+  render amber, and the pencil on each card edits name/email/phone. Crucially `mergeImport`
+  prefers a whole value over a freshly clipped one, and the stored `key` never changes — so a
+  name corrected by hand survives every later import of the same clipped report. Printing in
+  landscape or at a smaller scale avoids the clipping at source.
+- **The report page has an `EXPORT` button and a `Print patient statements` feature**, both read
+  out of the PDF's own text layer. Neither had been tried. If EXPORT yields a clean CSV most of
+  the PDF handling stops mattering, and if UP prints statements itself the statement generator
+  here may be redundant. Worth confirming before building anything more in this area.
+- **PDF import** (`src/lib/pdfTable.ts`): pdf.js reads the file in the browser, so nothing is
+  uploaded. It is a lazy `import()`, so the 431KB engine and 1.26MB worker are separate chunks
+  that download only when a PDF is actually picked — the main bundle grew about 6KB. Rows are
+  rebuilt from glyph coordinates: same baseline means same row, and a gap wider than 0.6x the
+  type size is a column break. Output is tab-delimited and goes through the ordinary paste path.
 - **UP cannot export CSV.** The clinic reported it can only screenshot, so the import has two
   routes and both feed the same `mergeImport` path with the same `acct:` keys — a hand-typed
   round and a pasted round merge with each other rather than duplicating.

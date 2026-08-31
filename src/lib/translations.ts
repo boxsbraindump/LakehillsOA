@@ -825,6 +825,33 @@ export const translations = {
     zh: "和 UP 上的合计对一下 —— 数字对得上就说明没敲错也没漏人。",
     en: "Check this against the total on the UP report — if they match, nothing was mistyped or missed.",
   },
+
+  "billing.pdfChoose": { zh: "选一个 PDF 文件", en: "Choose a PDF" },
+  "billing.pdfHint": {
+    zh: "把 UP 的报表打印成 PDF，选进来就行，不用先复制。文件不会离开这台电脑。",
+    en: "Print the UP report to PDF and pick it here — no copying needed. The file never leaves this computer.",
+  },
+  "billing.pdfReading": { zh: "正在读取 PDF…", en: "Reading the PDF…" },
+  "billing.pdfNoText": {
+    zh: "这个 PDF 里没有可读的文字，可能是扫描件。试试用浏览器打印成 PDF，而不是扫描。",
+    en: "No readable text in this PDF — it may be a scan. Try printing to PDF from the browser instead.",
+  },
+  "billing.pdfFailed": {
+    zh: "这个 PDF 读不了。可以改用粘贴，或者手动输入。",
+    en: "Could not read that PDF. You can paste instead, or type the rows in.",
+  },
+  "billing.clippedWarning": {
+    zh: "{count} 条的姓名/邮箱/电话在打印时被截断了（结尾是 …）。打印时选横向或缩小比例可以避免，否则要手动补全。",
+    en: "{count} rows arrived with a clipped name, email or phone (they end in …). Printing in landscape or at a smaller scale avoids it; otherwise fill them in by hand.",
+  },
+  "billing.role.email": { zh: "邮箱", en: "Email" },
+  "billing.role.phone": { zh: "电话", en: "Phone" },
+
+  "billing.editContact": { zh: "改姓名/邮箱/电话", en: "Edit name, email, phone" },
+  "billing.clippedName": {
+    zh: "这个名字在打印时被截断了，发账单前要补全",
+    en: "This name was clipped when printing — complete it before billing",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
