@@ -95,6 +95,13 @@ same people already judged "coming back next week". That is why the task kept ge
   - *Type it in* mode: a name/account/amount grid that auto-appends a blank row, with a running
     total shown so it can be checked against the total on the UP report. That total check is the
     only defence against a mistyped digit, so do not remove it.
+  - The PDF route works: printing the UP report to PDF produces a real text layer (25 embedded
+    fonts, each with a ToUnicode CMap covering letters, digits and `$ - . : @`), so the table can
+    be selected and copied. `parseTable` strips what comes along with it — the browser timestamp
+    header, the URL footer, `1/2` page counters, and the standalone report title. A line with only
+    one filled cell is never a table row, which is what stops the title being read as the header.
+  - `buildImportedPatients` drops any row whose mapped balance cell does not parse as money. That
+    is what makes a misdetected header harmless: "Balance Due" is not a number.
   - *Paste* mode, below. `detectDelimiter` also handles space-aligned text, because a table
     dragged across on screen and copied arrives as gaps, not tabs. Commas and gaps can both be
     present ("Alvarez, Marisol" is a comma *inside* a field), so whichever split yields more

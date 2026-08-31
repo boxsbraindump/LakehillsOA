@@ -104,17 +104,47 @@ export interface ParsedTable {
   rows: string[][];
 }
 
+/**
+ * Copying out of a print-to-PDF drags the browser's own header and footer along: the page
+ * URL, a "8/31/26, 11:22 AM" timestamp, and a "1/2" page counter. None of it is a patient,
+ * and left in place the timestamp gets mistaken for the header row.
+ */
+function isPrintChrome(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+  if (/^https?:\/\//i.test(trimmed)) return true;
+  if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) return true;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?\b/i.test(trimmed)) return true;
+  if (/^page\s+\d+(\s+of\s+\d+)?$/i.test(trimmed)) return true;
+  return false;
+}
+
 export function parseTable(text: string): ParsedTable {
-  const delimiter = detectDelimiter(text);
-  const lines = text
+  const body = text
+    .split(/\r?\n/)
+    .filter((line) => !isPrintChrome(line))
+    .join("\n");
+  const delimiter = detectDelimiter(body);
+  const lines = body
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.trim().length > 0);
   if (lines.length === 0) return { headers: null, rows: [] };
 
   const grid = lines.map((line) => splitLine(line, delimiter));
-  const width = Math.max(...grid.map((row) => row.length));
-  const padded = grid.map((row) => [...row, ...Array(width - row.length).fill("")]);
+
+  // A report title sitting on its own line ("Balance Due") is not a table row, and left in
+  // place it gets read as the header. Anything with a single cell is dropped once the table
+  // itself clearly has more than one column — which also catches section labels and totals
+  // captions. When every line has one cell there is no table structure to protect, so the
+  // rule stays out of the way.
+  const filled = grid.map((row) => row.filter((cell) => cell.trim().length > 0).length);
+  const widest = Math.max(...filled);
+  const rows = widest > 1 ? grid.filter((_, index) => filled[index] > 1) : grid;
+  if (rows.length === 0) return { headers: null, rows: [] };
+
+  const width = Math.max(...rows.map((row) => row.length));
+  const padded = rows.map((row) => [...row, ...Array(width - row.length).fill("")]);
 
   // A header row is text-only. If the first row already holds a dollar figure or a date it is
   // data, and treating it as a header would silently drop a patient from the import.
@@ -264,7 +294,11 @@ export function buildImportedPatients(rows: string[][], roles: ColumnRole[]): Im
     const name = cell(row, nameIdx);
     if (!account.trim() && !name.trim()) continue;
 
-    const balance = parseMoney(cell(row, balanceIdx)) ?? 0;
+    const parsedBalance = parseMoney(cell(row, balanceIdx));
+    // Once a balance column is mapped, a row without a readable amount is not a patient
+    // balance — it is a stray header, a section label, or leftover page furniture.
+    if (balanceIdx >= 0 && parsedBalance === undefined) continue;
+    const balance = parsedBalance ?? 0;
     const key = patientKey(account, name);
     const line: BillingLine = {
       serviceDate: parseDate(cell(row, dateIdx)),
