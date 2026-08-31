@@ -9,6 +9,8 @@ import { defaultPayers } from "../data/payers";
 import { defaultPlatforms } from "../data/platforms";
 import { slugify } from "../lib/slugify";
 import type { Payer, Platform } from "../lib/types";
+import { EMPTY_CLINIC_PROFILE } from "../lib/billing";
+import type { ClinicProfile } from "../lib/billing";
 
 const inputClass =
   "w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:shadow-(--shadow-level-1)";
@@ -27,6 +29,10 @@ export default function Settings() {
     isPersonalWorkspace ? [] : defaultPayers,
   );
   const [payerSeedVersion, setPayerSeedVersion] = useSyncedStorage("lh-payers-seed-version", "");
+  const [clinic, setClinic] = useSyncedStorage<ClinicProfile>(
+    "lh-clinic-profile",
+    EMPTY_CLINIC_PROFILE,
+  );
   const [platforms, setPlatforms] = useSyncedStorage<Platform[]>(
     "lh-platforms",
     isPersonalWorkspace ? [] : defaultPlatforms,
@@ -272,6 +278,49 @@ export default function Settings() {
         </section>
       </div>
 
+      <section className="mb-6 rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
+        <h2 className="text-[16px] font-bold text-(--color-ink)">
+          {t("settings.statementHeader")}
+        </h2>
+        <p className="mt-1 mb-4 text-[13px] text-(--color-ink-muted)">
+          {t("settings.statementHeaderHelp")}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ClinicField
+            label={t("settings.clinicName")}
+            value={clinic.name}
+            onChange={(name) => setClinic((prev) => ({ ...prev, name }))}
+          />
+          <ClinicField
+            label={t("settings.clinicPhone")}
+            value={clinic.phone}
+            onChange={(phone) => setClinic((prev) => ({ ...prev, phone }))}
+          />
+          <ClinicField
+            label={t("settings.clinicAddress1")}
+            value={clinic.addressLine1}
+            onChange={(addressLine1) => setClinic((prev) => ({ ...prev, addressLine1 }))}
+          />
+          <ClinicField
+            label={t("settings.clinicAddress2")}
+            value={clinic.addressLine2}
+            onChange={(addressLine2) => setClinic((prev) => ({ ...prev, addressLine2 }))}
+          />
+        </div>
+        <label className="mt-3 block">
+          <span className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
+            {t("settings.payInstructions")}
+          </span>
+          <textarea
+            value={clinic.payInstructions}
+            onChange={(e) => setClinic((prev) => ({ ...prev, payInstructions: e.target.value }))}
+            placeholder={t("settings.payInstructionsHelp")}
+            rows={2}
+            className={inputClass}
+          />
+        </label>
+      </section>
+
       <section className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-1) sm:p-6">
         <h2 className="text-[16px] font-bold text-(--color-ink)">
           {t("settings.workspaceData")}
@@ -434,5 +483,22 @@ export default function Settings() {
         </div>
       </section>
     </div>
+  );
+}
+
+function ClinicField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">{label}</span>
+      <input value={value} onChange={(e) => onChange(e.target.value)} className={inputClass} />
+    </label>
   );
 }

@@ -7,6 +7,7 @@ import Home from "./pages/Home.tsx";
 import Checklist from "./pages/Checklist.tsx";
 import OACases from "./pages/OACases.tsx";
 import Payments from "./pages/Payments.tsx";
+import Billing from "./pages/Billing.tsx";
 import CustomCategory from "./pages/CustomCategory.tsx";
 import Trash from "./pages/Trash.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -33,6 +34,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="checklist" element={<Checklist />} />
                 <Route path="oa-cases" element={<OACases />} />
                 <Route path="payments" element={<Payments />} />
+                <Route path="billing" element={<Billing />} />
                 <Route path="custom/:categoryId" element={<CustomCategory />} />
                 <Route path="trash" element={<Trash />} />
                 <Route path="settings" element={<Settings />} />

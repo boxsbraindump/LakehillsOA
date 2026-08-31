@@ -298,3 +298,43 @@ body::before {
     animation: none;
   }
 }
+
+/* Patient statements print on their own — the app shell around them is not part of the bill.
+   `visibility` rather than `display` because the sheets live inside the app's DOM: hiding an
+   ancestor with `display:none` would take the sheets with it. */
+@media print {
+  html.printing-statement body * {
+    visibility: hidden;
+  }
+
+  html.printing-statement .statement-print-root,
+  html.printing-statement .statement-print-root * {
+    visibility: visible;
+  }
+
+  html.printing-statement .statement-print-root {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 0;
+    overflow: visible;
+    background: #fff;
+  }
+
+  html.printing-statement .print-hide {
+    display: none !important;
+  }
+
+  .statement-sheet {
+    /* One patient per page: a bill that continues onto someone else's sheet is unmailable. */
+    break-after: page;
+    min-height: 0;
+    margin: 0;
+    border: 0;
+    box-shadow: none !important;
+  }
+
+  .statement-sheet:last-of-type {
+    break-after: auto;
+  }
+}

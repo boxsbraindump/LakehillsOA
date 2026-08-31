@@ -83,6 +83,54 @@
 - **OA Cases** — insurance claim edge-case cards (title/payer/tags/summary/resolution). `src/pages/OACases.tsx`
 - **Where to Find Payments** — payment-portal lookup per payer; payer field is a dropdown fed by the Payer directory. `src/pages/Payments.tsx`
 
+### 催账 / Billing (`src/pages/Billing.tsx`, logic in `src/lib/billing.ts`)
+Replaces a Notion-based workflow: pull balance-due out of UP → retype into Notion → decide
+person by person who gets a bill → open Square once per patient. The expensive part was never
+the sending; it was that **nothing remembered the previous round**, so every run re-triaged the
+same people already judged "coming back next week". That is why the task kept getting deferred.
+
+- **Import** — paste a tab- or comma-delimited export. `parseTable` detects the delimiter and
+  whether row 0 is a header (a row containing money or a date is data, not a header).
+  `guessRoles` pre-fills the column mapping from header text; the user can override every
+  guess, and the corrected mapping is saved per header signature (`lh-billing-column-map`) so
+  the next paste maps itself. **Do not hardcode UP's columns** — they were never specified and
+  the mapping UI exists precisely so a format change does not need a code change.
+- **Per-claim or per-patient exports both work.** `buildImportedPatients` groups rows by
+  account (falling back to a normalized name) and sums balances, so repeated rows become the
+  statement's line items.
+- **`mergeImport` is the feature.** Decisions carry forward; it returns `addedKeys`,
+  `changedKeys` (balance moved since the decision), and `clearedKeys` (dropped off the report
+  entirely — that is how you learn someone paid). Re-importing identical data must leave the
+  triage queue empty; that is the invariant to protect.
+- **Buckets are states with a clock, not folders** (`bucketOf`). "Coming back" expires on its
+  own once the expected date passes and the balance is still there; "awaiting insurance" ages
+  and flags at `INSURANCE_FOLLOWUP_DAYS` (30). A changed balance pulls a row back to triage.
+- **Statements** print from the browser (no PDF library). `runStatementPrint()` in
+  `Billing.tsx` toggles `html.printing-statement`, which the `@media print` block at the
+  bottom of `src/index.css` uses to hide the app shell via `visibility` (not `display` — the
+  sheets are nested inside the app's DOM). **Never call `window.print()` directly here**, or
+  the sidebar prints on the patient's bill.
+- Storage: `lh-billing-patients`, `lh-billing-column-map`, `lh-clinic-profile` (statement
+  header, edited in Settings). All synced.
+
+**Two deliberate decisions, do not "fix" them without asking:**
+1. Billing is *not* in the search index. That index feeds Home and the call panel; patient
+   names do not belong there. Verified: searching a patient name or account number finds nothing.
+2. This is the first patient data in the app (name + balance + dates of service), and it syncs
+   to Cloudflare D1 on a standard plan with no BAA. The owner chose this knowingly, over a
+   local-only option, because home/clinic continuity was the point. Do not widen what is stored
+   (no DOB, no diagnosis, no insurance ID) without raising it first.
+
+**Square context:** no API integration by choice. Square *Invoices* (unlike the *Payment Links*
+the clinic had been using) do support line items and up to 10 attachments / 25MB; per Square's
+docs only custom fields and installment schedules need Invoices Plus. The workflow is: print the
+statement to PDF, attach it to a Square invoice. If this is ever automated, it needs
+`INVOICES_WRITE` + `ORDERS_WRITE` and a token in the Worker.
+
+**Logic is unit-testable without a browser** — `src/lib/billing.ts` is pure. Compile it with
+`npx esbuild src/lib/billing.ts --format=esm --outfile=<tmp>/billing.mjs` and run assertions
+against it in plain node. Worth doing before touching `mergeImport` or `bucketOf`.
+
 ### Settings (`src/pages/Settings.tsx`)
 - Account (email + logout), Language toggle, **Payer directory** (name + payer ID, stored `lh-payers`) — these payers populate the dropdown in `PaymentEntryForm`.
 
@@ -153,6 +201,8 @@ Worth checking first when something "won't save" or "disappeared":
   as "the button is broken". Say why instead.
 
 ## Recent commits (latest first)
+- `b9758d9` Add the billing worklist: import balances, triage once, print statements
+- `e111988` Let the sidebar be dragged wider
 - `045215b` Make sidebar folder dragging land where you aim it
 - `b4b10c9` Copy forward from the last day worked, and let it skip finished items
 - `d564b10` Say why a checklist item did not save instead of ignoring the click

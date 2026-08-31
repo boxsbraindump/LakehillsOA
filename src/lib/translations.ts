@@ -660,6 +660,154 @@ export const translations = {
     zh: "Lake Hills Acupuncture 内部工作区",
     en: "Internal workspace for Lake Hills Acupuncture",
   },
+
+  "common.close": { zh: "关闭", en: "Close" },
+
+  "sidebar.billing": { zh: "催账", en: "Billing" },
+
+  "billing.title": { zh: "催账", en: "Billing" },
+  "billing.subtitle": {
+    zh: "把 UP 的欠费清单贴进来，判断过一次就记住，下次只看变化的部分。",
+    en: "Paste the balance-due list from UP. Decisions stick, so the next round only shows what changed.",
+  },
+  "billing.import": { zh: "导入欠费清单", en: "Import balances" },
+  "billing.statOutstanding": { zh: "未结清合计", en: "Outstanding" },
+  "billing.statPeople": { zh: "人数", en: "Patients" },
+  "billing.statToBill": { zh: "待发账单金额", en: "Ready to bill" },
+  "billing.emptyTitle": { zh: "还没有欠费清单", en: "No balances yet" },
+  "billing.emptyDescription": {
+    zh: "从 UP 把 balance due 复制出来贴进去就行，一列一列对上就能用。",
+    en: "Copy the balance-due list out of UP and paste it in — you match up the columns once and it is ready.",
+  },
+
+  "billing.bucketTodo": { zh: "待处理", en: "To triage" },
+  "billing.bucketReturning": { zh: "会回来", en: "Coming back" },
+  "billing.bucketWaiting": { zh: "等保险", en: "Awaiting insurance" },
+  "billing.bucketSendBill": { zh: "该发账单", en: "Send a bill" },
+  "billing.bucketSent": { zh: "已发出", en: "Sent" },
+  "billing.bucketCleared": { zh: "已结清", en: "Cleared" },
+  "billing.bucketEmpty": { zh: "这里现在是空的。", en: "Nothing here right now." },
+
+  "billing.selectAll": { zh: "全选", en: "Select all" },
+  "billing.selectNone": { zh: "取消全选", en: "Clear selection" },
+  "billing.selectedCount": { zh: "已选 {count} 人 · {amount}", en: "{count} selected · {amount}" },
+  "billing.selectPatient": { zh: "选择 {name}", en: "Select {name}" },
+  "billing.printStatements": { zh: "打印对账单", en: "Print statements" },
+  "billing.printStatement": { zh: "对账单", en: "Statement" },
+  "billing.markSent": { zh: "标记已发出", en: "Mark as sent" },
+  "billing.markedSent": { zh: "{count} 人已标记为发出", en: "Marked {count} as sent" },
+  "billing.purgeCleared": { zh: "清除已结清记录", en: "Remove cleared records" },
+  "billing.purgeClearedConfirm": {
+    zh: "把已结清的记录从列表里删掉？下次导入如果他们还欠钱会重新出现。",
+    en: "Remove the cleared records? They come back on the next import if they still owe.",
+  },
+  "billing.removeConfirm": {
+    zh: "把 {name} 从催账列表移除？下次导入还会再出现。",
+    en: "Remove {name} from the list? The next import will bring them back.",
+  },
+
+  "billing.importTitle": { zh: "导入欠费清单", en: "Import balances" },
+  "billing.importHelp": {
+    zh: "从 UP 里把表格选中复制，直接贴到下面。CSV 也可以。",
+    en: "Select the table in UP and copy it, then paste below. A CSV export works too.",
+  },
+  "billing.importPlaceholder": {
+    zh: "在这里粘贴…",
+    en: "Paste here…",
+  },
+  "billing.mapColumns": { zh: "这些列分别是什么？", en: "What is each column?" },
+  "billing.columnN": { zh: "第 {n} 列", en: "Column {n}" },
+  "billing.mapIncomplete": {
+    zh: "至少要指定「姓名」或「账号」其中一个，再加上「应付金额」。",
+    en: "Pick either a name or an account column, plus the balance column.",
+  },
+  "billing.previewSummary": { zh: "将导入 {count} 人，合计 {amount}", en: "Importing {count} — {amount} total" },
+  "billing.previewMore": { zh: "还有 {count} 人…", en: "and {count} more…" },
+  "billing.importConfirm": { zh: "导入", en: "Import" },
+  "billing.importSummary": {
+    zh: "新增 {added} · 金额有变动 {changed} · 已结清 {cleared}",
+    en: "{added} new · {changed} changed · {cleared} cleared",
+  },
+
+  "billing.role.ignore": { zh: "不用", en: "Skip" },
+  "billing.role.account": { zh: "账号", en: "Account" },
+  "billing.role.name": { zh: "姓名", en: "Name" },
+  "billing.role.balance": { zh: "应付金额", en: "Balance" },
+  "billing.role.serviceDate": { zh: "服务日期", en: "Service date" },
+  "billing.role.description": { zh: "项目", en: "Description" },
+  "billing.role.charge": { zh: "收费", en: "Charge" },
+  "billing.role.insurancePaid": { zh: "保险已付", en: "Insurance paid" },
+  "billing.role.adjustment": { zh: "调整", en: "Adjustment" },
+
+  "billing.unnamed": { zh: "（无姓名）", en: "(no name)" },
+  "billing.accountLabel": { zh: "账号 {account}", en: "Account {account}" },
+  "billing.lineCount": { zh: "{count} 笔", en: "{count} charges" },
+  "billing.oldestService": { zh: "最早 {date}", en: "since {date}" },
+  "billing.amountMoved": {
+    zh: "金额从 {from} 变成了 {to}，之前的判断可能不作数了。",
+    en: "The balance moved from {from} to {to}, so the earlier call may no longer hold.",
+  },
+  "billing.waitingDays": { zh: "已等 {days} 天", en: "Pending {days} days" },
+  "billing.waitingOverdue": { zh: "已等 {days} 天，该打电话催了", en: "Pending {days} days — time to call" },
+  "billing.expectedBack": { zh: "预计 {date} 回诊", en: "Expected back {date}" },
+  "billing.sentOn": { zh: "{date} 发出", en: "Sent {date}" },
+
+  "billing.decideReturning": { zh: "会回来", en: "Coming back" },
+  "billing.decideWaiting": { zh: "等保险", en: "Awaiting insurance" },
+  "billing.decideSendBill": { zh: "发账单", en: "Send a bill" },
+  "billing.expectedBackLabel": { zh: "预计回诊", en: "Expected back" },
+  "billing.claimSentLabel": { zh: "理赔递交日", en: "Claim submitted" },
+  "billing.payLinkLabel": { zh: "Square 付款链接", en: "Square payment link" },
+  "billing.payLinkPlaceholder": {
+    zh: "贴这里就会印在对账单上",
+    en: "Paste it here and it prints on the statement",
+  },
+  "billing.addNote": { zh: "加备注", en: "Add a note" },
+  "billing.editNote": { zh: "备注", en: "Note" },
+  "billing.notePlaceholder": {
+    zh: "比如：打过电话，说这个月底付",
+    en: "e.g. called, says they will pay end of month",
+  },
+
+  "billing.printPreviewHint": {
+    zh: "{count} 张对账单已经准备好。打印时可以选「另存为 PDF」，再附到 Square invoice 上。",
+    en: "Ready to print: {count}. Choose Save as PDF in the print dialog, then attach it to the Square invoice.",
+  },
+  "billing.printAgain": { zh: "再次打印", en: "Print again" },
+  "billing.clinicNameFallback": {
+    zh: "（去设置里填诊所抬头）",
+    en: "(add your clinic header in Settings)",
+  },
+  "billing.statementHeading": { zh: "Statement", en: "Statement" },
+  "billing.statementDate": { zh: "日期 {date}", en: "Date {date}" },
+  "billing.colDate": { zh: "服务日期", en: "Date" },
+  "billing.colDescription": { zh: "项目", en: "Description" },
+  "billing.colCharge": { zh: "收费", en: "Charge" },
+  "billing.colInsurance": { zh: "保险已付", en: "Insurance paid" },
+  "billing.colAdjustment": { zh: "调整", en: "Adjustment" },
+  "billing.colBalance": { zh: "应付", en: "Balance" },
+  "billing.balanceForward": { zh: "结转余额", en: "Balance forward" },
+  "billing.amountDue": { zh: "应付合计", en: "Amount due" },
+  "billing.howToPay": { zh: "付款方式", en: "How to pay" },
+  "billing.statementFooter": {
+    zh: "对账单金额如有疑问，请致电诊所前台。",
+    en: "Questions about this statement? Please call the front desk.",
+  },
+
+  "settings.statementHeader": { zh: "对账单抬头", en: "Statement header" },
+  "settings.statementHeaderHelp": {
+    zh: "这些内容会印在每张病人对账单的顶部。",
+    en: "This prints at the top of every patient statement.",
+  },
+  "settings.clinicName": { zh: "诊所名称", en: "Clinic name" },
+  "settings.clinicAddress1": { zh: "地址第一行", en: "Address line 1" },
+  "settings.clinicAddress2": { zh: "地址第二行", en: "Address line 2" },
+  "settings.clinicPhone": { zh: "电话", en: "Phone" },
+  "settings.payInstructions": { zh: "付款说明", en: "Payment instructions" },
+  "settings.payInstructionsHelp": {
+    zh: "写清楚病人该怎么付，比如「点 Square 邮件里的付款按钮，或致电前台刷卡」。",
+    en: "Say how to pay — e.g. use the button in the Square email, or call the front desk with a card.",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

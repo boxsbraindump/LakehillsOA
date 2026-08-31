@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   FileSearch,
   CreditCard,
+  Receipt,
   Sparkles,
   Trash2,
   Folder,
@@ -69,6 +70,12 @@ const NAV_ITEMS = [
     key: "sidebar.payments",
     category: "payments",
     icon: CreditCard,
+  },
+  {
+    to: "/billing",
+    key: "sidebar.billing",
+    category: "payments",
+    icon: Receipt,
   },
 ] as const;
 
