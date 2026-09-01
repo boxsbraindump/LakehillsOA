@@ -268,6 +268,23 @@ export function isTruncated(value: string | undefined): boolean {
   return trimmed.endsWith("\u2026") || /\.\.\.$/.test(trimmed);
 }
 
+/**
+ * An address that is missing, clipped by the printed report, or simply malformed must not be
+ * billed to: it bounces, or it reaches the wrong person. Checked before the confirmation screen
+ * so it can say who is blocked, and again on the Worker before anything is sent.
+ */
+export function isSendableEmail(email: string | undefined): boolean {
+  if (!email) return false;
+  const trimmed = email.trim();
+  if (isTruncated(trimmed)) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed);
+}
+
+/** Square works in minor units; going through Math.round keeps float cents out of a bill. */
+export function toCents(amount: number): number {
+  return Math.round(amount * 100);
+}
+
 /** Two spellings of the same person should not become two rows to triage. */
 export function normalizeName(name: string): string {
   return name.toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ").trim();
@@ -385,8 +402,10 @@ export interface BillingPatient {
   balanceAtDecision?: number;
   sentAt?: number;
   note?: string;
-  /** The patient's own Square link, pasted in — every balance differs, so there is one per person. */
+  /** The patient's own Square link — pasted by hand, or filled in when an invoice is sent. */
   payLink?: string;
+  /** Set once a Square invoice exists, so its payment status can be checked later. */
+  squareInvoiceId?: string;
   firstSeenAt: number;
   lastSeenAt: number;
   /** Dropped out of the latest import, so the balance is gone — they paid or it was written off. */

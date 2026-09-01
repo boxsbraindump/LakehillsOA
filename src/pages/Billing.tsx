@@ -6,6 +6,7 @@ import {
   Loader2,
   Printer,
   Send,
+  RefreshCw,
   Trash2,
   X,
   CalendarClock,
@@ -20,6 +21,9 @@ import { useToast } from "../components/ToastProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import EmptyState from "../components/EmptyState";
 import { pdfToTable } from "../lib/pdfTable";
+import SendInvoicesDialog from "../components/SendInvoicesDialog";
+import { fetchInvoiceStatuses, fetchSquareConfig } from "../lib/squareApi";
+import type { InvoiceResult } from "../lib/squareApi";
 import { todayKey, shiftDateKey } from "../lib/date";
 import {
   COLUMN_ROLES,
@@ -115,6 +119,21 @@ export default function Billing() {
   const [selected, setSelected] = useState<string[]>([]);
   const [printing, setPrinting] = useState<BillingPatient[] | null>(null);
   const printRequestRef = useRef(false);
+  const [sendingInvoicesFor, setSendingInvoicesFor] = useState<BillingPatient[] | null>(null);
+  const [squareReady, setSquareReady] = useState(false);
+  const [checkingPayments, setCheckingPayments] = useState(false);
+
+  // The send button only appears once the Worker actually has a Square token, so it never
+  // offers an action that would fail.
+  useEffect(() => {
+    let active = true;
+    void fetchSquareConfig().then((config) => {
+      if (active) setSquareReady(config.configured);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // The sheets must be committed to the DOM before the print dialog reads the page, so the
   // trigger lives in an effect. An earlier version used requestAnimationFrame, which never
@@ -300,6 +319,56 @@ export default function Billing() {
     setPrinting(list);
   }
 
+  /** Square answers per patient, so a partial batch records exactly who actually got an email. */
+  function recordInvoices(results: InvoiceResult[]) {
+    const byKey = new Map(results.map((result) => [result.key, result]));
+    setPatients((prev) =>
+      prev.map((patient) => {
+        const result = byKey.get(patient.key);
+        if (!result?.ok) return patient;
+        return {
+          ...patient,
+          decision: "sent",
+          sentAt: Date.now(),
+          balanceAtDecision: patient.balance,
+          squareInvoiceId: result.invoiceId,
+          payLink: result.publicUrl ?? patient.payLink,
+        };
+      }),
+    );
+    setSelected([]);
+  }
+
+  /**
+   * Asks Square who has paid. Without this the only way to find out was waiting for someone
+   * to drop off the next balance report, which could be weeks.
+   */
+  async function refreshPaymentStatus() {
+    const withInvoices = patients.filter((patient) => patient.squareInvoiceId && !patient.clearedAt);
+    if (withInvoices.length === 0) return;
+    setCheckingPayments(true);
+    const statuses = await fetchInvoiceStatuses(
+      withInvoices.map((patient) => patient.squareInvoiceId!),
+    );
+    setCheckingPayments(false);
+
+    const paid = new Set(
+      statuses.filter((status) => status.status === "PAID").map((status) => status.invoiceId),
+    );
+    if (paid.size === 0) {
+      showToast(t("billing.noNewPayments"));
+      return;
+    }
+    setPatients((prev) =>
+      prev.map((patient) =>
+        patient.squareInvoiceId && paid.has(patient.squareInvoiceId)
+          ? { ...patient, clearedAt: Date.now() }
+          : patient,
+      ),
+    );
+    showToast(t("billing.paymentsFound", { count: String(paid.size) }));
+  }
+
   function markSent(list: BillingPatient[]) {
     const keys = new Set(list.map((patient) => patient.key));
     setPatients((prev) =>
@@ -406,13 +475,36 @@ export default function Billing() {
                   type="button"
                   disabled={selectedInBucket.length === 0}
                   onClick={() => markSent(selectedInBucket)}
-                  className="flex items-center gap-1.5 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-(--radius-sm) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink) disabled:opacity-40"
                 >
-                  <Send size={14} />
+                  <CheckCircle2 size={14} />
                   {t("billing.markSent")}
                 </button>
+                {squareReady && (
+                  <button
+                    type="button"
+                    disabled={selectedInBucket.length === 0}
+                    onClick={() => setSendingInvoicesFor(selectedInBucket)}
+                    className="flex items-center gap-1.5 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+                  >
+                    <Send size={14} />
+                    {t("billing.sendInvoices")}
+                  </button>
+                )}
               </div>
             </div>
+          )}
+
+          {activeBucket === "sent" && squareReady && visible.some((p) => p.squareInvoiceId) && (
+            <button
+              type="button"
+              onClick={refreshPaymentStatus}
+              disabled={checkingPayments}
+              className="mb-4 flex items-center gap-1.5 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink) disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={checkingPayments ? "animate-spin" : ""} />
+              {t("billing.checkPayments")}
+            </button>
           )}
 
           {activeBucket === "cleared" && visible.length > 0 && (
@@ -468,6 +560,14 @@ export default function Billing() {
           onSetRole={setRole}
           onCancel={closeImport}
           onCommit={commitImport}
+        />
+      )}
+
+      {sendingInvoicesFor && (
+        <SendInvoicesDialog
+          patients={sendingInvoicesFor}
+          onClose={() => setSendingInvoicesFor(null)}
+          onSent={recordInvoices}
         />
       )}
 

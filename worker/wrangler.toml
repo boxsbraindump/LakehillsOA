@@ -10,3 +10,14 @@ GOOGLE_CLIENT_ID = "266656169647-si258nfdhvudk20hl5jdi03kg9411rj4.apps.googleuse
 binding = "DB"
 database_name = "lakehills-oa"
 database_id = "7bc78e4f-af1e-4dba-8e9e-a41184e72b79"
+
+# Square Invoices — sends each patient their own invoice email instead of one at a time.
+#
+# The access token is a SECRET and must never live in this file. Set it with:
+#   npx wrangler secret put SQUARE_ACCESS_TOKEN
+#
+# SQUARE_ENV is deliberately absent below, and the Worker treats anything other than
+# "production" as sandbox. A half-configured deploy therefore cannot email real patients.
+# To go live, add SQUARE_ENV = "production" under [vars] and swap in the production token.
+#
+# SQUARE_LOCATION_ID is optional; the first active location on the account is used when unset.

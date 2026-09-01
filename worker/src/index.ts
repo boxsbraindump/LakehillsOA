@@ -1,6 +1,14 @@
 import { verifyGoogleIdToken } from "./googleAuth";
+import {
+  getInvoiceStatuses,
+  sendInvoices,
+  squareConfigured,
+  squareMode,
+  type InvoiceRequest,
+  type SquareEnv,
+} from "./square";
 
-export interface Env {
+export interface Env extends SquareEnv {
   DB: D1Database;
   GOOGLE_CLIENT_ID: string;
   /** Comma-separated list of allowed emails, e.g. "alice@gmail.com,bob@hotmail.com" */
@@ -323,6 +331,65 @@ export default {
     }
     const workspace = await requestedWorkspaceForEmail(request, email, env);
     await ensureWorkspace(env, workspace);
+
+    if (request.method === "GET" && url.pathname === "/api/square/config") {
+      return json({ configured: squareConfigured(env), mode: squareMode(env) }, headers);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/square/invoices") {
+      if (!squareConfigured(env)) {
+        return json({ error: "square_not_configured" }, headers, 503);
+      }
+
+      const body = await request.json<{ batchId?: string; patients?: InvoiceRequest[] }>();
+      const patients = body.patients ?? [];
+      if (!body.batchId || patients.length === 0) {
+        return json({ error: "missing_patients" }, headers, 400);
+      }
+      // A stray huge request would be a bug, not a real batch, and each entry is an email.
+      if (patients.length > 200) {
+        return json({ error: "too_many_patients" }, headers, 400);
+      }
+
+      // Refusing here rather than in the browser only: an unreachable or clipped address
+      // either bounces or, worse, reaches somebody else.
+      const sendable = (email: string | undefined) => {
+        if (!email) return false;
+        const trimmed = email.trim();
+        // The printed report clips long cells and marks the cut, and "a@b.com…" still looks
+        // like an address to a plain pattern. The browser blocks these too, but this is the
+        // layer that actually sends, so it does not get to trust the caller.
+        if (trimmed.endsWith("\u2026") || /\.\.\.$/.test(trimmed)) return false;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed);
+      };
+
+      const invalid = patients.filter(
+        (patient) =>
+          !sendable(patient.email) ||
+          !Number.isInteger(patient.amountCents) ||
+          patient.amountCents <= 0,
+      );
+      if (invalid.length > 0) {
+        return json(
+          { error: "invalid_recipients", keys: invalid.map((patient) => patient.key) },
+          headers,
+          400,
+        );
+      }
+
+      const results = await sendInvoices(env, body.batchId, patients);
+      return json({ mode: squareMode(env), results }, headers);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/square/invoice-status") {
+      if (!squareConfigured(env)) {
+        return json({ error: "square_not_configured" }, headers, 503);
+      }
+      const body = await request.json<{ invoiceIds?: string[] }>();
+      const ids = (body.invoiceIds ?? []).slice(0, 200);
+      if (ids.length === 0) return json({ statuses: [] }, headers);
+      return json({ statuses: await getInvoiceStatuses(env, ids) }, headers);
+    }
 
     if (request.method === "GET" && url.pathname === "/api/state") {
       const query = workspace.isPrimary

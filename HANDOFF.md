@@ -149,6 +149,39 @@ same people already judged "coming back next week". That is why the task kept ge
 - Storage: `lh-billing-patients`, `lh-billing-column-map`, `lh-clinic-profile` (statement
   header, edited in Settings). All synced.
 
+**Square invoicing (`worker/src/square.ts`, `src/components/SendInvoicesDialog.tsx`)**
+
+The real bottleneck was never the import — it was sending one payment link at a time. UP can
+print a statement per patient and Square can bill a patient, but both are one-at-a-time, so a
+list of thirty never got worked. Square's own batch invoicing sends the *same* invoice to many
+customers, which is useless when every balance differs, and it has no CSV import. Hence the
+Invoices API: per patient, find-or-create customer, create order, create invoice, publish.
+Square then sends the email, hosts the payment page, and chases with reminders.
+
+- **The token lives only in the Worker** (`wrangler secret put SQUARE_ACCESS_TOKEN`). The browser
+  never sees it and cannot bill anyone directly.
+- **Sandbox is the default.** `squareBase()` returns the sandbox host unless `SQUARE_ENV` is
+  exactly `"production"`, so a half-configured deploy cannot email real patients. The dialog
+  shows a red banner in live mode and a neutral one in sandbox.
+- **The send button only renders when `/api/square/config` reports a token**, so the UI never
+  offers an action that would fail.
+- **Emails are validated twice** — in the dialog so it can say who is skipped, and again on the
+  Worker, which is the layer that actually sends and does not get to trust the caller. Clipped
+  addresses from the printed report are rejected: `a@b.com…` still matches a naive pattern.
+- **`buildLineItems` only itemises when the parts sum exactly to the balance.** A mismatch falls
+  back to one summary line. Being vague about dates is fine; billing the wrong amount is not.
+  The balance-due report carries no service dates, so most invoices are a single line today.
+- **Idempotency keys are `${batchId}:${patientKey}:${step}`**, with `batchId` fixed for the life
+  of the dialog, so a double-click reuses them and Square dedupes rather than double-billing.
+- **Invoices are sent sequentially, on purpose.** These are real emails asking for money; a
+  parallel burst against a rate limit would fail some for no reason a front desk could act on.
+- **`/api/square/invoice-status` closes the loop**: "查一下谁付了" moves PAID invoices to Cleared
+  without waiting for someone to drop off the next balance report.
+
+**Not verified end to end.** Everything above is unit-tested (money, email validation, name
+splitting, line-item construction) and typechecks, but no live Square call has ever been made —
+that needs a sandbox token, which is the owner's to create. Do the first real run in sandbox.
+
 **Two deliberate decisions, do not "fix" them without asking:**
 1. Billing is *not* in the search index. That index feeds Home and the call panel; patient
    names do not belong there. Verified: searching a patient name or account number finds nothing.

@@ -852,6 +852,45 @@ export const translations = {
     zh: "这个名字在打印时被截断了，发账单前要补全",
     en: "This name was clipped when printing — complete it before billing",
   },
+
+  "billing.sendInvoices": { zh: "用 Square 发账单", en: "Send via Square" },
+  "billing.checkPayments": { zh: "查一下谁付了", en: "Check who has paid" },
+  "billing.noNewPayments": { zh: "还没有人付款", en: "No payments yet" },
+  "billing.paymentsFound": { zh: "{count} 人已付款，已移到「已结清」", en: "{count} paid — moved to Cleared" },
+
+  "square.title": { zh: "发送账单", en: "Send invoices" },
+  "square.explainer": {
+    zh: "Square 会给每个人发一封带付款按钮的发票邮件，金额和明细各自不同。之后还会自动催两次。",
+    en: "Square emails each person their own invoice with a Pay button, and chases them twice afterwards.",
+  },
+  "square.modeSandbox": {
+    zh: "沙盒模式 —— 不会有真的邮件发到病人手上，可以放心试。",
+    en: "Sandbox mode — nothing reaches a real patient, so this is safe to try.",
+  },
+  "square.modeLive": {
+    zh: "生产模式 —— 点发送后，真的邮件会立刻发到病人邮箱。",
+    en: "Live mode — pressing send emails real patients immediately.",
+  },
+  "square.notConfigured": {
+    zh: "Worker 还没有配置 Square token，暂时发不了。设置好之后这里就能用。",
+    en: "The Worker has no Square token yet, so nothing can be sent until one is set.",
+  },
+  "square.blockedTitle": { zh: "{count} 人发不了，已跳过", en: "{count} skipped" },
+  "square.blockedNoEmail": { zh: "没有邮箱", en: "no email address" },
+  "square.blockedBadEmail": {
+    zh: "邮箱不完整或格式不对：{email}",
+    en: "email is clipped or malformed: {email}",
+  },
+  "square.blockedNoBalance": { zh: "金额不是正数", en: "balance is not a positive amount" },
+  "square.nothingToSend": { zh: "选中的人里没有可以发的。", en: "None of the selected patients can be sent to." },
+  "square.totalLine": { zh: "将发送 {count} 封，合计 {amount}", en: "Sending {count} — {amount} total" },
+  "square.sendButton": { zh: "发送 {count} 封", en: "Send {count}" },
+  "square.sending": { zh: "发送中…", en: "Sending…" },
+  "square.sendFailed": {
+    zh: "发送失败。没有任何邮件发出，可以再试一次。",
+    en: "The send failed. Nothing went out, so it is safe to try again.",
+  },
+  "square.resultSummary": { zh: "成功 {sent} 封，失败 {failed} 封", en: "{sent} sent, {failed} failed" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
