@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  ArrowUpToLine,
   Check,
   StickyNote,
   Copy,
@@ -14,7 +15,7 @@ import {
   X,
   GripVertical,
 } from "lucide-react";
-import { useSyncedStorage } from "../hooks/useSyncedStorage";
+import { useSyncedStorage, updateSyncedStorage } from "../hooks/useSyncedStorage";
 import { useHashHighlight } from "../hooks/useHashHighlight";
 import { useTrash } from "../hooks/useTrash";
 import { useToast } from "../components/ToastProvider";
@@ -27,7 +28,8 @@ import VoiceInputButton from "../components/VoiceInputButton";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
 import { matchesSearch } from "../lib/searchIndex";
-import type { ChecklistItem, ChecklistSectionMeta } from "../lib/types";
+import type { ChecklistItem, ChecklistSectionMeta, FollowUpItem } from "../lib/types";
+import FollowUpBoard, { FOLLOW_UPS_KEY } from "../components/FollowUpBoard";
 
 interface ItemState {
   checked: boolean;
@@ -570,6 +572,41 @@ export default function Checklist() {
     return customSections.some((s) => s.id === sectionId);
   }
 
+  /**
+   * The moment the need shows up is the moment you realise today's item will not be done
+   * today. Moving it here takes it off the day rather than leaving it to be copied forward
+   * into every morning from now on.
+   */
+  function promoteToFollowUp(sectionId: string, item: ChecklistItem) {
+    const note = (state[selectedDate] ?? {})[item.id]?.note ?? "";
+    const followUp: FollowUpItem = {
+      id: `followup-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      label: item.label,
+      note: note.trim() || undefined,
+      createdAt: Date.now(),
+    };
+    updateSyncedStorage<FollowUpItem[]>(FOLLOW_UPS_KEY, [], (prev) => [...prev, followUp]);
+
+    // Drop it from this day only. The definition stays put if another day still lists it.
+    setDayItemIds((prev) => ({
+      ...prev,
+      [selectedDate]: getDayItemIds(selectedDate).filter((id) => id !== item.id),
+    }));
+    setState((prev) => {
+      const day = { ...(prev[selectedDate] ?? {}) };
+      delete day[item.id];
+      return { ...prev, [selectedDate]: day };
+    });
+    if (!isReferencedByOtherDay(dayItemIds, item.id, selectedDate)) {
+      setCustomItems((prev) => ({
+        ...prev,
+        [sectionId]: (prev[sectionId] ?? []).filter((i) => i.id !== item.id),
+      }));
+    }
+    setOpenNoteId(null);
+    showToast(t("followUp.movedToast", { label: item.label }));
+  }
+
   function handleSaveItem(sectionId: string, updated: ChecklistItem) {
     setCustomItems((prev) => ({
       ...prev,
@@ -997,6 +1034,9 @@ export default function Checklist() {
         </p>
       </div>
 
+      {/* Above the day, and the same on every date — that is the whole point of it. */}
+      <FollowUpBoard />
+
       <div className="flex flex-col gap-6">
         {displayedSections.map((section) => (
           <section
@@ -1236,6 +1276,15 @@ export default function Checklist() {
                           </span>
                         )}
                       </div>
+
+                      <button
+                        onClick={() => promoteToFollowUp(section.id, item)}
+                        aria-label={t("followUp.moveAria", { label: item.label })}
+                        title={t("followUp.moveTitle")}
+                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
+                      >
+                        <ArrowUpToLine size={13} />
+                      </button>
 
                       <button
                         onClick={() => setEditingItemId(item.id)}

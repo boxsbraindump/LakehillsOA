@@ -83,6 +83,32 @@
 - **OA Cases** — insurance claim edge-case cards (title/payer/tags/summary/resolution). `src/pages/OACases.tsx`
 - **Where to Find Payments** — payment-portal lookup per payer; payer field is a dropdown fed by the Payer directory. `src/pages/Payments.tsx`
 
+### Follow-up board (`src/components/FollowUpBoard.tsx`)
+
+Everything else on the Checklist page is a *reference owned by a date*: `lh-checklist-day-item-ids`
+says which shared definitions a given day shows. That is right for a daily routine and wrong for
+"chase this claim", which stays open for a week. Such an item either had to be copied forward by
+hand every morning — cluttering each day among the routine — or was dropped the first time nobody
+copied it.
+
+So follow-ups sit **outside the calendar entirely**: one flat list in `lh-checklist-followups`
+(`FollowUpItem[]`), rendered above the day's sections and identical on every date. Do not give it a
+per-day shape; that is the bug it exists to avoid.
+
+- Open items sort oldest-first, and show their age once past a day. Past `STALE_AFTER_DAYS` (3) the
+  age turns amber — the board's job is to make something that has been sitting too long look wrong.
+- Ticking sets `doneAt` and moves the item into a collapsed done group rather than deleting it, so a
+  misclick is one click back. `清除已完成` clears them, with undo.
+- Deleting offers undo via a toast. It deliberately does **not** go through the 30-day Trash: that is
+  for the day/section/item model, and wiring a fourth entry type through `Trash.tsx` restore was more
+  surface than a small self-contained row warrants. Worth revisiting if follow-ups grow.
+- **The bridge is the point of use**: each day item has a `promoteToFollowUp` action (the up-arrow),
+  which moves it off *this day only*, carries that day's note across, and drops the shared definition
+  only when no other day still references it — the same rule the per-day delete uses.
+- `promoteToFollowUp` writes through `updateSyncedStorage(FOLLOW_UPS_KEY, ...)` rather than owning the
+  state, so the board picks the new item up wherever it is mounted. Keep it that way; two components
+  holding the same key in their own `useState` would drift.
+
 ### 催账 / Billing (`src/pages/Billing.tsx`, logic in `src/lib/billing.ts`)
 Replaces a Notion-based workflow: pull balance-due out of UP → retype into Notion → decide
 person by person who gets a bill → open Square once per patient. The expensive part was never
@@ -249,11 +275,11 @@ as of this writing.
 | 2 | Search misses names typed without spaces | **Done** (`0fe7d42`), verified live against real records: `communityhealthplan` finds "Community Health Plan of WA". |
 | 3a | Things written in the to-do list vanished | **Done** (`6dd1ecf`, `7a747a6`) — two sync bugs. Only real use over time can confirm it; worth asking whether it has recurred. |
 | 3b | "…然后在descption那块，如果把notes打开了" | **Entry is cut off mid-sentence.** Probably the note-open-then-edit save bug; editing and the note panel are now mutually exclusive rows, but the original sentence was never finished. Ask before acting. |
-| 4 | Checklist wants a pinned follow-up section, daily separate | **Not built.** Work that spans days currently reappears on every day with no way to hold it apart. |
+| 4 | Checklist wants a pinned follow-up section, daily separate | **Done** — `FollowUpBoard`, see below. |
 | 5 | Copy-previous-day should not overwrite | **Done** — see below. |
 | 6 | Automatic VA form | **Clarified, next up.** VA patients who exceed their visit count need an extension letter rewritten each time. Wanted: a fillable, editable template held in the app, copy-pasted out when done. Details still to be worked through with the owner. |
 
-Agreed order: 5, then 6. Items 1 and 4 after that.
+Done so far: 5, then 4. Remaining: 6 (needs a sample letter), then 1.
 
 ## Recent commits (latest first)
 - `f96fb76` Add the billing worklist: import balances, triage once, print statements

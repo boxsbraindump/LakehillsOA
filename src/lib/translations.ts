@@ -871,6 +871,36 @@ export const translations = {
     zh: "{date} 的内容这一天都已经有了",
     en: "Everything from {date} is already on this day",
   },
+
+  "followUp.title": { zh: "跟进中", en: "Following up" },
+  "followUp.subtitle": {
+    zh: "跨天的事放这里，每天都在最上面，做完才消失。",
+    en: "Work that spans days sits here, on top of every day, until it is actually done.",
+  },
+  "followUp.add": { zh: "添加", en: "Add" },
+  "followUp.emptyAdd": { zh: "＋ 添加一件需要跟进的事", en: "+ Add something to follow up" },
+  "followUp.placeholder": {
+    zh: "比如：催 Kaiser 的理赔 ref 4471",
+    en: "e.g. chase the Kaiser claim, ref 4471",
+  },
+  "followUp.daysOpen": { zh: "已 {days} 天", en: "{days}d" },
+  "followUp.noteAria": { zh: "备注", en: "Note" },
+  "followUp.notePlaceholder": {
+    zh: "打过谁、对方怎么说、下一步做什么",
+    en: "Who you spoke to, what they said, what happens next",
+  },
+  "followUp.markDone": { zh: "标记「{label}」为完成", en: "Mark {label} done" },
+  "followUp.markNotDone": { zh: "把「{label}」放回跟进", en: "Put {label} back" },
+  "followUp.doneCount": { zh: "已完成 {count}", en: "{count} done" },
+  "followUp.clearDone": { zh: "清除已完成", en: "Clear done" },
+  "followUp.clearedToast": { zh: "清除了 {count} 项已完成", en: "Cleared {count} finished" },
+  "followUp.deletedToast": { zh: "已删除「{label}」", en: "Deleted {label}" },
+  "followUp.moveAria": { zh: "把「{label}」移到跟进中", en: "Move {label} to follow-up" },
+  "followUp.moveTitle": {
+    zh: "移到跟进中（今天做不完的）",
+    en: "Move to follow-up (not finishing today)",
+  },
+  "followUp.movedToast": { zh: "「{label}」已移到跟进中", en: "Moved {label} to follow-up" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

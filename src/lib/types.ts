@@ -18,6 +18,19 @@ export interface ChecklistSectionMeta {
   title: string;
 }
 
+/**
+ * Work that spans days, deliberately held outside the per-day model: a checklist item is a
+ * reference owned by one date, which is wrong for something that stays open all week.
+ */
+export interface FollowUpItem {
+  id: string;
+  label: string;
+  note?: string;
+  createdAt: number;
+  /** Set when ticked. Done items stay listed, collapsed, until they are cleared. */
+  doneAt?: number;
+}
+
 export interface OACase {
   id: string;
   title: string;
