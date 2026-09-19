@@ -852,6 +852,25 @@ export const translations = {
     zh: "这个名字在打印时被截断了，发账单前要补全",
     en: "This name was clipped when printing — complete it before billing",
   },
+
+  "checklist.copyAppend": { zh: "追加到这一天", en: "Add to this day" },
+  "checklist.copyAppendHint": {
+    zh: "今天已经写的东西不动，只把还没有的加进来。",
+    en: "Leaves what is already here alone and only brings across what is missing.",
+  },
+  "checklist.copyReplace": { zh: "替换这一天", en: "Replace this day" },
+  "checklist.copyReplaceHint": {
+    zh: "清空这一天，完全照搬那一天。",
+    en: "Clears this day and starts it over from that one.",
+  },
+  "checklist.appendedPreviousDayToast": {
+    zh: "从 {date} 加了 {count} 项",
+    en: "Added {count} from {date}",
+  },
+  "checklist.nothingNewToCopyToast": {
+    zh: "{date} 的内容这一天都已经有了",
+    en: "Everything from {date} is already on this day",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

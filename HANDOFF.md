@@ -236,6 +236,25 @@ Worth checking first when something "won't save" or "disappeared":
 - **Silent no-ops.** Several handlers `return` on invalid input with no message, which reads
   as "the button is broken". Say why instead.
 
+## Current backlog — the 新版本调整 folder
+
+The owner keeps feedback in a custom folder called **新版本调整** inside the app itself (folder
+id `反馈-修改-87xv1`). It is the source of truth for what to build next, not this file — read it
+first. Reaching it needs a signed-in session; `wrangler d1` was not authorised for the account
+as of this writing.
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | OA cases needs categorisation | **Clarified, not built.** Wanted: filter by insurance company — "show me everything about Kaiser". The existing tag bar is a flat filter over free-text tags, which is not the same thing. |
+| 2 | Search misses names typed without spaces | **Done** (`0fe7d42`), verified live against real records: `communityhealthplan` finds "Community Health Plan of WA". |
+| 3a | Things written in the to-do list vanished | **Done** (`6dd1ecf`, `7a747a6`) — two sync bugs. Only real use over time can confirm it; worth asking whether it has recurred. |
+| 3b | "…然后在descption那块，如果把notes打开了" | **Entry is cut off mid-sentence.** Probably the note-open-then-edit save bug; editing and the note panel are now mutually exclusive rows, but the original sentence was never finished. Ask before acting. |
+| 4 | Checklist wants a pinned follow-up section, daily separate | **Not built.** Work that spans days currently reappears on every day with no way to hold it apart. |
+| 5 | Copy-previous-day should not overwrite | **Done** — see below. |
+| 6 | Automatic VA form | **Clarified, next up.** VA patients who exceed their visit count need an extension letter rewritten each time. Wanted: a fillable, editable template held in the app, copy-pasted out when done. Details still to be worked through with the owner. |
+
+Agreed order: 5, then 6. Items 1 and 4 after that.
+
 ## Recent commits (latest first)
 - `f96fb76` Add the billing worklist: import balances, triage once, print statements
 - `e111988` Let the sidebar be dragged wider

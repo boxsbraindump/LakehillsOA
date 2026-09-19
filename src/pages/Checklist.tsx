@@ -35,6 +35,8 @@ interface ItemState {
 }
 
 type DayState = Record<string, ItemState>;
+/** Appending leaves today alone and adds what is missing; replacing starts the day over. */
+type CopyMode = "append" | "replace";
 /** Keyed by YYYY-MM-DD — checked/note state is per day; sections & items themselves are global. */
 type ChecklistState = Record<string, DayState>;
 
@@ -331,14 +333,19 @@ export default function Checklist() {
     ? getDayItemIds(copySourceDate).filter((id) => !state[copySourceDate]?.[id]?.checked).length
     : 0;
 
-  async function copyFromDay(sourceDate: string, onlyUnfinished: boolean) {
+  /**
+   * Copying used to replace the day outright, which quietly threw away anything already
+   * added that morning. "Append" is the safe default and the one that matches what copying
+   * forward is usually for; "replace" is still there but now says so and asks first.
+   */
+  async function copyFromDay(sourceDate: string, onlyUnfinished: boolean, mode: CopyMode) {
     const sourceState = state[sourceDate] ?? {};
     const allSourceItemIds = getDayItemIds(sourceDate);
-    const itemIds = onlyUnfinished
+    const candidateIds = onlyUnfinished
       ? allSourceItemIds.filter((id) => !sourceState[id]?.checked)
       : allSourceItemIds;
 
-    if (itemIds.length === 0) {
+    if (candidateIds.length === 0) {
       showToast(
         onlyUnfinished
           ? t("checklist.nothingUnfinishedToast", { date: formatDisplayDate(sourceDate, lang) })
@@ -347,7 +354,23 @@ export default function Checklist() {
       return;
     }
 
+    const existingItemIds = getDayItemIds(selectedDate);
+    const existingItemIdSet = new Set(existingItemIds);
+    // Appending brings across only what is not already here, so pressing it twice, or
+    // copying a day you have partly worked through, cannot duplicate a row.
+    const incomingIds =
+      mode === "append"
+        ? candidateIds.filter((id) => !existingItemIdSet.has(id))
+        : candidateIds;
+
+    if (mode === "append" && incomingIds.length === 0) {
+      showToast(t("checklist.nothingNewToCopyToast", { date: formatDisplayDate(sourceDate, lang) }));
+      return;
+    }
+
+    // Only replacing can lose work, so only replacing interrupts.
     if (
+      mode === "replace" &&
       hasSelectedDayContent(selectedDate) &&
       !(await confirm({
         title: t("checklist.copyPreviousDayConfirmTitle"),
@@ -355,23 +378,30 @@ export default function Checklist() {
           sourceDate: formatDisplayDate(sourceDate, lang),
           targetDate: formatDisplayDate(selectedDate, lang),
         }),
-        confirmLabel: t("checklist.copyPreviousDay"),
-        tone: "default",
+        confirmLabel: t("checklist.copyReplace"),
+        tone: "danger",
       }))
     )
       return;
 
+    const itemIds = mode === "append" ? [...existingItemIds, ...incomingIds] : incomingIds;
+
     // Keep only the sections that still have something in them after filtering, so a
     // fully-finished section doesn't arrive as an empty header.
-    const copiedIds = new Set(itemIds);
-    const sectionIds = getDaySectionIds(sourceDate, allSourceItemIds).filter((sectionId) =>
+    const copiedIds = new Set(incomingIds);
+    const incomingSectionIds = getDaySectionIds(sourceDate, allSourceItemIds).filter((sectionId) =>
       (customItems[sectionId] ?? []).some((item) => copiedIds.has(item.id)),
     );
+    const sectionIds =
+      mode === "append"
+        ? [...new Set([...getDaySectionIds(selectedDate, existingItemIds), ...incomingSectionIds])]
+        : incomingSectionIds;
 
     // A copied item starts as work still to do: carry its note across for context, but
-    // never its tick — otherwise the new day arrives already marked complete.
-    const carriedState: DayState = {};
-    for (const id of itemIds) {
+    // never its tick — otherwise the new day arrives already marked complete. When appending,
+    // what this day already holds stays exactly as it is.
+    const carriedState: DayState = mode === "append" ? { ...(state[selectedDate] ?? {}) } : {};
+    for (const id of incomingIds) {
       const note = sourceState[id]?.note ?? "";
       if (note.trim()) carriedState[id] = { checked: false, note };
     }
@@ -382,7 +412,12 @@ export default function Checklist() {
     setOpenNoteId(null);
     setIsCopyPanelOpen(false);
     showToast(
-      t("checklist.copiedPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }),
+      mode === "append"
+        ? t("checklist.appendedPreviousDayToast", {
+            count: incomingIds.length,
+            date: formatDisplayDate(sourceDate, lang),
+          })
+        : t("checklist.copiedPreviousDayToast", { date: formatDisplayDate(sourceDate, lang) }),
     );
   }
 
@@ -918,20 +953,33 @@ export default function Checklist() {
                       </span>
                     </label>
 
-                    <div className="mt-3 flex justify-end gap-2">
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished, "append")}
+                        className="w-full rounded-(--radius-md) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                      >
+                        {t("checklist.copyAppend")}
+                      </button>
+                      <p className="text-[11px] text-(--color-ink-faint)">
+                        {t("checklist.copyAppendHint")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished, "replace")}
+                        className="mt-1 w-full rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[12px] font-medium text-(--color-ink-secondary) hover:border-red-300 hover:text-red-600"
+                      >
+                        {t("checklist.copyReplace")}
+                      </button>
+                      <p className="text-[11px] text-(--color-ink-faint)">
+                        {t("checklist.copyReplaceHint")}
+                      </p>
                       <button
                         type="button"
                         onClick={() => setIsCopyPanelOpen(false)}
-                        className="rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+                        className="mt-1 w-full rounded-(--radius-md) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink)"
                       >
                         {t("common.cancel")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished)}
-                        className="rounded-(--radius-md) bg-(--color-primary) px-2.5 py-1 text-[12px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
-                      >
-                        {t("checklist.copyPreviousDay")}
                       </button>
                     </div>
                   </>
