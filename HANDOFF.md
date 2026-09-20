@@ -83,6 +83,35 @@
 - **OA Cases** — insurance claim edge-case cards (title/payer/tags/summary/resolution). `src/pages/OACases.tsx`
 - **Where to Find Payments** — payment-portal lookup per payer; payer field is a dropdown fed by the Payer directory. `src/pages/Payments.tsx`
 
+### VA request for service (`src/pages/VaRfs.tsx`, `src/lib/vaRfsForm.ts`)
+
+A veteran who runs out of authorised visits needs a fresh RFS. The ask sounded like a letter
+template, but the sample turned out to be one sentence in box 18 — the real work was filling
+**VA Form 10-10172** by hand, because it is a flat PDF with no AcroForm fields (checked: zero).
+Twelve of the twenty-two boxes on page 1 never change, and the clinic only ever fills page 1.
+
+- The blank form ships as `public/va-form-10-10172.pdf` (a public US government form). Values are
+  drawn **onto the real form** with pdf-lib, not onto a lookalike, because the VA facility should
+  receive the document it expects.
+- Coordinates in `PLACE` / `CHECKS` are PDF points against the **MAR 2025** revision, origin
+  bottom-left, derived from the label positions in the blank form. `FORM_REVISION` states this
+  out loud: **if VA reissues the form, replace the asset and re-check every coordinate.** The way
+  to check is to fill it with dummy data and rasterise page 1 — pdf.js plus a canvas in Node does
+  it, and eyeballing the result catches a drifted box instantly.
+- Boxes 6, 10, 11 and 12 are ticked automatically (NO, NO, YES, NO): an extension is by definition
+  a continuation of care, not urgent, and not a referral.
+- Box 18 is the only multi-line box, so it wraps to the box width. Other values shrink rather than
+  overflow — a number running into the neighbouring box is worse than small type.
+- Box 21 is deliberately left empty: it wants a signature, so the form gets printed and signed.
+- **The veteran's details are never stored.** Only the clinic's own boxes persist
+  (`lh-va-rfs-defaults`); the patient fields live in component state and are gone on reload. That
+  keeps this feature entirely clear of the PHI question that the billing worklist had to answer.
+- pdf-lib is loaded on demand inside `fillRfsForm`, so its ~430KB is a separate chunk.
+
+Open questions the owner has not answered, currently handled by defaults rather than guesses:
+box 3 in their sample held a patient address rather than a VA facility, so it is a per-request
+field with a saved default; CPT codes are editable with the usual pair saved as the default.
+
 ### Follow-up board (`src/components/FollowUpBoard.tsx`)
 
 Everything else on the Checklist page is a *reference owned by a date*: `lh-checklist-day-item-ids`
@@ -277,9 +306,9 @@ as of this writing.
 | 3b | "…然后在descption那块，如果把notes打开了" | **Entry is cut off mid-sentence.** Probably the note-open-then-edit save bug; editing and the note panel are now mutually exclusive rows, but the original sentence was never finished. Ask before acting. |
 | 4 | Checklist wants a pinned follow-up section, daily separate | **Done** — `FollowUpBoard`, see below. |
 | 5 | Copy-previous-day should not overwrite | **Done** — see below. |
-| 6 | Automatic VA form | **Clarified, next up.** VA patients who exceed their visit count need an extension letter rewritten each time. Wanted: a fillable, editable template held in the app, copy-pasted out when done. Details still to be worked through with the owner. |
+| 6 | Automatic VA form | **Done** — `VaRfs`, see below. It turned out not to be a letter: the work was hand-filling VA Form 10-10172 every time. |
 
-Done so far: 5, then 4. Remaining: 6 (needs a sample letter), then 1.
+Done so far: 5, 4, 6. Remaining: 1 (filter records by insurance company), and 3b once the entry is finished.
 
 ## Recent commits (latest first)
 - `f96fb76` Add the billing worklist: import balances, triage once, print statements

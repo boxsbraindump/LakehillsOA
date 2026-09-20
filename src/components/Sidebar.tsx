@@ -14,6 +14,7 @@ import {
   FileSearch,
   CreditCard,
   Receipt,
+  FileText,
   Sparkles,
   Trash2,
   Folder,
@@ -76,6 +77,12 @@ const NAV_ITEMS = [
     key: "sidebar.billing",
     category: "payments",
     icon: Receipt,
+  },
+  {
+    to: "/va-rfs",
+    key: "sidebar.vaRfs",
+    category: "oa-cases",
+    icon: FileText,
   },
 ] as const;
 
