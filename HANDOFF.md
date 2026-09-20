@@ -335,12 +335,14 @@ as of this writing.
 | 1 | OA cases needs categorisation | **Done** — `ByPayer`, see below. Wanted a way to pull one insurer out across everything, not a tag bar on one page. |
 | 2 | Search misses names typed without spaces | **Done** (`0fe7d42`), verified live against real records: `communityhealthplan` finds "Community Health Plan of WA". |
 | 3a | Things written in the to-do list vanished | **Done** (`6dd1ecf`, `7a747a6`) — two sync bugs. Only real use over time can confirm it; worth asking whether it has recurred. |
-| 3b | "…然后在descption那块，如果把notes打开了" | **Entry is cut off mid-sentence.** Probably the note-open-then-edit save bug; editing and the note panel are now mutually exclusive rows, but the original sentence was never finished. Ask before acting. |
+| 3b | "…然后在descption那块，如果把notes打开了" | **Dropped by the owner** (2026-09-19): the entry trails off mid-sentence and they decided it does not need acting on. Do not guess at what it meant. |
 | 4 | Checklist wants a pinned follow-up section, daily separate | **Done** — `FollowUpBoard`, see below. |
 | 5 | Copy-previous-day should not overwrite | **Done** — see below. |
 | 6 | Automatic VA form | **Done** — `VaRfs`, see below. It turned out not to be a letter: the work was hand-filling VA Form 10-10172 every time. |
 
-Done: 1, 4, 5, 6. Remaining: 3b, once the folder entry that trails off mid-sentence is finished.
+All six are closed: 2 and 3a were already fixed, 1, 4, 5 and 6 were built, 3b was dropped by the
+owner. **The folder is the live backlog — re-read it rather than this table** before picking up
+new work, since it is where new feedback lands.
 
 ## Recent commits (latest first)
 - `f96fb76` Add the billing worklist: import balances, triage once, print statements
