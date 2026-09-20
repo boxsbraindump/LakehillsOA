@@ -9,6 +9,7 @@ import OACases from "./pages/OACases.tsx";
 import Payments from "./pages/Payments.tsx";
 import Billing from "./pages/Billing.tsx";
 import VaRfs from "./pages/VaRfs.tsx";
+import ByPayer from "./pages/ByPayer.tsx";
 import CustomCategory from "./pages/CustomCategory.tsx";
 import Trash from "./pages/Trash.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -37,6 +38,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="payments" element={<Payments />} />
                 <Route path="billing" element={<Billing />} />
                 <Route path="va-rfs" element={<VaRfs />} />
+                <Route path="by-payer" element={<ByPayer />} />
                 <Route path="custom/:categoryId" element={<CustomCategory />} />
                 <Route path="trash" element={<Trash />} />
                 <Route path="settings" element={<Settings />} />

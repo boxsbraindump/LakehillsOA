@@ -83,6 +83,32 @@
 - **OA Cases** — insurance claim edge-case cards (title/payer/tags/summary/resolution). `src/pages/OACases.tsx`
 - **Where to Find Payments** — payment-portal lookup per payer; payer field is a dropdown fed by the Payer directory. `src/pages/Payments.tsx`
 
+### By insurer (`src/pages/ByPayer.tsx`, `src/lib/payerFilter.ts`)
+
+Records name an insurer two different ways, and the split matters. Measured on the live
+workspace before building: **all six OA cases had a `payer` field set, none of thirty folder
+entries did, and thirteen of those thirty named an insurer in their text.** A filter honouring
+only the field would have returned almost nothing and left a tagging chore behind it — the exact
+shape of task that never gets done here. So mentions count too, and the two are shown apart:
+filed-under is certain, mentions are a read of the text.
+
+- `payerAliases()` is the delicate part. "Kaiser Permanente" must find text saying only
+  "Kaiser", so distinctive tokens become aliases — but `GENERIC_TOKENS` drops the ones that
+  carry no identity, or "Community Health Plan of WA" would claim every record containing
+  "health". Parenthesised qualifiers are stripped first: "Medicare Advantage (various)" would
+  otherwise match any record using the word "various".
+- The chip list comes from payers already on records **plus** the Settings directory, because
+  that directory was empty on the live workspace and waiting for it would have meant a blank
+  page. Spellings that prefix one another are folded together, so the directory's "Kaiser" and a
+  record's "Kaiser Permanente" are one chip, not two.
+- **The free-text box is not a convenience.** An insurer named only in prose — Molina, on the
+  live data — has no chip to click, because nothing carries it as a field. Typing is the only way
+  to reach those, and there were several.
+- `SearchDoc` gained `payer`, populated by all three builders, so the index stays the one source.
+
+Note for whoever reads the older text below: the claim that user-added OA cases and payments are
+missing from the search index is **out of date** — `useSearchIndex` covers them.
+
 ### VA request for service (`src/pages/VaRfs.tsx`, `src/lib/vaRfsForm.ts`)
 
 A veteran who runs out of authorised visits needs a fresh RFS. The ask sounded like a letter
@@ -306,7 +332,7 @@ as of this writing.
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | OA cases needs categorisation | **Clarified, not built.** Wanted: filter by insurance company — "show me everything about Kaiser". The existing tag bar is a flat filter over free-text tags, which is not the same thing. |
+| 1 | OA cases needs categorisation | **Done** — `ByPayer`, see below. Wanted a way to pull one insurer out across everything, not a tag bar on one page. |
 | 2 | Search misses names typed without spaces | **Done** (`0fe7d42`), verified live against real records: `communityhealthplan` finds "Community Health Plan of WA". |
 | 3a | Things written in the to-do list vanished | **Done** (`6dd1ecf`, `7a747a6`) — two sync bugs. Only real use over time can confirm it; worth asking whether it has recurred. |
 | 3b | "…然后在descption那块，如果把notes打开了" | **Entry is cut off mid-sentence.** Probably the note-open-then-edit save bug; editing and the note panel are now mutually exclusive rows, but the original sentence was never finished. Ask before acting. |
@@ -314,7 +340,7 @@ as of this writing.
 | 5 | Copy-previous-day should not overwrite | **Done** — see below. |
 | 6 | Automatic VA form | **Done** — `VaRfs`, see below. It turned out not to be a letter: the work was hand-filling VA Form 10-10172 every time. |
 
-Done so far: 5, 4, 6. Remaining: 1 (filter records by insurance company), and 3b once the entry is finished.
+Done: 1, 4, 5, 6. Remaining: 3b, once the folder entry that trails off mid-sentence is finished.
 
 ## Recent commits (latest first)
 - `f96fb76` Add the billing worklist: import balances, triage once, print statements
