@@ -83,31 +83,15 @@
 - **OA Cases** — insurance claim edge-case cards (title/payer/tags/summary/resolution). `src/pages/OACases.tsx`
 - **Where to Find Payments** — payment-portal lookup per payer; payer field is a dropdown fed by the Payer directory. `src/pages/Payments.tsx`
 
-### By insurer (`src/pages/ByPayer.tsx`, `src/lib/payerFilter.ts`)
+### By insurer — **removed**
 
-Records name an insurer two different ways, and the split matters. Measured on the live
-workspace before building: **all six OA cases had a `payer` field set, none of thirty folder
-entries did, and thirteen of those thirty named an insurer in their text.** A filter honouring
-only the field would have returned almost nothing and left a tagging chore behind it — the exact
-shape of task that never gets done here. So mentions count too, and the two are shown apart:
-filed-under is certain, mentions are a read of the text.
+A page for pulling one insurer out across every record was built and removed the same day
+(2026-09-20), not wanted. Recoverable from `c95def6`.
 
-- `payerAliases()` is the delicate part. "Kaiser Permanente" must find text saying only
-  "Kaiser", so distinctive tokens become aliases — but `GENERIC_TOKENS` drops the ones that
-  carry no identity, or "Community Health Plan of WA" would claim every record containing
-  "health". Parenthesised qualifiers are stripped first: "Medicare Advantage (various)" would
-  otherwise match any record using the word "various".
-- The chip list comes from payers already on records **plus** the Settings directory, because
-  that directory was empty on the live workspace and waiting for it would have meant a blank
-  page. Spellings that prefix one another are folded together, so the directory's "Kaiser" and a
-  record's "Kaiser Permanente" are one chip, not two.
-- **The free-text box is not a convenience.** An insurer named only in prose — Molina, on the
-  live data — has no chip to click, because nothing carries it as a field. Typing is the only way
-  to reach those, and there were several.
-- `SearchDoc` gained `payer`, populated by all three builders, so the index stays the one source.
-
-Note for whoever reads the older text below: the claim that user-added OA cases and payments are
-missing from the search index is **out of date** — `useSearchIndex` covers them.
+One measurement from it is worth keeping, because it would shape any future attempt: on the
+live workspace **every OA case carried a `payer` field, no folder entry did, and thirteen of
+thirty folder entries named an insurer only in their prose.** Any insurer-based grouping that
+honours the payer field alone will therefore look almost empty and leave a tagging chore behind.
 
 ### VA request for service (`src/pages/VaRfs.tsx`, `src/lib/vaRfsForm.ts`)
 
@@ -256,7 +240,7 @@ as of this writing.
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | OA cases needs categorisation | **Done** — `ByPayer`, see below. Wanted a way to pull one insurer out across everything, not a tag bar on one page. |
+| 1 | OA cases needs categorisation | **Built, then removed** at the owner request — see below. The need as stated (pull one insurer out across everything) did not turn out to be worth a page. |
 | 2 | Search misses names typed without spaces | **Done** (`0fe7d42`), verified live against real records: `communityhealthplan` finds "Community Health Plan of WA". |
 | 3a | Things written in the to-do list vanished | **Done** (`6dd1ecf`, `7a747a6`) — two sync bugs. Only real use over time can confirm it; worth asking whether it has recurred. |
 | 3b | "…然后在descption那块，如果把notes打开了" | **Dropped by the owner** (2026-09-19): the entry trails off mid-sentence and they decided it does not need acting on. Do not guess at what it meant. |

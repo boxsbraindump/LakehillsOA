@@ -791,38 +791,7 @@ export const translations = {
     en: "Built on VA Form 10-10172 ({revision}). If VA reissues the form, the template and field positions need rechecking.",
   },
 
-  "sidebar.byPayer": { zh: "按保险公司", en: "By insurer" },
 
-  "byPayer.title": { zh: "按保险公司", en: "By insurer" },
-  "byPayer.subtitle": {
-    zh: "挑一家保险公司，把所有跟它有关的东西一次看完 —— checklist、理赔案例、付款入口、各个文件夹里的记录都算。",
-    en: "Pick an insurer and see everything about it at once — checklist, cases, payment portals and folder records alike.",
-  },
-  "byPayer.searchPlaceholder": {
-    zh: "或者直接输入名字，比如 Molina",
-    en: "Or type a name, e.g. Molina",
-  },
-  "byPayer.pickTitle": { zh: "挑一家保险公司", en: "Pick an insurer" },
-  "byPayer.pickDescription": {
-    zh: "点上面的名字，或者输入一个没在列表里的。",
-    en: "Tap a name above, or type one that is not listed.",
-  },
-  "byPayer.noPayersDescription": {
-    zh: "还没有记录填过保险公司。先输入一个名字试试，比如 Kaiser。",
-    en: "No record carries an insurer yet. Try typing one, such as Kaiser.",
-  },
-  "byPayer.resultSummary": { zh: "{payer} —— 共 {total} 条", en: "{payer} — {total} in all" },
-  "byPayer.taggedHeading": { zh: "填了这家保险公司的（{count}）", en: "Filed under this insurer ({count})" },
-  "byPayer.mentionedHeading": { zh: "内容里提到的（{count}）", en: "Mentions it ({count})" },
-  "byPayer.mentionedHint": {
-    zh: "这些记录没填保险公司，但正文里写到了它。",
-    en: "These have no insurer set, but name it in their text.",
-  },
-  "byPayer.noMatches": { zh: "没有找到跟 {payer} 有关的记录。", en: "Nothing found for {payer}." },
-  "byPayer.directoryNote": {
-    zh: "列表来自记录里已经填过的保险公司，加上设置里的 Payer 目录。要固定某一家，在设置里加进目录就行。",
-    en: "The list comes from insurers already named on records, plus the Payer directory in Settings.",
-  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

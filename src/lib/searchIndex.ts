@@ -69,7 +69,6 @@ export function buildOACaseSearchDocs(cases: OACase[]): SearchDoc[] {
       title: c.title,
       snippet: c.summary || c.resolution || c.payer,
       keywords: [c.payer, c.resolution, ...c.tags],
-      payer: c.payer,
     }),
   );
 }
@@ -90,7 +89,6 @@ export function buildPaymentSearchDocs(entries: PaymentEntry[]): SearchDoc[] {
         title: p.payer,
         snippet: p.portals.map((portal) => portal.name).filter(Boolean).join(" · ") || p.notes || "",
         keywords: [p.notes ?? "", ...portalText],
-        payer: p.payer,
       };
     },
   );
@@ -139,7 +137,6 @@ export function buildCustomSearchDocs(
             ...entry.tags,
             ...portalText,
           ],
-          payer: entry.payer,
         };
       },
     ),

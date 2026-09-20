@@ -116,8 +116,6 @@ export interface SearchDoc {
   title: string;
   snippet: string;
   keywords: string[];
-  /** The insurer this record is filed under, when it has a real payer field to read. */
-  payer?: string;
 }
 
 export interface TrashEntry {

@@ -14,7 +14,6 @@ import {
   FileSearch,
   CreditCard,
   FileText,
-  Building2,
   Sparkles,
   Trash2,
   Folder,
@@ -77,12 +76,6 @@ const NAV_ITEMS = [
     key: "sidebar.vaRfs",
     category: "oa-cases",
     icon: FileText,
-  },
-  {
-    to: "/by-payer",
-    key: "sidebar.byPayer",
-    category: "oa-cases",
-    icon: Building2,
   },
 ] as const;
 
