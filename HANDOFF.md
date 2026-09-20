@@ -131,7 +131,7 @@ Twelve of the twenty-two boxes on page 1 never change, and the clinic only ever 
 - Box 21 is deliberately left empty: it wants a signature, so the form gets printed and signed.
 - **The veteran's details are never stored.** Only the clinic's own boxes persist
   (`lh-va-rfs-defaults`); the patient fields live in component state and are gone on reload. That
-  keeps this feature entirely clear of the PHI question that the billing worklist had to answer.
+  means this feature never raises the PHI question at all.
 - pdf-lib is loaded on demand inside `fillRfsForm`, so its ~430KB is a separate chunk.
 
 The boxes that copy clinic defaults are **pre-filled into the visible inputs**, not shown as
@@ -170,105 +170,29 @@ per-day shape; that is the bug it exists to avoid.
   state, so the board picks the new item up wherever it is mounted. Keep it that way; two components
   holding the same key in their own `useState` would drift.
 
-### 催账 / Billing (`src/pages/Billing.tsx`, logic in `src/lib/billing.ts`)
-Replaces a Notion-based workflow: pull balance-due out of UP → retype into Notion → decide
-person by person who gets a bill → open Square once per patient. The expensive part was never
-the sending; it was that **nothing remembered the previous round**, so every run re-triaged the
-same people already judged "coming back next week". That is why the task kept getting deferred.
+### Billing / chasing balances — **removed**
 
-- **The real report columns are `PATIENT | EMAIL | PHONE # | AMOUNT DUE | PRINT`** — read out of
-  an actual printed report. There is **no account number**, so `patientKey` falls back to the
-  normalized name. `guessRoles` maps all four automatically; note that `balance` has to claim
-  "Amount Due" before `charge` does, which is why /amount/ was removed from the charge patterns.
-- **Printing clips cells.** In the sample, 34 of 229 cells ended in an ellipsis: 5 names, 16
-  emails, 11 phones. `isTruncated()` detects it, the import warns with a count, clipped values
-  render amber, and the pencil on each card edits name/email/phone. Crucially `mergeImport`
-  prefers a whole value over a freshly clipped one, and the stored `key` never changes — so a
-  name corrected by hand survives every later import of the same clipped report. Printing in
-  landscape or at a smaller scale avoids the clipping at source.
-- **The report page has an `EXPORT` button and a `Print patient statements` feature**, both read
-  out of the PDF's own text layer. Neither had been tried. If EXPORT yields a clean CSV most of
-  the PDF handling stops mattering, and if UP prints statements itself the statement generator
-  here may be redundant. Worth confirming before building anything more in this area.
-- **PDF import** (`src/lib/pdfTable.ts`): pdf.js reads the file in the browser, so nothing is
-  uploaded. It is a lazy `import()`, so the 431KB engine and 1.26MB worker are separate chunks
-  that download only when a PDF is actually picked — the main bundle grew about 6KB. Rows are
-  rebuilt from glyph coordinates: same baseline means same row, and a gap wider than 0.6x the
-  type size is a column break. Output is tab-delimited and goes through the ordinary paste path.
-- **UP cannot export CSV.** The clinic reported it can only screenshot, so the import has two
-  routes and both feed the same `mergeImport` path with the same `acct:` keys — a hand-typed
-  round and a pasted round merge with each other rather than duplicating.
-  - *Type it in* mode: a name/account/amount grid that auto-appends a blank row, with a running
-    total shown so it can be checked against the total on the UP report. That total check is the
-    only defence against a mistyped digit, so do not remove it.
-  - The PDF route works: printing the UP report to PDF produces a real text layer (25 embedded
-    fonts, each with a ToUnicode CMap covering letters, digits and `$ - . : @`), so the table can
-    be selected and copied. `parseTable` strips what comes along with it — the browser timestamp
-    header, the URL footer, `1/2` page counters, and the standalone report title. A line with only
-    one filled cell is never a table row, which is what stops the title being read as the header.
-  - `buildImportedPatients` drops any row whose mapped balance cell does not parse as money. That
-    is what makes a misdetected header harmless: "Balance Due" is not a number.
-  - *Paste* mode, below. `detectDelimiter` also handles space-aligned text, because a table
-    dragged across on screen and copied arrives as gaps, not tabs. Commas and gaps can both be
-    present ("Alvarez, Marisol" is a comma *inside* a field), so whichever split yields more
-    columns wins, ties going to gaps. Single spaces never split — that would halve every name.
-- **Import** — paste a tab- or comma-delimited export. `parseTable` detects the delimiter and
-  whether row 0 is a header (a row containing money or a date is data, not a header).
-  `guessRoles` pre-fills the column mapping from header text; the user can override every
-  guess, and the corrected mapping is saved per header signature (`lh-billing-column-map`) so
-  the next paste maps itself. **Do not hardcode UP's columns** — they were never specified and
-  the mapping UI exists precisely so a format change does not need a code change.
-- **Per-claim or per-patient exports both work.** `buildImportedPatients` groups rows by
-  account (falling back to a normalized name) and sums balances, so repeated rows become the
-  statement's line items.
-- **`mergeImport` is the feature.** Decisions carry forward; it returns `addedKeys`,
-  `changedKeys` (balance moved since the decision), and `clearedKeys` (dropped off the report
-  entirely — that is how you learn someone paid). Re-importing identical data must leave the
-  triage queue empty; that is the invariant to protect.
-- **Buckets are states with a clock, not folders** (`bucketOf`). "Coming back" expires on its
-  own once the expected date passes and the balance is still there; "awaiting insurance" ages
-  and flags at `INSURANCE_FOLLOWUP_DAYS` (30). A changed balance pulls a row back to triage.
-- **Statements** print from the browser (no PDF library). `runStatementPrint()` in
-  `Billing.tsx` toggles `html.printing-statement`, which the `@media print` block at the
-  bottom of `src/index.css` uses to hide the app shell via `visibility` (not `display` — the
-  sheets are nested inside the app's DOM). **Never call `window.print()` directly here**, or
-  the sidebar prints on the patient's bill.
-- Storage: `lh-billing-patients`, `lh-billing-column-map`, `lh-clinic-profile` (statement
-  header, edited in Settings). All synced.
+A worklist for chasing patient balances was built here and then removed at the owner's request
+(2026-09-20), having never been used: all three of its stores were still empty on the live
+workspace. Recoverable from `c71569a`, the commit before the removal.
 
-**Two deliberate decisions, do not "fix" them without asking:**
-1. Billing is *not* in the search index. That index feeds Home and the call panel; patient
-   names do not belong there. Verified: searching a patient name or account number finds nothing.
-2. This is the first patient data in the app (name + balance + dates of service), and it syncs
-   to Cloudflare D1 on a standard plan with no BAA. The owner chose this knowingly, over a
-   local-only option, because home/clinic continuity was the point. Do not widen what is stored
-   (no DOB, no diagnosis, no insurance ID) without raising it first.
+It is worth knowing why it existed before rebuilding anything like it. The expensive part of
+chasing balances was never the sending — it was that nothing remembered the previous round, so
+every run re-triaged the same people already judged "coming back next week". If the problem
+comes back, that is the part to solve, and `c71569a` has a tested implementation of it
+(import, carry decisions forward, surface only what changed) plus a PDF reader for the printed
+UP report and handling for the cells that report clips.
 
-**Square context:** no API integration by choice. Square *Invoices* (unlike the *Payment Links*
-the clinic had been using) do support line items and up to 10 attachments / 25MB; per Square's
-docs only custom fields and installment schedules need Invoices Plus. The workflow is: print the
-statement to PDF, attach it to a Square invoice. If this is ever automated, it needs
-`INVOICES_WRITE` + `ORDERS_WRITE` and a token in the Worker.
+Two findings from that work outlive it:
 
-**Logic is unit-testable without a browser** — `src/lib/billing.ts` is pure. Compile it with
-`npx esbuild src/lib/billing.ts --format=esm --outfile=<tmp>/billing.mjs` and run assertions
-against it in plain node. Worth doing before touching `mergeImport` or `bucketOf`.
+- **The UP balance report's columns are `PATIENT | EMAIL | PHONE # | AMOUNT DUE | PRINT`**, read
+  out of a real printed report. There is no account number anywhere, and printing clips long
+  cells with an ellipsis — 34 of 229 cells in the sample, mostly emails and phones.
+- **That report page has an `EXPORT` button and a `Print patient statements` feature**, neither
+  of which had been tried. Worth checking before building any import for it.
 
-### Settings (`src/pages/Settings.tsx`)
-- Account (email + logout), Language toggle, **Payer directory** (name + payer ID, stored `lh-payers`) — these payers populate the dropdown in `PaymentEntryForm`.
-
-### User-editable custom sidebar categories (most recent work)
-- Sidebar "添加分类" creates a new category (name + one of 5 icons); inline rename; delete via Trash/undo (cascade-deletes its entries). `src/components/Sidebar.tsx`
-- Route `/custom/:categoryId` → `src/pages/CustomCategory.tsx`: generic card list (title/notes/tags) with full CRUD.
-- **Custom entries are searchable from Home** via `src/hooks/useSearchIndex.ts` (reactively rebuilds the Fuse index). Point of the feature: build a "查保险" category, add "Aetna → underwritten by Premera", then searching "Premera" on Home jumps to Aetna.
-- Storage keys: `lh-custom-categories` (`CustomCategory[]`), `lh-custom-entries` (`Record<catId, CustomEntry[]>`).
-- Types in `src/lib/types.ts`: `Category` union gained `"custom"`; `SearchDoc`/`TrashEntry` gained `categoryTitle?`; whole-category trash uses `entryType:"section"` with snapshot `{category, entries}`.
-
-### Cross-cutting
-- **Trash / undo**: 30-day soft-delete for all deletions. `src/hooks/useTrash.ts`, `src/lib/trash.ts`, `src/pages/Trash.tsx` (handles per-category restore incl. custom branch). Opportunistic purge on mount.
-- **Toasts** with optional Undo action: `src/components/ToastProvider.tsx`.
-- **Search**: Fuse.js. Index built in `src/lib/searchIndex.ts` (`buildSeedSearchDocs`, `buildCustomSearchDocs`, `categoryLabel`, `CATEGORY_DOT`), consumed via `useSearchIndex()`.
-- **Auth**: `@react-oauth/google` + server-side sessions (Worker verifies Google JWT once, issues 60-day opaque session token in D1 `sessions` table). `src/components/AuthProvider.tsx`, `LoginGate.tsx`, `ProfileMenu.tsx`.
+With this gone, **the app once again stores no patient data at all.** The VA form filler holds
+only the clinic's own boxes. Keep it that way unless there is a decision to the contrary.
 
 ## Provider / layout structure
 - `src/main.tsx`: LanguageProvider → AuthProvider → HashRouter. Route `welcome` is public; workspace routes are wrapped in `LoginGate`. HashRouter is chosen for GH Pages static hosting.

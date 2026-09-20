@@ -13,7 +13,6 @@ import {
   ClipboardCheck,
   FileSearch,
   CreditCard,
-  Receipt,
   FileText,
   Building2,
   Sparkles,
@@ -72,12 +71,6 @@ const NAV_ITEMS = [
     key: "sidebar.payments",
     category: "payments",
     icon: CreditCard,
-  },
-  {
-    to: "/billing",
-    key: "sidebar.billing",
-    category: "payments",
-    icon: Receipt,
   },
   {
     to: "/va-rfs",
