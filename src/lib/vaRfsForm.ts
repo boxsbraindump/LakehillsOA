@@ -154,7 +154,7 @@ export async function fillRfsForm({ defaults, patient, formBytes }: FillRfsInput
 
   draw(patient.veteranName, PLACE.veteranName);
   draw(patient.dateOfBirth, PLACE.dateOfBirth);
-  draw(patient.vaFacility || defaults.vaFacility, PLACE.vaFacility);
+  draw(patient.vaFacility, PLACE.vaFacility);
   draw(patient.authorizationNumber, PLACE.authorizationNumber);
   draw(defaults.providerOffice, PLACE.providerOffice);
   draw(defaults.providerOfficeLine2, PLACE.providerOfficeLine2);
@@ -163,14 +163,14 @@ export async function fillRfsForm({ defaults, patient, formBytes }: FillRfsInput
   draw(defaults.email, PLACE.email);
   draw(patient.icd10, PLACE.icd10);
   draw(patient.diagnosisDescription, PLACE.diagnosisDescription);
-  draw(patient.cptCodes || defaults.cptCodes, PLACE.cptCodes);
+  draw(patient.cptCodes, PLACE.cptCodes);
   draw(patient.cptDescription || defaults.cptDescription, PLACE.cptDescription);
   draw(defaults.providerName, PLACE.providerName);
   draw(defaults.npi, PLACE.npi);
   draw(patient.todaysDate, PLACE.todaysDate);
 
   // Box 18 is the only multi-line box on the page.
-  const reason = (patient.reason || defaults.reason).trim();
+  const reason = patient.reason.trim();
   if (reason) {
     const size = 10;
     wrap(reason, font, size, PLACE.reason.maxWidth).forEach((line, index) => {

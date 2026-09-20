@@ -108,6 +108,12 @@ Twelve of the twenty-two boxes on page 1 never change, and the clinic only ever 
   keeps this feature entirely clear of the PHI question that the billing worklist had to answer.
 - pdf-lib is loaded on demand inside `fillRfsForm`, so its ~430KB is a separate chunk.
 
+The boxes that copy clinic defaults are **pre-filled into the visible inputs**, not shown as
+grey placeholder text. An earlier version used placeholders and fell back at generation time,
+which meant a box could look empty and still print something. Now what is on screen is what
+prints: clearing a box prints nothing there, and a value typed for one request survives a later
+edit to the default.
+
 Open questions the owner has not answered, currently handled by defaults rather than guesses:
 box 3 in their sample held a patient address rather than a VA facility, so it is a per-request
 field with a saved default; CPT codes are editable with the usual pair saved as the default.

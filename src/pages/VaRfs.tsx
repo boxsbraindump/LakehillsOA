@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Download, Loader2, RotateCcw } from "lucide-react";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "../components/LanguageProvider";
@@ -19,17 +19,22 @@ function todayUS(): string {
   return `${mm}/${dd}/${now.getFullYear()}`;
 }
 
-function emptyPatient(): RfsPatientFields {
+/**
+ * The boxes that copy the clinic's usual answers start out holding them, rather than showing
+ * them as grey placeholder text. A box that looks empty but prints something is unsettling,
+ * and there is no way to tell from looking whether it will be filled.
+ */
+function startingPatient(defaults: RfsClinicDefaults): RfsPatientFields {
   return {
     veteranName: "",
     dateOfBirth: "",
-    vaFacility: "",
+    vaFacility: defaults.vaFacility,
     authorizationNumber: "",
     icd10: "",
     diagnosisDescription: "",
-    cptCodes: "",
+    cptCodes: defaults.cptCodes,
     cptDescription: "",
-    reason: "",
+    reason: defaults.reason,
     todaysDate: todayUS(),
   };
 }
@@ -78,7 +83,32 @@ export default function VaRfs() {
     "lh-va-rfs-defaults",
     EMPTY_RFS_DEFAULTS,
   );
-  const [patient, setPatient] = useState<RfsPatientFields>(emptyPatient);
+  const [patient, setPatient] = useState<RfsPatientFields>(() => startingPatient(defaults));
+
+  // Filling the clinic details in *after* this page is already open should flow into the
+  // boxes that copy them — but must never overwrite something typed for this request.
+  const carriedRef = useRef({
+    vaFacility: defaults.vaFacility,
+    cptCodes: defaults.cptCodes,
+    reason: defaults.reason,
+  });
+  useEffect(() => {
+    const previous = carriedRef.current;
+    const latest = {
+      vaFacility: defaults.vaFacility,
+      cptCodes: defaults.cptCodes,
+      reason: defaults.reason,
+    };
+    carriedRef.current = latest;
+    setPatient((current) => {
+      const next = { ...current };
+      for (const key of Object.keys(latest) as (keyof typeof latest)[]) {
+        // Untouched means still blank, or still exactly what the old default put there.
+        if (!current[key].trim() || current[key] === previous[key]) next[key] = latest[key];
+      }
+      return next;
+    });
+  }, [defaults.vaFacility, defaults.cptCodes, defaults.reason]);
   const [showDefaults, setShowDefaults] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -149,7 +179,7 @@ export default function VaRfs() {
             label={t("vaRfs.vaFacility")}
             value={patient.vaFacility}
             onChange={(vaFacility) => set({ vaFacility })}
-            placeholder={defaults.vaFacility || t("vaRfs.vaFacilityPlaceholder")}
+            placeholder={t("vaRfs.vaFacilityPlaceholder")}
             hint={t("vaRfs.vaFacilityHint")}
           />
           <Field
@@ -173,7 +203,7 @@ export default function VaRfs() {
             label={t("vaRfs.cptCodes")}
             value={patient.cptCodes}
             onChange={(cptCodes) => set({ cptCodes })}
-            placeholder={defaults.cptCodes || "97813, 97814"}
+            placeholder="97813, 97814"
             hint={t("vaRfs.cptHint")}
           />
           <Field
@@ -190,7 +220,7 @@ export default function VaRfs() {
           <textarea
             value={patient.reason}
             onChange={(e) => set({ reason: e.target.value })}
-            placeholder={defaults.reason}
+            placeholder={t("vaRfs.reasonPlaceholder")}
             rows={3}
             className={inputClass}
           />
@@ -211,7 +241,7 @@ export default function VaRfs() {
           </button>
           <button
             type="button"
-            onClick={() => setPatient(emptyPatient())}
+            onClick={() => setPatient(startingPatient(defaults))}
             className="flex items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-3 py-2 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
           >
             <RotateCcw size={14} />
