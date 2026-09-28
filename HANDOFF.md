@@ -128,9 +128,12 @@ paid / denied. Denied is not terminal — it goes back to submitted once resubmi
 - Two groupings, both wanted for different reasons: **by paid date** answers what the other clinic
   is owed this week; **by visit date** shows a day where everything around it came back and that
   one did not, which is how a bad day used to reveal itself on the sheet.
-- Importing the old sheet carries its colours across by pasting each batch with a status. When
-  that status is paid the payment date is **asked for**, never derived from the visit date — the
-  colour says money arrived, not when, and inventing a date would corrupt the payroll view.
+- **Adding one person is a field, not a dialog**: a name box above the list, enter to add, with
+  the date sticking between adds so a day of bookings is typed straight through. There is no
+  spreadsheet to import from — an earlier version was written around pasting one and had to be
+  reworded. The batch panel remains for putting a group in at once. When a batch goes in as paid
+  the payment date is asked for, never derived from the visit date — the status says money
+  arrived, not when, and inventing a date would corrupt the payment-date view. When
 
 **Access, as of 2026-09-28.** Both users are already on `ALLOWED_EMAILS`, so this runs today in
 any workspace they create. Letting the other clinic's staff in still needs two things that do not

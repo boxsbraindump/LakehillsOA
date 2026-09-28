@@ -822,22 +822,31 @@ export const translations = {
 
   "ledger.emptyTitle": { zh: "还没有记录", en: "Nothing here yet" },
   "ledger.emptyBody": {
-    zh: "把 Excel 里的名字贴进来就能开始。绿色的贴一次选「已回钱」，黄色的选「已报 OA」，这样原来的状态就带过来了。",
-    en: "Paste the names from the spreadsheet to start. Bring the colours across by pasting each batch with its status.",
+    zh: "在上面填个名字按回车就行。要一次录一批的话，用下面那个。",
+    en: "Type a name above and press enter. To put in a whole batch at once, use the option below.",
+  },
+  "ledger.addMany": { zh: "一次录入一批", en: "Add a batch at once" },
+  "ledger.quickAdd": { zh: "加入", en: "Add" },
+  "ledger.quickAddPlaceholder": {
+    zh: "输入姓名按回车 —— 日期会留着，可以一个接一个加",
+    en: "Type a name and press enter — the date stays, so you can keep going",
   },
 
-  "ledger.addTitle": { zh: "添加就诊记录", en: "Add visits" },
-  "ledger.addHelp": { zh: "一行一个名字。名字后面跟着别的内容也没关系。", en: "One name per line. Anything after the name is ignored." },
+  "ledger.addTitle": { zh: "一次录入一批", en: "Add a batch" },
+  "ledger.addHelp": {
+    zh: "一行一个名字，可以直接打，也可以从别处整段贴进来。名字后面跟着别的内容没关系。",
+    en: "One name per line — type them or paste from anywhere. Anything after the name is ignored.",
+  },
   "ledger.addPlaceholder": { zh: "王小明\n李华\n…", en: "Jane Doe\nRobert Smith\n…" },
   "ledger.visitDate": { zh: "就诊日期", en: "Visit date" },
   "ledger.importAs": { zh: "导入为", en: "Import as" },
   "ledger.importAsHint": {
-    zh: "从旧表导入时用这个把颜色带过来：绿色的选「已回钱」，黄色的选「已报 OA」。",
-    en: "Use this to carry the old sheet's colours across — paste the green rows as paid, the yellow as submitted.",
+    zh: "这一批如果已经处理过了，在这里选到对应的那一步，不用加完再一条条改。",
+    en: "If this batch has already been worked through, set it to the right step here instead of changing each row after.",
   },
   "ledger.importPaidDateHint": {
-    zh: "旧表的绿色只说明回了钱，说不出是哪天回的。不确定就挑那一批大概的日期。",
-    en: "The old sheet's green says money arrived, not when. Pick roughly when that batch came back.",
+    zh: "这一批钱是哪天回的。不确定就挑个大概的日期 —— 「按回款日期」那个视图看的就是它。",
+    en: "When this batch's money arrived. Pick roughly if unsure — the payment-date view reads this.",
   },
   "ledger.willAdd": { zh: "将添加 {count} 条", en: "{count} to add" },
   "ledger.addConfirm": { zh: "添加", en: "Add" },

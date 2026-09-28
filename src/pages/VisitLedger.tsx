@@ -61,6 +61,10 @@ export default function VisitLedger() {
   const [statusFilter, setStatusFilter] = useState<VisitStatus | "all" | "open">("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
+  const [quickName, setQuickName] = useState("");
+  // The date sticks between adds: a batch is usually one day's bookings, typed one after
+  // another, and re-picking the date every time would be the slow part.
+  const [quickDate, setQuickDate] = useState(today);
   const [reconciling, setReconciling] = useState(false);
 
   const sorted = useMemo(
@@ -78,6 +82,16 @@ export default function VisitLedger() {
     for (const status of VISIT_STATUSES) map[status] = visits.filter((v) => v.status === status).length;
     return map;
   }, [visits]);
+
+  function quickAdd() {
+    const name = quickName.trim();
+    if (!name) return;
+    setVisits((prev) => [
+      ...prev,
+      { id: newVisitId(), name, visitDate: quickDate, status: "new", createdAt: Date.now() },
+    ]);
+    setQuickName("");
+  }
 
   function patch(ids: string[], changes: Partial<Visit>) {
     const idSet = new Set(ids);
@@ -152,10 +166,45 @@ export default function VisitLedger() {
         ))}
       </div>
 
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          quickAdd();
+        }}
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
+      >
+        <input
+          type="date"
+          value={quickDate}
+          onChange={(e) => setQuickDate(e.target.value)}
+          aria-label={t("ledger.visitDate")}
+          className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+        />
+        <input
+          value={quickName}
+          onChange={(e) => setQuickName(e.target.value)}
+          placeholder={t("ledger.quickAddPlaceholder")}
+          className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+        />
+        <button
+          type="submit"
+          disabled={!quickName.trim()}
+          className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
+        >
+          {t("ledger.quickAdd")}
+        </button>
+      </form>
+
       {visits.length === 0 ? (
         <div className="rounded-(--radius-lg) border border-dashed border-(--color-hairline) px-6 py-12 text-center">
           <p className="text-[15px] font-medium text-(--color-ink)">{t("ledger.emptyTitle")}</p>
           <p className="mt-1 text-[13px] text-(--color-ink-muted)">{t("ledger.emptyBody")}</p>
+          <button
+            onClick={() => setAdding(true)}
+            className="mt-3 text-[13px] font-medium text-(--color-primary)"
+          >
+            {t("ledger.addMany")}
+          </button>
         </div>
       ) : view === "list" ? (
         <>
