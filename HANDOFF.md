@@ -142,6 +142,15 @@ paid / denied. Denied is not terminal — it goes back to submitted once resubmi
   the payment date is asked for, never derived from the visit date — the status says money
   arrived, not when, and inventing a date would corrupt the payment-date view. When
 
+**The page is the job, not the model.** The first build exposed all five statuses as filter
+chips, three view tabs and two separate add buttons — nine controls on an empty ledger — and the
+owner could not tell what to do first. It is now three collapsible stages that are the workflow
+(not sent / waiting on money / money arrived), each row advancing with a single button that names
+the next step, with denial and delete behind a second. The week`s figure is stated at the top
+rather than hidden behind a view, since it is the only number the week turns on. Every step is
+one click and one click back via undo. **Resist adding a filter or a tab here**: the pile a row
+is in is the filter.
+
 **Access, as of 2026-09-28.** Both users are already on `ALLOWED_EMAILS`, so this runs today in
 any workspace they create. Letting the other clinic's staff in still needs two things that do not
 exist yet: a member-management endpoint (workspace creation only enrols its creator), and a login

@@ -822,8 +822,8 @@ export const translations = {
 
   "ledger.emptyTitle": { zh: "还没有记录", en: "Nothing here yet" },
   "ledger.emptyBody": {
-    zh: "在上面填个名字按回车就行。要一次录一批的话，用下面那个。",
-    en: "Type a name above and press enter. To put in a whole batch at once, use the option below.",
+    zh: "上面填个名字按回车，就开始了。",
+    en: "Type a name above and press enter — that is the whole of it.",
   },
   "ledger.addMany": { zh: "一次录入一批", en: "Add a batch at once" },
   "ledger.quickAdd": { zh: "加入", en: "Add" },
@@ -890,6 +890,29 @@ export const translations = {
   "ledger.dayBreakdown": { zh: "共 {total} · 已回 {paid} · 没回 {outstanding}", en: "{total} total · {paid} paid · {outstanding} outstanding" },
   "ledger.noPayments": { zh: "还没有任何回款记录。", en: "No payments recorded yet." },
   "ledger.noVisits": { zh: "还没有就诊记录。", en: "No visits yet." },
+
+  "ledger.thisWeekLabel": { zh: "这一周（{from} – {to}）", en: "This week ({from} – {to})" },
+  "ledger.thisWeekCount": { zh: "回了 {count} 个，这就是要结的数", en: "{count} came back — that is what is owed" },
+
+  "ledger.stageTodo": { zh: "① 还没报出去", en: "1. Not sent yet" },
+  "ledger.stageTodoHint": { zh: "录进 Unified Practice，再报到 Office Ally", en: "Put into Unified Practice, then submit to Office Ally" },
+  "ledger.stageWaiting": { zh: "② 等钱", en: "2. Waiting on money" },
+  "ledger.stageWaitingHint": { zh: "已经报出去了，等保险公司回款", en: "Submitted — waiting for the payer" },
+  "ledger.stageDone": { zh: "③ 钱回来了", en: "3. Money arrived" },
+  "ledger.stageDoneHint": { zh: "这些才算数，按周结给另一家诊所", en: "Only these count towards what the other clinic is paid" },
+  "ledger.stageEmpty": { zh: "这里暂时没有人。", en: "Nobody here right now." },
+
+  "ledger.stepEntered": { zh: "已录入 UP →", en: "In UP →" },
+  "ledger.stepSubmitted": { zh: "已报 OA →", en: "Submitted →" },
+  "ledger.stepPaid": { zh: "钱回来了 →", en: "Paid →" },
+  "ledger.stepResubmitted": { zh: "重报了 →", en: "Resubmitted →" },
+  "ledger.movedToast": { zh: "「{name}」→ {step}", en: "{name} → {step}" },
+  "ledger.markDenied": { zh: "标为拒付", en: "Mark denied" },
+  "ledger.more": { zh: "更多", en: "More" },
+
+  "ledger.reconcileCta": { zh: "回款单来了？对一下这 {count} 条", en: "Remittance arrived? Match it against these {count}" },
+  "ledger.seeByDate": { zh: "按日期看", en: "By date" },
+  "ledger.backToStages": { zh: "回到三步", en: "Back to the steps" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
