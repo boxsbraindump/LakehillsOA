@@ -3,6 +3,8 @@ import {
   AlertTriangle,
   CalendarDays,
   ListChecks,
+  ArrowDown,
+  ArrowUp,
   Rows3,
   ChevronLeft,
   ChevronRight,
@@ -130,6 +132,31 @@ function tagOptions(tags: ServiceTag[], none: string) {
   ];
 }
 
+type SortKey = "name" | "visitDate" | "lastStep";
+
+/**
+ * How two visits compare on one column.
+ *
+ * Every key falls back to the other two, so a column of identical dates still comes out in a
+ * stable, sensible order rather than whatever the previous sort happened to leave behind.
+ */
+function compareBy(a: Visit, b: Visit, key: SortKey): number {
+  if (key === "name") {
+    return a.name.localeCompare(b.name) || b.visitDate.localeCompare(a.visitDate);
+  }
+  if (key === "visitDate") {
+    return a.visitDate.localeCompare(b.visitDate) || a.name.localeCompare(b.name);
+  }
+  // A visit nobody has touched yet sorts with the oldest, not above everything.
+  const left = currentStep(a).date ?? "";
+  const right = currentStep(b).date ?? "";
+  return (
+    left.localeCompare(right) ||
+    a.visitDate.localeCompare(b.visitDate) ||
+    a.name.localeCompare(b.name)
+  );
+}
+
 export default function VisitLedger() {
   const { t, lang } = useLanguage();
   const { showToast } = useToast();
@@ -139,6 +166,11 @@ export default function VisitLedger() {
   const [visits, setVisits] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  // Newest visit first is the useful default; every column can be turned over from its header.
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "visitDate",
+    dir: "desc",
+  });
   /**
    * Rows whose status just moved.
    *
@@ -176,13 +208,20 @@ export default function VisitLedger() {
   const [logLimit, setLogLimit] = useState(14);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
 
-  const rows = useMemo(
-    () =>
-      visits
-        .filter((v) => matchesQuery(v, query))
-        .sort((a, b) => b.visitDate.localeCompare(a.visitDate) || a.name.localeCompare(b.name)),
-    [visits, query],
-  );
+  const rows = useMemo(() => {
+    const filtered = visits.filter((v) => matchesQuery(v, query));
+    const sign = sort.dir === "asc" ? 1 : -1;
+    return filtered.sort((a, b) => sign * compareBy(a, b, sort.key));
+  }, [visits, query, sort]);
+
+  /** Clicking the active column turns it over; a new column starts the way that column reads. */
+  function sortBy(key: SortKey) {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "name" ? "asc" : "desc" },
+    );
+  }
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
   const log = useMemo(() => activityLog(visits), [visits]);
@@ -332,7 +371,7 @@ export default function VisitLedger() {
           {t("ledger.title")}
         </h1>
         {visits.length > 0 && (
-          <p className="font-mono text-[13px] text-(--color-ink-muted)">
+          <p className="text-[13px] text-(--color-ink-muted)">
             {t("ledger.summaryLine", {
               patients: String(patients.length),
               visits: String(visits.length),
@@ -473,7 +512,7 @@ export default function VisitLedger() {
           </button>
           <button
             onClick={() => setSelected([])}
-            className="font-mono text-[12px] text-(--color-ink-muted)"
+            className="text-[12px] text-(--color-ink-muted)"
           >
             {t("common.cancel")}
           </button>
@@ -691,12 +730,18 @@ export default function VisitLedger() {
                     className="align-middle"
                   />
                 </th>
-                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
-                  {t("ledger.colPatient")}
-                </th>
-                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
-                  {t("ledger.colVisitDate")}
-                </th>
+                <SortHeader
+                  label={t("ledger.colPatient")}
+                  active={sort.key === "name"}
+                  dir={sort.dir}
+                  onClick={() => sortBy("name")}
+                />
+                <SortHeader
+                  label={t("ledger.colVisitDate")}
+                  active={sort.key === "visitDate"}
+                  dir={sort.dir}
+                  onClick={() => sortBy("visitDate")}
+                />
                 <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   <button
                     onClick={() => setManagingTags(true)}
@@ -709,9 +754,12 @@ export default function VisitLedger() {
                 <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colStatus")}
                 </th>
-                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
-                  {t("ledger.colLastStep")}
-                </th>
+                <SortHeader
+                  label={t("ledger.colLastStep")}
+                  active={sort.key === "lastStep"}
+                  dir={sort.dir}
+                  onClick={() => sortBy("lastStep")}
+                />
               </tr>
             </thead>
             <tbody>
@@ -746,7 +794,7 @@ export default function VisitLedger() {
                       value={visit.visitDate}
                       onChange={(date) => setVisitDate(visit, date)}
                       ariaLabel={t("ledger.colVisitDate")}
-                      className="font-mono text-[13px] text-(--color-ink-muted)"
+                      className="-ml-[7px] font-mono text-[13px] text-(--color-ink-muted)"
                     />
                   </td>
                   <td className="px-3 py-1">
@@ -788,14 +836,14 @@ export default function VisitLedger() {
                     {(() => {
                       const step = currentStep(visit);
                       if (!step.field || !step.date) {
-                        return <span className="pl-1 text-[13px] text-(--color-ink-faint)">—</span>;
+                        return <span className="text-[13px] text-(--color-ink-faint)">—</span>;
                       }
                       return (
                         <DatePicker
                           value={step.date}
                           onChange={(date) => setStepDate(visit, step.field!, date)}
                           ariaLabel={t("ledger.colLastStep")}
-                          className="font-mono text-[12px] text-(--color-ink-muted)"
+                          className="-ml-[7px] font-mono text-[12px] text-(--color-ink-muted)"
                         />
                       );
                     })()}
@@ -903,6 +951,39 @@ const VISIT_STEPS = [
  * skipped step and a completed one read as a bug rather than as information. The status chip
  * already states where the visit is; these dates only have to state when each step happened.
  */
+/** A column header you can sort by. The arrow only appears on the column doing the sorting. */
+function SortHeader({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+}) {
+  const Arrow = dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th
+      scope="col"
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+      className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-left"
+    >
+      <button
+        onClick={onClick}
+        className={[
+          "flex items-center gap-1 text-[12px] font-medium whitespace-nowrap",
+          active ? "text-(--color-primary)" : "text-(--color-ink-muted) hover:text-(--color-ink)",
+        ].join(" ")}
+      >
+        {label}
+        <Arrow size={11} className={active ? "" : "opacity-0 group-hover:opacity-40"} />
+      </button>
+    </th>
+  );
+}
+
 function VisitCard({
   visit,
   tags,
@@ -1534,7 +1615,7 @@ function BatchPanel({
         )}
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="font-mono text-[13px] text-(--color-ink-muted)">
+          <span className="text-[13px] text-(--color-ink-muted)">
             {t("ledger.willAdd", { count: String(preview.length) })}
           </span>
           <div className="flex gap-2">

@@ -270,6 +270,19 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**Sortable by patient, visit date or last step, either way up.** Clicking the active column
+turns it over; clicking a new one starts it the way that column reads (names up, dates down).
+Every comparator falls back to the other two keys, so a column of identical dates still comes out
+in a stable order instead of whatever the previous sort left behind. A visit nobody has touched
+yet sorts with the oldest rather than above everything.
+
+**Column alignment: text aligns to text, chips align by their box.** The status and area chips are
+pills, so their left border sits on the header. A borderless date button is read as text, but its
+own padding pushed it 7px right of the header — next to the patient column, which has no padding
+and lined up exactly, that drift was what looked broken. The date cells now pull back by exactly
+that inset. Measure this with a Range over the text node, not the element box, or padding hides
+the problem.
+
 **The ledger shows one date, not three.** Three date columns beside a status column stated the
 same fact twice: a row reading 已报 OA with 09/22 beside it *is* "we reported it on the 22nd".
 So the table is 患者 / 就诊日期 / 部位 / 状态 / 上次操作 — six columns including the checkbox —
