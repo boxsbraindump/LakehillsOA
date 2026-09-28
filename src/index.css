@@ -48,6 +48,36 @@
   --color-accent-green: #4f9d72;
   --color-accent-brown: #6f5842;
 
+  /*
+   * Ledger tones.
+   *
+   * The visit ledger replaced a spreadsheet whose four cell colours were the whole interface, so
+   * a status has to be readable as colour — that part is function, not decoration. What was
+   * wrong was *how*: thirty-six raw Tailwind palette classes (bg-sky-50, text-amber-800 and so
+   * on) scattered through the page, bypassing every token here. One hue per meaning lives below
+   * and the .tone classes derive the fill, border and text from it, so a change lands in one
+   * place — and a dark mode would only have to touch .tone itself.
+   *
+   * Saturation is held down deliberately: a whole column of these sits next to the brand teal.
+   */
+  --tone-new: #5d7773;
+  --tone-entered: #3576b8;
+  --tone-submitted: #b07d1a;
+  --tone-paid: #2f8f63;
+  --tone-denied: #c0555c;
+
+  /* Two more meanings, not two more decorations: something needs attention, something is destructive. */
+  --color-warn: #a8741a;
+  --color-danger: #c0555c;
+
+  /* Body areas. Six, because they have to be told apart at a glance, but muted to match. */
+  --tone-area-1: #6a76c4;
+  --tone-area-2: #1f8f8a;
+  --tone-area-3: #c07a3e;
+  --tone-area-4: #b3628f;
+  --tone-area-5: #7d9440;
+  --tone-area-6: #4d7f9e;
+
   /* Radius */
   --radius-xs: 4px;
   --radius-sm: 5px;
@@ -296,5 +326,62 @@ body::before {
   .landing-sync-pulse,
   .click-spark i {
     animation: none;
+  }
+}
+
+/*
+ * A status or area chip. `.tone` does the mixing; the modifier only names the hue.
+ *
+ * Used as class="tone tone-paid". Kept as CSS rather than three Tailwind classes per state so
+ * that the fill/border/text relationship is stated once instead of thirty-six times.
+ */
+.tone {
+  background-color: color-mix(in srgb, var(--tone) 11%, var(--color-canvas));
+  border-color: color-mix(in srgb, var(--tone) 34%, var(--color-canvas));
+  color: color-mix(in srgb, var(--tone) 82%, var(--color-ink));
+}
+
+.tone-new { --tone: var(--tone-new); }
+.tone-entered { --tone: var(--tone-entered); }
+.tone-submitted { --tone: var(--tone-submitted); }
+.tone-paid { --tone: var(--tone-paid); }
+.tone-denied { --tone: var(--tone-denied); }
+
+.tone-warn { --tone: var(--color-warn); }
+.tone-danger { --tone: var(--color-danger); }
+
+.tone-area-1 { --tone: var(--tone-area-1); }
+.tone-area-2 { --tone: var(--tone-area-2); }
+.tone-area-3 { --tone: var(--tone-area-3); }
+.tone-area-4 { --tone: var(--tone-area-4); }
+.tone-area-5 { --tone: var(--tone-area-5); }
+.tone-area-6 { --tone: var(--tone-area-6); }
+
+/*
+ * A visible focus ring, everywhere.
+ *
+ * The ledger had none at all: the whole page was mouse-only, and entering a batch of names is
+ * exactly the job where staying on the keyboard is faster. `:focus-visible` shows it for keyboard
+ * use without ringing every mouse click.
+ */
+:where(button, a, input, select, textarea, [role="option"], [tabindex]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/*
+ * Tactile feedback on press.
+ *
+ * Nothing on the page moved when clicked, so every control felt like a picture of a control.
+ * A half-pixel of travel is enough to read as a physical press; `transform` only, so it cannot
+ * cost a layout pass.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :where(button):not(:disabled) {
+    transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :where(button):not(:disabled):active {
+    transform: translateY(0.5px);
   }
 }

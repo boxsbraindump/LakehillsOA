@@ -80,11 +80,11 @@ const STATUS_LABEL: Record<VisitStatus, TranslationKey> = {
  * that was the one thing the spreadsheet did well, and losing it would be a step backwards.
  */
 const STATUS_TONE: Record<VisitStatus, string> = {
-  new: "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-muted)",
-  entered: "border-sky-300 bg-sky-50 text-sky-800",
-  submitted: "border-amber-300 bg-amber-50 text-amber-800",
-  paid: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  denied: "border-rose-300 bg-rose-50 text-rose-800",
+  new: 'tone tone-new',
+  entered: 'tone tone-entered',
+  submitted: 'tone tone-submitted',
+  paid: 'tone tone-paid',
+  denied: 'tone tone-denied',
 };
 
 function timestamp(at: number, lang: "zh" | "en"): string {
@@ -421,9 +421,13 @@ export default function VisitLedger() {
         </form>
       )}
 
-      {/* The weekly batch lives here: select rows, say what happened to them. */}
+      {/* The weekly batch lives here: select rows, say what happened to them.
+
+          A floating bar rather than a sticky one: it used to stick to the top of the page and
+          would now collide with the table header that sticks there too — and half the point of
+          selecting rows is doing it far down a long table, nowhere near the top. */}
       {selected.length > 0 && view === "table" && (
-        <div className="sticky top-2 z-10 mt-3 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-primary)/40 bg-(--color-primary)/[0.07] px-3 py-2 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-4 z-40 mx-auto flex w-[min(60rem,calc(100vw-2rem))] flex-wrap items-center gap-2 rounded-(--radius-lg) border border-(--color-primary)/40 bg-(--color-canvas)/95 px-3 py-2 shadow-(--shadow-level-3) backdrop-blur">
           <span className="text-[13px] font-medium text-(--color-ink)">
             {t("ledger.selectedCount", { count: String(selected.length) })}
           </span>
@@ -453,7 +457,7 @@ export default function VisitLedger() {
           ))}
           <button
             onClick={() => remove(selected)}
-            className="ml-auto flex items-center gap-1 text-[12px] text-rose-700"
+            className="ml-auto flex items-center gap-1 text-[12px] text-(--color-danger)"
           >
             <Trash2 size={12} />
             {t("common.delete")}
@@ -474,7 +478,7 @@ export default function VisitLedger() {
       ) : view === "log" ? (
         <div className="mt-4">
         <div className="mt-4 overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
-          <p className="border-b border-(--color-hairline) bg-(--color-surface) px-4 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
+          <p className="border-b border-(--color-hairline) bg-(--color-canvas-soft) px-4 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
             {t("ledger.logTitle")}
           </p>
           {log.length === 0 ? (
@@ -653,11 +657,20 @@ export default function VisitLedger() {
           {t("ledger.noMatches", { query })}
         </p>
       ) : (
-        <div className="mt-3 overflow-x-auto rounded-(--radius-lg) border border-(--color-hairline)">
+        <div
+          className={[
+            "mt-3 max-h-[calc(100dvh-13rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline)",
+            // The floating batch bar sits over the foot of the table while it is up.
+            selected.length > 0 ? "pb-16" : "",
+          ].join(" ")}
+        >
           <table className="w-full border-collapse text-left">
+            {/* Sticky, because the table runs to sixty rows and more: scrolling used to leave
+                you guessing which column was 报 OA and which was 回款. Sticky goes on the cells,
+                not the row — a sticky <tr> is ignored by most browsers. */}
             <thead>
-              <tr className="border-b border-(--color-hairline) bg-(--color-surface)">
-                <th className="w-9 px-3 py-2">
+              <tr className="border-b border-(--color-hairline)">
+                <th className="sticky top-0 z-10 w-9 bg-(--color-canvas-soft) px-3 py-2">
                   <input
                     type="checkbox"
                     checked={allShownSelected}
@@ -666,13 +679,13 @@ export default function VisitLedger() {
                     className="align-middle"
                   />
                 </th>
-                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colPatient")}
                 </th>
-                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colVisitDate")}
                 </th>
-                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   <button
                     onClick={() => setManagingTags(true)}
                     className="flex items-center gap-1 hover:text-(--color-primary)"
@@ -681,10 +694,10 @@ export default function VisitLedger() {
                     <Tag size={11} />
                   </button>
                 </th>
-                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colStatus")}
                 </th>
-                <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
                   {t("ledger.colLastStep")}
                 </th>
               </tr>
@@ -740,7 +753,7 @@ export default function VisitLedger() {
                           ? TAG_COLORS[
                               tagById(serviceTags, visit.serviceTag)!.color % TAG_COLORS.length
                             ]
-                          : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)"
+                          : "border-(--color-hairline) bg-(--color-canvas-soft) text-(--color-ink-faint)"
                       }
                     />
                   </td>
@@ -930,7 +943,7 @@ function VisitCard({
           className={
             tag
               ? TAG_COLORS[tag.color % TAG_COLORS.length]
-              : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)"
+              : "border-(--color-hairline) bg-(--color-canvas-soft) text-(--color-ink-faint)"
           }
         />
 
@@ -947,7 +960,7 @@ function VisitCard({
         <button
           onClick={() => onRemove(visit.id)}
           aria-label={t("common.delete")}
-          className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-rose-600"
+          className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
         >
           <Trash2 size={13} />
         </button>
@@ -1070,7 +1083,7 @@ function PatientPanel({
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-[18px] font-bold text-(--color-ink)">{record.name}</h2>
             <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
-              <span className="rounded-full border border-(--color-hairline) bg-(--color-surface) px-2 py-0.5 text-(--color-ink-muted)">
+              <span className="rounded-full border border-(--color-hairline) bg-(--color-canvas-soft) px-2 py-0.5 text-(--color-ink-muted)">
                 {t("ledger.totalVisits", { count: String(record.total) })}
               </span>
               {record.paid > 0 && (
@@ -1157,7 +1170,7 @@ function MonthCalendar({
 
   return (
     <div className="overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
-      <div className="grid grid-cols-7 border-b border-(--color-hairline) bg-(--color-surface)">
+      <div className="grid grid-cols-7 border-b border-(--color-hairline) bg-(--color-canvas-soft)">
         {weekdays.map((key) => (
           <div
             key={key}
@@ -1257,7 +1270,7 @@ function DayView({
               <span
                 className={[
                   "flex items-center gap-1.5 text-[13px] tabular-nums",
-                  group.outstanding > 0 ? "font-medium text-amber-700" : "text-(--color-ink-muted)",
+                  group.outstanding > 0 ? "font-medium text-(--color-warn)" : "text-(--color-ink-muted)",
                 ].join(" ")}
               >
                 {group.outstanding > 0 && <AlertTriangle size={13} />}
@@ -1357,7 +1370,7 @@ function TagManager({
               <button
                 onClick={() => remove(tag.id)}
                 aria-label={t("common.delete")}
-                className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-rose-600"
+                className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
               >
                 <Trash2 size={14} />
               </button>
@@ -1461,7 +1474,7 @@ function BatchPanel({
           />
         </label>
         {readError && (
-          <p className="mb-2 flex items-start gap-1 text-[12px] text-amber-700">
+          <p className="mb-2 flex items-start gap-1 text-[12px] text-(--color-warn)">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
             {readError}
           </p>
@@ -1489,7 +1502,7 @@ function BatchPanel({
                     <td className="px-2.5 py-1 text-right text-[12px] tabular-nums">
                       <span
                         className={
-                          row.usedFallbackDate ? "text-amber-700" : "text-(--color-ink-muted)"
+                          row.usedFallbackDate ? "text-(--color-warn)" : "text-(--color-ink-muted)"
                         }
                       >
                         {row.visitDate}
@@ -1502,7 +1515,7 @@ function BatchPanel({
           </div>
         )}
         {undated > 0 && (
-          <p className="mt-1 text-[11px] text-amber-700">
+          <p className="mt-1 text-[11px] text-(--color-warn)">
             {t("ledger.undatedRows", { count: String(undated) })}
           </p>
         )}
@@ -1646,7 +1659,7 @@ function ReconcilePanel({
                         <span className="shrink-0 text-(--color-ink-faint)">{visit.visitDate}</span>
                       </span>
                       {datesOnRemittance && (
-                        <span className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700">
+                        <span className="mt-0.5 flex items-center gap-1 text-[11px] text-(--color-warn)">
                           <AlertTriangle size={11} className="shrink-0" />
                           {t("ledger.dateMismatch", { dates: datesOnRemittance.join(" · ") })}
                         </span>
@@ -1659,19 +1672,19 @@ function ReconcilePanel({
 
             {result.ambiguous.length > 0 && (
               <section>
-                <h3 className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-amber-800">
+                <h3 className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-(--color-warn)">
                   <AlertTriangle size={14} />
                   {t("ledger.ambiguous", { count: String(result.ambiguous.length) })}
                 </h3>
                 <p className="mb-1.5 text-[12px] text-(--color-ink-faint)">{t("ledger.ambiguousHint")}</p>
-                <ul className="flex flex-col gap-2 rounded-(--radius-md) bg-amber-50 p-2.5">
+                <ul className="tone tone-warn flex flex-col gap-2 rounded-(--radius-md) border p-2.5">
                   {result.ambiguous.map((group) => (
                     <li key={group.name}>
-                      <p className="text-[13px] font-medium text-amber-900">
+                      <p className="text-[13px] font-medium text-(--color-warn)">
                         {group.name} · {t("ledger.ambiguousLines", { lines: String(group.lines) })}
                       </p>
                       {group.datesOnRemittance.length > 0 && (
-                        <p className="text-[11px] text-amber-800">
+                        <p className="text-[11px] text-(--color-warn)">
                           {t("ledger.remittanceSays", { dates: group.datesOnRemittance.join(" · ") })}
                         </p>
                       )}
@@ -1689,8 +1702,8 @@ function ReconcilePanel({
                             className={[
                               "rounded-(--radius-sm) border px-2 py-1 text-[12px] transition-colors",
                               chosen.includes(visit.id)
-                                ? "border-green-600 bg-green-50 font-medium text-green-800"
-                                : "border-amber-300 text-amber-900 hover:border-green-500",
+                                ? "tone tone-paid font-medium"
+                                : "border-(--color-warn)/40 text-(--color-warn) hover:border-(--color-primary)",
                             ].join(" ")}
                           >
                             {visit.visitDate}

@@ -17,13 +17,12 @@ export interface ServiceTag {
 
 /** Muted on purpose: a column of these sits next to the status colours and must not shout. */
 export const TAG_COLORS = [
-  "border-slate-300 bg-slate-100 text-slate-700",
-  "border-violet-300 bg-violet-100 text-violet-800",
-  "border-teal-300 bg-teal-100 text-teal-800",
-  "border-orange-300 bg-orange-100 text-orange-800",
-  "border-pink-300 bg-pink-100 text-pink-800",
-  "border-lime-300 bg-lime-100 text-lime-800",
-  "border-cyan-300 bg-cyan-100 text-cyan-800",
+  'tone tone-area-1',
+  'tone tone-area-2',
+  'tone tone-area-3',
+  'tone tone-area-4',
+  'tone tone-area-5',
+  'tone tone-area-6',
 ];
 
 export function newTagId(): string {
