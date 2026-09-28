@@ -226,6 +226,27 @@ The bulk bar carries a date, because a batch shares one: select the week's rows,
 actually went out, then say what happened to it. The calendar has a third lens over that same
 date (按报 OA 日期), so a day's submissions are as findable as a day's payments.
 
+**No native selects or date inputs anywhere on this page.** A `<select>` draws its own
+arrow and its own list from the operating system, and `<input type="date">` draws the OS
+calendar glyph and picker — next to a coloured status chip both read as something glued on from
+elsewhere, and at two or three per row they were most of the visual noise. `Select.tsx` and
+`DatePicker.tsx` replace them, sharing `Popover.tsx`.
+
+The popover **must** be a portal. The ledger table scrolls horizontally, and a panel positioned
+inside it is clipped at the table's edge — which is exactly where the status and date cells sit.
+It measures the trigger, flips above when there is no room below, and clamps to the viewport.
+Scrolling and resizing **re-measure rather than close**: an earlier version closed on both, which
+threw away a half-made choice whenever the window changed size. Escape and an outside press
+close it.
+
+The status dropdown renders each option as the chip it will become, so the colour is chosen
+rather than remembered. The date picker reuses `monthGridDays` from the calendar view, so
+there is one month-grid implementation.
+
+**Deleting asks first.** The undo toast was the only net, and it is easy to hit the bin by
+accident, miss the toast, and find the record gone days later when a payment will not match. The
+toast stays as the second net for deletes that were meant.
+
 **The patient panel is a step track, because it was stating every step twice.** It used to put
 three labelled date inputs in a row and, directly beneath them, the raw trail of status changes
 — so one visit read "报 OA 09/28" from the stored date and "已报 OA 9/28 15:25" from the click,

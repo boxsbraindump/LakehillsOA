@@ -968,6 +968,10 @@ export const translations = {
   "ledger.waitingChip": { zh: "{count} 次还在等", en: "{count} waiting" },
   "ledger.showTrail": { zh: "操作记录", en: "Change log" },
   "ledger.hideTrail": { zh: "收起操作记录", en: "Hide change log" },
+  "ledger.deleteTitle": { zh: "删掉这条记录？", en: "Delete this record?" },
+  "ledger.deleteOne": { zh: "{name} · {date} 这一次就诊会被删掉。", en: "{name}’s visit on {date} will be removed." },
+  "ledger.deleteMany": { zh: "选中的 {count} 条记录都会被删掉。", en: "All {count} selected records will be removed." },
+  "ledger.thisMonthToday": { zh: "今天", en: "Today" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

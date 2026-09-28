@@ -17,6 +17,9 @@ import {
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "../components/LanguageProvider";
 import { useToast } from "../components/ToastProvider";
+import { useConfirm } from "../components/ConfirmProvider";
+import { Select } from "../components/Select";
+import { DatePicker } from "../components/DatePicker";
 import {
   todayKey,
   formatDisplayDate,
@@ -107,9 +110,30 @@ function timestamp(at: number, lang: "zh" | "en"): string {
  * you graduate from. What the sheet could not do — say *when* each change was made, because a
  * cell colour overwrites the colour before it — is on the patient's own page.
  */
+/** The status list, as the styled select wants it — each option carrying its own colour. */
+function statusOptions(t: (key: TranslationKey) => string) {
+  return VISIT_STATUSES.map((status) => ({
+    value: status,
+    label: t(STATUS_LABEL[status]),
+    tone: STATUS_TONE[status],
+  }));
+}
+
+function tagOptions(tags: ServiceTag[], none: string) {
+  return [
+    { value: "", label: none },
+    ...tags.map((tag) => ({
+      value: tag.id,
+      label: tag.label,
+      tone: TAG_COLORS[tag.color % TAG_COLORS.length],
+    })),
+  ];
+}
+
 export default function VisitLedger() {
   const { t, lang } = useLanguage();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const today = todayKey();
 
   const [visits, setVisits] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
@@ -257,9 +281,29 @@ export default function VisitLedger() {
     setVisits((prev) => prev.map((v) => (v.id === visit.id ? { ...v, visitDate } : v)));
   }
 
-  function remove(ids: string[]) {
+  /**
+   * Deleting asks first.
+   *
+   * The undo toast is not enough on its own: it is easy to click the bin by accident, miss the
+   * toast, and only notice the record is gone days later when a payment does not match. The
+   * toast stays as the second net for the deletes that were meant.
+   */
+  async function remove(ids: string[]) {
     const idSet = new Set(ids);
     const removed = visits.filter((v) => idSet.has(v.id));
+    if (removed.length === 0) return;
+
+    const ok = await confirm({
+      title: t("ledger.deleteTitle"),
+      message:
+        removed.length === 1
+          ? t("ledger.deleteOne", { name: removed[0].name, date: removed[0].visitDate })
+          : t("ledger.deleteMany", { count: String(removed.length) }),
+      confirmLabel: t("common.delete"),
+      tone: "danger",
+    });
+    if (!ok) return;
+
     setVisits((prev) => prev.filter((v) => !idSet.has(v.id)));
     setSelected([]);
     showToast(t("ledger.deletedToast", { count: String(removed.length) }), {
@@ -355,12 +399,11 @@ export default function VisitLedger() {
           }}
           className="mt-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
         >
-          <input
-            type="date"
+          <DatePicker
             value={quickDate}
-            onChange={(e) => setQuickDate(e.target.value)}
-            aria-label={t("ledger.visitDate")}
-            className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+            onChange={setQuickDate}
+            ariaLabel={t("ledger.visitDate")}
+            className="shrink-0 border-(--color-hairline)! bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink)"
           />
           <input
             value={quickName}
@@ -386,11 +429,11 @@ export default function VisitLedger() {
           </span>
           <label className="flex items-center gap-1 text-[12px] text-(--color-ink-muted)">
             {t("ledger.onDate")}
-            <input
-              type="date"
+            <DatePicker
               value={batchDate}
-              onChange={(e) => setBatchDate(e.target.value)}
-              className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+              onChange={setBatchDate}
+              ariaLabel={t("ledger.onDate")}
+              className="border-(--color-hairline)! bg-(--color-canvas) text-[12px] text-(--color-ink)"
             />
           </label>
           {VISIT_STATUSES.map((status) => (
@@ -673,55 +716,43 @@ export default function VisitLedger() {
                     </button>
                   </td>
                   <td className="px-3 py-2">
-                    <input
-                      type="date"
+                    <DatePicker
                       value={visit.visitDate}
-                      onChange={(e) => setVisitDate(visit, e.target.value)}
-                      aria-label={t("ledger.colVisitDate")}
-                      className="rounded-(--radius-xs) border border-transparent bg-transparent px-1.5 py-1 text-[13px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
+                      onChange={(date) => setVisitDate(visit, date)}
+                      ariaLabel={t("ledger.colVisitDate")}
+                      className="text-[13px] text-(--color-ink-muted)"
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <select
+                    <Select
                       value={visit.serviceTag ?? ""}
-                      onChange={(e) => {
-                        if (e.target.value === "__manage") setManagingTags(true);
-                        else setServiceTag(visit, e.target.value);
+                      options={[
+                        ...tagOptions(serviceTags, t("ledger.noService")),
+                        { value: "__manage", label: t("ledger.manageTags") },
+                      ]}
+                      onChange={(next) => {
+                        if (next === "__manage") setManagingTags(true);
+                        else setServiceTag(visit, next);
                       }}
-                      aria-label={t("ledger.colService")}
-                      className={[
-                        "cursor-pointer rounded-full border px-2 py-1 text-[12px] outline-none",
+                      ariaLabel={t("ledger.colService")}
+                      className={
                         tagById(serviceTags, visit.serviceTag)
-                          ? TAG_COLORS[tagById(serviceTags, visit.serviceTag)!.color % TAG_COLORS.length]
-                          : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)",
-                      ].join(" ")}
-                    >
-                      <option value="">{t("ledger.noService")}</option>
-                      {serviceTags.map((tag) => (
-                        <option key={tag.id} value={tag.id}>
-                          {tag.label}
-                        </option>
-                      ))}
-                      <option value="__manage">{t("ledger.manageTags")}</option>
-                    </select>
+                          ? TAG_COLORS[
+                              tagById(serviceTags, visit.serviceTag)!.color % TAG_COLORS.length
+                            ]
+                          : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)"
+                      }
+                    />
                   </td>
                   <td className="px-3 py-2">
                     {/* A status is a cell you change, not a stage you graduate from. */}
-                    <select
+                    <Select
                       value={visit.status}
-                      onChange={(e) => setStatusWithUndo([visit.id], e.target.value as VisitStatus)}
-                      aria-label={t("ledger.colStatus")}
-                      className={[
-                        "cursor-pointer rounded-full border px-2 py-1 text-[12px] font-medium outline-none",
-                        STATUS_TONE[visit.status],
-                      ].join(" ")}
-                    >
-                      {VISIT_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {t(STATUS_LABEL[status])}
-                        </option>
-                      ))}
-                    </select>
+                      options={statusOptions(t)}
+                      onChange={(next) => setStatusWithUndo([visit.id], next as VisitStatus)}
+                      ariaLabel={t("ledger.colStatus")}
+                      className={["font-medium", STATUS_TONE[visit.status]].join(" ")}
+                    />
                   </td>
                   {/* One date, not three: the status already says which step this is, so
                       "已报 OA" plus 09/22 *is* "we reported it on the 22nd". Editing it edits
@@ -734,12 +765,11 @@ export default function VisitLedger() {
                         return <span className="pl-1 text-[13px] text-(--color-ink-faint)">—</span>;
                       }
                       return (
-                        <input
-                          type="date"
+                        <DatePicker
                           value={step.date}
-                          onChange={(e) => setStepDate(visit, step.field!, e.target.value)}
-                          aria-label={t("ledger.colLastStep")}
-                          className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-1 text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
+                          onChange={(date) => setStepDate(visit, step.field!, date)}
+                          ariaLabel={t("ledger.colLastStep")}
+                          className="text-[12px] text-(--color-ink-muted)"
                         />
                       );
                     })()}
@@ -886,47 +916,34 @@ function VisitCard({
   return (
     <li className="px-5 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="date"
+        <DatePicker
           value={visit.visitDate}
-          onChange={(e) => onSetVisitDate(visit.id, e.target.value)}
-          aria-label={t("ledger.colVisitDate")}
-          className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-[13px] text-(--color-ink) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
+          onChange={(date) => onSetVisitDate(visit.id, date)}
+          ariaLabel={t("ledger.colVisitDate")}
+          className="text-[13px] text-(--color-ink)"
         />
-        <select
+        <Select
           value={visit.serviceTag ?? ""}
-          onChange={(e) => onSetServiceTag(visit.id, e.target.value)}
-          aria-label={t("ledger.colService")}
-          className={[
-            "cursor-pointer rounded-full border px-2 py-0.5 text-[12px] outline-none",
+          options={tagOptions(tags, t("ledger.noService"))}
+          onChange={(next) => onSetServiceTag(visit.id, next)}
+          ariaLabel={t("ledger.colService")}
+          className={
             tag
               ? TAG_COLORS[tag.color % TAG_COLORS.length]
-              : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)",
-          ].join(" ")}
-        >
-          <option value="">{t("ledger.noService")}</option>
-          {tags.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+              : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)"
+          }
+        />
 
-        <select
-          value={visit.status}
-          onChange={(e) => onSetStatus(visit.id, e.target.value as VisitStatus)}
-          aria-label={t("ledger.colStatus")}
-          className={[
-            "ml-auto cursor-pointer rounded-full border px-2 py-0.5 text-[12px] font-medium outline-none",
-            STATUS_TONE[visit.status],
-          ].join(" ")}
-        >
-          {VISIT_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {t(STATUS_LABEL[status])}
-            </option>
-          ))}
-        </select>
+        <span className="ml-auto">
+          <Select
+            value={visit.status}
+            options={statusOptions(t)}
+            onChange={(next) => onSetStatus(visit.id, next as VisitStatus)}
+            ariaLabel={t("ledger.colStatus")}
+            align="end"
+            className={["font-medium", STATUS_TONE[visit.status]].join(" ")}
+          />
+        </span>
         <button
           onClick={() => onRemove(visit.id)}
           aria-label={t("common.delete")}
@@ -977,12 +994,11 @@ function VisitCard({
                 {t(label)}
               </span>
               {reached ? (
-                <input
-                  type="date"
+                <DatePicker
                   value={date}
-                  onChange={(e) => onSetStepDate(visit.id, field, e.target.value)}
-                  aria-label={t(label)}
-                  className="w-full rounded-(--radius-xs) border border-transparent bg-transparent text-center text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
+                  onChange={(next) => onSetStepDate(visit.id, field, next)}
+                  ariaLabel={t(label)}
+                  className="w-full text-center text-[12px] text-(--color-ink-muted)"
                 />
               ) : (
                 <span className="text-[12px] text-(--color-ink-faint)">—</span>
@@ -1496,11 +1512,11 @@ function BatchPanel({
             <span className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
               {t("ledger.visitDate")}
             </span>
-            <input
-              type="date"
+            <DatePicker
               value={visitDate}
-              onChange={(e) => setVisitDate(e.target.value)}
-              className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+              onChange={setVisitDate}
+              ariaLabel={t("ledger.visitDate")}
+              className="w-full border-(--color-hairline)! bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink)"
             />
             <span className="mt-0.5 block text-[11px] text-(--color-ink-faint)">
               {t("ledger.yearHint")}
@@ -1510,17 +1526,13 @@ function BatchPanel({
             <span className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
               {t("ledger.importAs")}
             </span>
-            <select
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value as VisitStatus)}
-              className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink) outline-none focus:border-(--color-primary)"
-            >
-              {VISIT_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {t(STATUS_LABEL[s])}
-                </option>
-              ))}
-            </select>
+              options={statusOptions(t)}
+              onChange={(next) => setStatus(next as VisitStatus)}
+              ariaLabel={t("ledger.importAs")}
+              className={["w-full justify-between", STATUS_TONE[status]].join(" ")}
+            />
           </label>
         </div>
         <p className="mt-1 text-[11px] text-(--color-ink-faint)">{t("ledger.importAsHint")}</p>
@@ -1530,11 +1542,11 @@ function BatchPanel({
             <span className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">
               {t("ledger.paidDate")}
             </span>
-            <input
-              type="date"
+            <DatePicker
               value={paidDate}
-              onChange={(e) => setPaidDate(e.target.value)}
-              className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink) outline-none focus:border-(--color-primary) sm:w-1/2"
+              onChange={setPaidDate}
+              ariaLabel={t("ledger.paidDate")}
+              className="w-full border-(--color-hairline)! bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink) sm:w-1/2"
             />
             <span className="mt-0.5 block text-[11px] text-(--color-ink-faint)">
               {t("ledger.importPaidDateHint")}
@@ -1700,11 +1712,11 @@ function ReconcilePanel({
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-(--color-hairline) pt-3">
               <label className="flex items-center gap-2 text-[13px] text-(--color-ink-muted)">
                 {t("ledger.paidDate")}
-                <input
-                  type="date"
+                <DatePicker
                   value={paidDate}
-                  onChange={(e) => setPaidDate(e.target.value)}
-                  className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+                  onChange={setPaidDate}
+                  ariaLabel={t("ledger.paidDate")}
+                  className="border-(--color-hairline)! bg-(--color-canvas) px-2 py-1 text-[13px] text-(--color-ink)"
                 />
               </label>
               <div className="flex gap-2">
