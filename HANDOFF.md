@@ -247,20 +247,28 @@ there is one month-grid implementation.
 accident, miss the toast, and find the record gone days later when a payment will not match. The
 toast stays as the second net for deletes that were meant.
 
-**The patient panel is a step track, because it was stating every step twice.** It used to put
-three labelled date inputs in a row and, directly beneath them, the raw trail of status changes
-— so one visit read "报 OA 09/28" from the stored date and "已报 OA 9/28 15:25" from the click,
-adjacent, with different times. Two readings of one fact next to each other are worse than
-either alone. Each visit now shows a three-dot track: a filled dot is a step that happened, with
-its day beneath it and the step still editable there; a hollow dot and a dash is one that has
-not. Progress is legible at a glance and each step is stated once. The click trail is audit
-data, so it sits behind a 操作记录 toggle.
+**The patient panel shows three labelled dates, not a progress track.** It briefly had a
+three-dot track with connectors. It looked like progress and cost four lines a visit to say what
+three labelled dates say in one — and a half-drawn connector between a skipped step and a
+completed one read as a bug rather than as information. The status chip already states where a
+visit is; the dates only have to state when each step happened. The click trail stays behind a
+操作记录 toggle, since it is audit data.
 
-The visit date used to be the largest, boldest thing on each row while carrying the least
-meaning; it is now ordinary weight, with the status chip given the emphasis. The header's
-counts became chips coloured to match the statuses they count, and the native date-picker glyph
-is hidden until hover on every inline date cell — at three per visit it was most of the visual
-noise.
+**Design pass, and what was deliberately not taken from it.** The house frontend skill is written
+for marketing pages and SaaS dashboards. Bento grids, perpetual micro-animations, magnetic
+buttons and hero sections were all rejected on purpose: this is a page someone stares at while
+doing repetitive data entry, and anything that moves on its own is a distraction. Swapping the
+icon set (the skill asks for Phosphor/Radix) was also declined — lucide is app-wide, and
+changing one page would leave two icon languages side by side. Skeleton loaders were declined
+because the store is local-first and there is no load to cover.
+
+What was taken: a sticky table header; press feedback and focus rings (the page had neither, and
+was mouse-only); colour moved out of raw Tailwind palette classes into tokens; rows tightened
+from 41px to 36px, which is two more visible at a time; dates set in `--font-mono` so they
+read as data; one boxed container removed from the day log; and motion in exactly three places —
+a popover that opens from its trigger, a row that tints for a moment when its status changes, and
+the press travel. All of it is transform/opacity and all of it is inside
+`prefers-reduced-motion: no-preference`.
 
 **The ledger shows one date, not three.** Three date columns beside a status column stated the
 same fact twice: a row reading 已报 OA with 09/22 beside it *is* "we reported it on the 22nd".

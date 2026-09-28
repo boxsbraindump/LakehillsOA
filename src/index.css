@@ -15,6 +15,9 @@
 @theme {
   --font-sans: "Outfit", "Inter", -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
 
+  /* Dates and counts read as data, not prose. System stack, so this costs no download. */
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
+
   /* Surface */
   --color-canvas: #ffffff;
   --color-canvas-soft: #f4f8f7;
@@ -383,5 +386,39 @@ body::before {
   }
   :where(button):not(:disabled):active {
     transform: translateY(0.5px);
+  }
+}
+
+/*
+ * Motion, kept to three places.
+ *
+ * This is a page someone stares at while doing repetitive data entry, so anything that moves on
+ * its own is a distraction, not delight — no perpetual loops, no floating, no shimmer. Motion
+ * here only answers "where did that come from" and "did that actually change". All of it is
+ * transform/opacity, and none of it runs when the reader has asked for less.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  /* A panel should look like it came out of the control that opened it. */
+  .pop-in {
+    animation: pop-in 140ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top center;
+  }
+
+  /* A row whose status just changed, so a batch of twenty is visibly a batch of twenty. */
+  .row-changed {
+    animation: row-changed 900ms ease-out;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.985);
+  }
+}
+
+@keyframes row-changed {
+  from {
+    background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
   }
 }

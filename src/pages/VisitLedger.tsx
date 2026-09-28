@@ -139,6 +139,13 @@ export default function VisitLedger() {
   const [visits, setVisits] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  /**
+   * Rows whose status just moved.
+   *
+   * Marking twenty rows at once changed twenty chips silently, several of them off screen, and
+   * the only evidence was a toast. A brief tint on each row says what was actually touched.
+   */
+  const [justChanged, setJustChanged] = useState<string[]>([]);
   const [detailName, setDetailName] = useState<string | null>(null);
   const [quickName, setQuickName] = useState("");
   // The date sticks between adds: a batch is one day's bookings typed straight through.
@@ -243,6 +250,8 @@ export default function VisitLedger() {
 
   function setStatusWithUndo(ids: string[], status: VisitStatus, onDate?: string) {
     const before = setStatus(ids, status, onDate);
+    setJustChanged(ids);
+    window.setTimeout(() => setJustChanged((prev) => (prev === ids ? [] : prev)), 900);
     if (before.length === 0) return;
     const message =
       before.length === 1
@@ -323,7 +332,7 @@ export default function VisitLedger() {
           {t("ledger.title")}
         </h1>
         {visits.length > 0 && (
-          <p className="text-[13px] text-(--color-ink-muted)">
+          <p className="font-mono text-[13px] text-(--color-ink-muted)">
             {t("ledger.summaryLine", {
               patients: String(patients.length),
               visits: String(visits.length),
@@ -464,7 +473,7 @@ export default function VisitLedger() {
           </button>
           <button
             onClick={() => setSelected([])}
-            className="text-[12px] text-(--color-ink-muted)"
+            className="font-mono text-[12px] text-(--color-ink-muted)"
           >
             {t("common.cancel")}
           </button>
@@ -477,8 +486,8 @@ export default function VisitLedger() {
         </div>
       ) : view === "log" ? (
         <div className="mt-4">
-        <div className="mt-4 overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
-          <p className="border-b border-(--color-hairline) bg-(--color-canvas-soft) px-4 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
+        <div className="mt-4">
+          <p className="border-b border-(--color-hairline) px-1 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
             {t("ledger.logTitle")}
           </p>
           {log.length === 0 ? (
@@ -490,10 +499,13 @@ export default function VisitLedger() {
               {log.slice(0, logLimit).map((day) => {
                 const open = openDay === day.date;
                 return (
-                  <li key={day.date} className={day.date === today ? "bg-(--color-primary)/[0.05]" : ""}>
+                  <li
+                    key={day.date}
+                    className={day.date === today ? "bg-(--color-primary)/[0.05]" : ""}
+                  >
                     <button
                       onClick={() => setOpenDay(open ? null : day.date)}
-                      className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-left"
+                      className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-1 py-2 text-left"
                     >
                       <span
                         className={[
@@ -600,7 +612,7 @@ export default function VisitLedger() {
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="min-w-[7ch] text-center text-[14px] font-medium text-(--color-ink) tabular-nums">
+              <span className="min-w-[7ch] text-center font-mono text-[14px] font-medium text-(--color-ink)">
                 {month}
               </span>
               <button
@@ -709,9 +721,10 @@ export default function VisitLedger() {
                   className={[
                     "border-b border-(--color-hairline) last:border-0",
                     selectedSet.has(visit.id) ? "bg-(--color-primary)/[0.06]" : "",
+                    justChanged.includes(visit.id) ? "row-changed" : "",
                   ].join(" ")}
                 >
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     <input
                       type="checkbox"
                       checked={selectedSet.has(visit.id)}
@@ -720,7 +733,7 @@ export default function VisitLedger() {
                       className="align-middle"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     <button
                       onClick={() => setDetailName(visit.name)}
                       className="max-w-[16ch] truncate text-[14px] font-medium text-(--color-ink) underline-offset-2 hover:text-(--color-primary) hover:underline sm:max-w-none"
@@ -728,15 +741,15 @@ export default function VisitLedger() {
                       {visit.name}
                     </button>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     <DatePicker
                       value={visit.visitDate}
                       onChange={(date) => setVisitDate(visit, date)}
                       ariaLabel={t("ledger.colVisitDate")}
-                      className="text-[13px] text-(--color-ink-muted)"
+                      className="font-mono text-[13px] text-(--color-ink-muted)"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     <Select
                       value={visit.serviceTag ?? ""}
                       options={[
@@ -757,7 +770,7 @@ export default function VisitLedger() {
                       }
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     {/* A status is a cell you change, not a stage you graduate from. */}
                     <Select
                       value={visit.status}
@@ -771,7 +784,7 @@ export default function VisitLedger() {
                       "已报 OA" plus 09/22 *is* "we reported it on the 22nd". Editing it edits
                       whichever step the status owns — the week's work is not always ticked off
                       on the day it happened. The other two dates stay on the patient's page. */}
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     {(() => {
                       const step = currentStep(visit);
                       if (!step.field || !step.date) {
@@ -782,7 +795,7 @@ export default function VisitLedger() {
                           value={step.date}
                           onChange={(date) => setStepDate(visit, step.field!, date)}
                           ariaLabel={t("ledger.colLastStep")}
-                          className="text-[12px] text-(--color-ink-muted)"
+                          className="font-mono text-[12px] text-(--color-ink-muted)"
                         />
                       );
                     })()}
@@ -875,28 +888,21 @@ export default function VisitLedger() {
   );
 }
 
-/**
- * One patient's whole record — the thing a spreadsheet of coloured cells could never show,
- * because a colour is overwritten by the next colour. Every visit keeps its trail.
- */
-/**
- * The three steps a visit goes through, as a track.
- *
- * The first version of this panel put three labelled date inputs in a row and, directly beneath
- * them, the raw trail of status changes — so every visit stated each step twice with two
- * different times: "报 OA 09/28" from the stored date, "已报 OA 9/28 15:25" from the click. Two
- * readings of one fact, adjacent, is worse than either alone.
- *
- * A track states it once and shows progress at the same time: a filled dot is a step that
- * happened, with the day it happened under it. The click trail is audit data, so it moves
- * behind a toggle.
- */
+/** The three steps, as three labelled dates — no graphics. */
 const VISIT_STEPS = [
   { field: "enteredDate", label: "ledger.colEnteredDate" },
   { field: "submittedDate", label: "ledger.colSubmittedDate" },
   { field: "paidDate", label: "ledger.colPaidDate" },
 ] as const;
 
+/**
+ * One visit inside a patient's record.
+ *
+ * This was briefly a three-dot progress track. It looked like progress and cost four lines a
+ * visit to say what three labelled dates say in one — and a half-drawn connector between a
+ * skipped step and a completed one read as a bug rather than as information. The status chip
+ * already states where the visit is; these dates only have to state when each step happened.
+ */
 function VisitCard({
   visit,
   tags,
@@ -927,13 +933,13 @@ function VisitCard({
   const tag = tagById(tags, visit.serviceTag);
 
   return (
-    <li className="px-5 py-4">
+    <li className="px-5 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <DatePicker
           value={visit.visitDate}
           onChange={(date) => onSetVisitDate(visit.id, date)}
           ariaLabel={t("ledger.colVisitDate")}
-          className="text-[13px] text-(--color-ink)"
+          className="font-mono text-[13px] text-(--color-ink)"
         />
         <Select
           value={visit.serviceTag ?? ""}
@@ -943,10 +949,9 @@ function VisitCard({
           className={
             tag
               ? TAG_COLORS[tag.color % TAG_COLORS.length]
-              : "border-(--color-hairline) bg-(--color-canvas-soft) text-(--color-ink-faint)"
+              : "border-(--color-hairline) text-(--color-ink-faint)"
           }
         />
-
         <span className="ml-auto">
           <Select
             value={visit.status}
@@ -966,67 +971,30 @@ function VisitCard({
         </button>
       </div>
 
-      <ol className="mt-3 flex items-start">
-        {VISIT_STEPS.map(({ field, label }, i) => {
-          const date = done[i];
-          const reached = Boolean(date);
-          return (
-            <li key={field} className="flex min-w-0 flex-1 flex-col items-center">
-              <div className="flex w-full items-center">
-                <span
-                  className={[
-                    "h-px flex-1",
-                    i === 0 ? "bg-transparent" : reached ? "bg-(--color-primary)" : "bg-(--color-hairline)",
-                  ].join(" ")}
-                />
-                <span
-                  className={[
-                    "h-2.5 w-2.5 shrink-0 rounded-full border-2",
-                    reached
-                      ? "border-(--color-primary) bg-(--color-primary)"
-                      : "border-(--color-hairline) bg-(--color-canvas)",
-                  ].join(" ")}
-                />
-                <span
-                  className={[
-                    "h-px flex-1",
-                    i === VISIT_STEPS.length - 1
-                      ? "bg-transparent"
-                      : done[i + 1]
-                        ? "bg-(--color-primary)"
-                        : "bg-(--color-hairline)",
-                  ].join(" ")}
-                />
-              </div>
-              <span
-                className={[
-                  "mt-1.5 text-[12px] whitespace-nowrap",
-                  reached ? "font-medium text-(--color-ink)" : "text-(--color-ink-faint)",
-                ].join(" ")}
-              >
-                {t(label)}
-              </span>
-              {reached ? (
-                <DatePicker
-                  value={date}
-                  onChange={(next) => onSetStepDate(visit.id, field, next)}
-                  ariaLabel={t(label)}
-                  className="w-full text-center text-[12px] text-(--color-ink-muted)"
-                />
-              ) : (
-                <span className="text-[12px] text-(--color-ink-faint)">—</span>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+        {VISIT_STEPS.map(({ field, label }, i) => (
+          <span key={field} className="flex items-center gap-1 text-[12px]">
+            <span className="text-(--color-ink-faint)">{t(label)}</span>
+            {done[i] ? (
+              <DatePicker
+                value={done[i]}
+                onChange={(next) => onSetStepDate(visit.id, field, next)}
+                ariaLabel={t(label)}
+                className="font-mono text-[12px] text-(--color-ink-muted)"
+              />
+            ) : (
+              <span className="px-1.5 text-(--color-ink-faint)">—</span>
+            )}
+          </span>
+        ))}
+        <button
+          onClick={() => setShowTrail(!showTrail)}
+          className="ml-auto text-[11px] text-(--color-ink-faint) hover:text-(--color-primary)"
+        >
+          {t(showTrail ? "ledger.hideTrail" : "ledger.showTrail")}
+        </button>
+      </div>
 
-      <button
-        onClick={() => setShowTrail(!showTrail)}
-        className="mt-2 text-[11px] text-(--color-ink-faint) hover:text-(--color-primary)"
-      >
-        {t(showTrail ? "ledger.hideTrail" : "ledger.showTrail")}
-      </button>
       {showTrail && (
         <ol className="mt-1 flex flex-col gap-0.5 border-l-2 border-(--color-hairline) pl-3">
           {visitHistory(visit).map((event, i) => (
@@ -1035,9 +1003,7 @@ function VisitCard({
               className="flex flex-wrap items-baseline gap-x-2 text-[11px]"
             >
               <span className="text-(--color-ink-muted)">{t(STATUS_LABEL[event.status])}</span>
-              <span className="text-(--color-ink-faint) tabular-nums">
-                {timestamp(event.at, lang)}
-              </span>
+              <span className="font-mono text-(--color-ink-faint)">{timestamp(event.at, lang)}</span>
             </li>
           ))}
         </ol>
@@ -1568,7 +1534,7 @@ function BatchPanel({
         )}
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="text-[13px] text-(--color-ink-muted)">
+          <span className="font-mono text-[13px] text-(--color-ink-muted)">
             {t("ledger.willAdd", { count: String(preview.length) })}
           </span>
           <div className="flex gap-2">

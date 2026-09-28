@@ -108,7 +108,7 @@ export function Popover({
         width,
         visibility: place ? "visible" : "hidden",
       }}
-      className="z-[60] overflow-hidden rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)"
+      className="pop-in z-[60] overflow-hidden rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-2)"
     >
       {children}
     </div>,
