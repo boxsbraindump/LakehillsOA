@@ -144,12 +144,22 @@ paid / denied. Denied is not terminal — it goes back to submitted once resubmi
 
 **The page is the job, not the model.** The first build exposed all five statuses as filter
 chips, three view tabs and two separate add buttons — nine controls on an empty ledger — and the
-owner could not tell what to do first. It is now three collapsible stages that are the workflow
-(not sent / waiting on money / money arrived), each row advancing with a single button that names
-the next step, with denial and delete behind a second. The week`s figure is stated at the top
-rather than hidden behind a view, since it is the only number the week turns on. Every step is
-one click and one click back via undo. **Resist adding a filter or a tab here**: the pile a row
-is in is the filter.
+owner could not tell what to do first. A second pass cut it to three piles named for where a
+visit sat; the owner then described the week and the names were still wrong. The week is three
+*actions* — put them into Unified Practice, send the claims to Office Ally, chase the money — so
+the piles are now ① 放进 UP / ② 报到 Office Ally / ③ 回钱, each named for the work still owed on it.
+
+**Two of the three are batch operations, and that is the whole point.** Scheduling happens one
+patient at a time in UP, but the week's claims go to Office Ally in a single upload — so every
+pile that can be emptied at once carries a header button that empties it, with one undo covering
+the batch. Marking a weekly OA submission used to be one click per person. Pile ③ is emptied by
+pasting the EOB instead, because money comes back per patient; the reconcile entry point lives on
+that pile rather than in the toolbar, where it was offered a second time.
+
+Paid visits are in no pile at all — they are the figure at the top, which is the number the other
+clinic gets paid on, with the two date groupings behind 按日期看 for anything older than the week.
+Every step is one click and one click back via undo. **Resist adding a filter or a tab here**:
+the pile a row is in is the filter.
 
 **Access, as of 2026-09-28.** Both users are already on `ALLOWED_EMAILS`, so this runs today in
 any workspace they create. Letting the other clinic's staff in still needs two things that do not
