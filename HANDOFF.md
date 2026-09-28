@@ -202,6 +202,35 @@ for labels it has not seen, since their sheet already carries this column. A sin
 character is a valid label, so the row parser's two-character minimum applies only to Latin
 text — "头" was being silently dropped.
 
+**Their sheet is one patient per COLUMN, and reading it row-wise produced garbage.** The real
+layout is a header row of patient names with each patient's visits down the column beneath —
+`09/18 肩颈` in a single cell, date and body area together, and no year anywhere. The parser
+now detects the shape instead of assuming it: a columnar sheet is one where *every* filled cell
+below the header states a date, because every one of them is a visit, while a row-per-record
+sheet always has a name cell with no date in it. Both shapes are tested. The missing year comes
+from the date being imported against, and a date landing more than ~3 months ahead of it is read
+as last year's — a sheet opened in January still holds December's visits.
+
+**Each step keeps its own date, and the dates are editable.** `enteredDate`,
+`submittedDate` and `paidDate` record the day the work happened, defaulted to today when
+the status changes and correctable afterwards. An event timestamp cannot stand in for this: a
+batch reported to Office Ally on Friday and ticked off on Monday would read as Monday, and "哪一
+天我们报了 OA，哪一天回的钱" was named as one of the clinic's real pain points. `history` still
+records when the click happened — the two answer different questions and both are kept.
+`operationDates` falls back to the trail for records written before the fields existed, and
+claims nothing about a step a visit never reached. Moving a visit backwards clears the dates of
+every step after it, or a pushed-back visit would keep its payment date and stay in the payout
+figure.
+
+The bulk bar carries a date, because a batch shares one: select the week's rows, set the day it
+actually went out, then say what happened to it. The calendar has a third lens over that same
+date (按报 OA 日期), so a day's submissions are as findable as a day's payments.
+
+**`new` is not counted as work done.** A visit appearing is the other clinic booking someone,
+not this clinic doing something, so the day's figure excludes it and reports it on its own line
+underneath. Counting an import of sixty bookings as sixty things handled would make the one
+number on the page meaningless.
+
 **Resist re-introducing a workflow shell here.** Three attempts at one were all rejected, each
 time because the page has to be the record first.
 

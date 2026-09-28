@@ -30,16 +30,22 @@ import {
   groupByPaidDate,
   groupByPatient,
   groupByVisitDate,
-  lastTouchedAt,
   isOpen,
   matchRemittance,
   matchesQuery,
+  operationDates,
   newVisitId,
   parseVisitRows,
   visitHistory,
   withStatus,
 } from "../lib/visitLedger";
-import type { ParsedVisitRow, PatientRecord, Visit, VisitStatus } from "../lib/visitLedger";
+import type {
+  DateLens,
+  ParsedVisitRow,
+  PatientRecord,
+  Visit,
+  VisitStatus,
+} from "../lib/visitLedger";
 import { readSheetFile } from "../lib/sheetImport";
 import {
   DEFAULT_SERVICE_TAGS,
@@ -111,13 +117,15 @@ export default function VisitLedger() {
   const [quickDate, setQuickDate] = useState(today);
   const [batchOpen, setBatchOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
-  const [byDate, setByDate] = useState<null | "paid" | "visit">(null);
+  const [byDate, setByDate] = useState<null | DateLens>(null);
   const [month, setMonth] = useState(() => monthKeyOf(todayKey()));
   const [serviceTags, setServiceTags] = useSyncedStorage<ServiceTag[]>(
     "lh-visit-service-tags",
     DEFAULT_SERVICE_TAGS,
   );
   const [managingTags, setManagingTags] = useState(false);
+  // "哪一天是我把这个 batch 报到 OA 的" — a batch shares one date, and it is often not today.
+  const [batchDate, setBatchDate] = useState(today);
   // What was done, and when — the question the clinic actually asked this page to answer.
   const [activityDay, setActivityDay] = useState(today);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -133,6 +141,20 @@ export default function VisitLedger() {
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
   const activity = useMemo(() => activityOn(visits, activityDay), [visits, activityDay]);
+  const dayGroups = useMemo(() => {
+    if (byDate === "visit") return groupByVisitDate(visits);
+    if (byDate === "paid") return groupByPaidDate(visits);
+    const byDay = bucketByDate(visits, "submitted");
+    return [...byDay.entries()]
+      .map(([date, group]) => ({
+        date,
+        total: group.length,
+        paid: group.filter((v) => v.status === "paid").length,
+        outstanding: group.filter(isOpen).length,
+        visits: group,
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [visits, byDate]);
   const detail = detailName ? patients.find((p) => p.name === detailName) ?? null : null;
 
   const thisWeek = useMemo(() => {
@@ -164,21 +186,24 @@ export default function VisitLedger() {
   }
 
   /** Every status change goes through here, so nothing can move without leaving a trail. */
-  function setStatus(ids: string[], status: VisitStatus, paidDate?: string): Visit[] {
+  function setStatus(ids: string[], status: VisitStatus, onDate?: string): Visit[] {
     const idSet = new Set(ids);
     const before = visits.filter((v) => idSet.has(v.id));
     setVisits((prev) =>
-      prev.map((v) =>
-        idSet.has(v.id)
-          ? withStatus(v, status, status === "paid" ? (paidDate ?? today) : undefined)
-          : v,
-      ),
+      prev.map((v) => (idSet.has(v.id) ? withStatus(v, status, onDate ?? today) : v)),
     );
     return before;
   }
 
-  function setStatusWithUndo(ids: string[], status: VisitStatus) {
-    const before = setStatus(ids, status);
+  /** Correcting one step's date afterwards, without touching the status or the trail. */
+  function setStepDate(visit: Visit, field: "enteredDate" | "submittedDate" | "paidDate", date: string) {
+    setVisits((prev) =>
+      prev.map((v) => (v.id === visit.id ? { ...v, [field]: date || undefined } : v)),
+    );
+  }
+
+  function setStatusWithUndo(ids: string[], status: VisitStatus, onDate?: string) {
+    const before = setStatus(ids, status, onDate);
     if (before.length === 0) return;
     const message =
       before.length === 1
@@ -203,11 +228,6 @@ export default function VisitLedger() {
     );
   }
 
-  function setPaidDate(visit: Visit, paidDate: string) {
-    setVisits((prev) =>
-      prev.map((v) => (v.id === visit.id ? { ...v, paidDate: paidDate || undefined } : v)),
-    );
-  }
 
   /**
    * The visit date is editable, not fixed at entry.
@@ -289,10 +309,17 @@ export default function VisitLedger() {
         <p className="mt-1 text-[20px] font-bold text-(--color-ink) tabular-nums">
           {t("ledger.didCount", { count: String(activity.total) })}
         </p>
+        {activity.added > 0 && (
+          <p className="text-[12px] text-(--color-ink-faint)">
+            {t("ledger.addedApart", { count: String(activity.added) })}
+          </p>
+        )}
 
         {activity.total > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {VISIT_STATUSES.filter((status) => activity.counts[status] > 0).map((status) => (
+            {VISIT_STATUSES.filter(
+              (status) => status !== "new" && activity.counts[status] > 0,
+            ).map((status) => (
               <span
                 key={status}
                 className={[
@@ -408,11 +435,20 @@ export default function VisitLedger() {
           <span className="text-[13px] font-medium text-(--color-ink)">
             {t("ledger.selectedCount", { count: String(selected.length) })}
           </span>
+          <label className="flex items-center gap-1 text-[12px] text-(--color-ink-muted)">
+            {t("ledger.onDate")}
+            <input
+              type="date"
+              value={batchDate}
+              onChange={(e) => setBatchDate(e.target.value)}
+              className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+            />
+          </label>
           {VISIT_STATUSES.map((status) => (
             <button
               key={status}
               onClick={() => {
-                setStatusWithUndo(selected, status);
+                setStatusWithUndo(selected, status, batchDate);
                 setSelected([]);
               }}
               className={[
@@ -446,7 +482,13 @@ export default function VisitLedger() {
       ) : byDate ? (
         <div className="mt-4">
           <div className="mb-3 flex flex-wrap items-center gap-1.5">
-            {(["paid", "visit"] as const).map((mode) => (
+            {(
+              [
+                ["submitted", "ledger.viewBySubmitted"],
+                ["paid", "ledger.viewByPaid"],
+                ["visit", "ledger.viewByVisit"],
+              ] as const
+            ).map(([mode, label]) => (
               <button
                 key={mode}
                 onClick={() => {
@@ -460,7 +502,7 @@ export default function VisitLedger() {
                     : "border-(--color-hairline) text-(--color-ink-muted)",
                 ].join(" ")}
               >
-                {t(mode === "paid" ? "ledger.viewByPaid" : "ledger.viewByVisit")}
+                {t(label)}
               </button>
             ))}
             <div className="ml-auto flex items-center gap-1">
@@ -493,6 +535,7 @@ export default function VisitLedger() {
             </div>
           </div>
 
+          {/* One grouping per lens, so "which day did we claim these" is answerable. */}
           <MonthCalendar
             month={month}
             today={today}
@@ -508,18 +551,15 @@ export default function VisitLedger() {
                   {formatDisplayDate(pickedDay, lang)}
                 </p>
                 <DayView
-                  groups={(byDate === "paid"
-                    ? groupByPaidDate(visits)
-                    : groupByVisitDate(visits)
-                  ).filter((g) => g.date === pickedDay)}
-                  mode={byDate}
+                  groups={dayGroups.filter((g) => g.date === pickedDay)}
+                  mode={byDate === "visit" ? "visit" : "paid"}
                   lang={lang}
                 />
               </>
             ) : (
               <DayView
-                groups={byDate === "paid" ? groupByPaidDate(visits) : groupByVisitDate(visits)}
-                mode={byDate}
+                groups={dayGroups}
+                mode={byDate === "visit" ? "visit" : "paid"}
                 lang={lang}
               />
             )}
@@ -561,11 +601,14 @@ export default function VisitLedger() {
                 <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colStatus")}
                 </th>
-                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
-                  {t("ledger.colPaidDate")}
+                <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
+                  {t("ledger.colEnteredDate")}
                 </th>
-                <th className="hidden px-3 py-2 text-[12px] font-medium text-(--color-ink-muted) sm:table-cell">
-                  {t("ledger.colLastTouched")}
+                <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
+                  {t("ledger.colSubmittedDate")}
+                </th>
+                <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
+                  {t("ledger.colPaidDate")}
                 </th>
               </tr>
             </thead>
@@ -646,22 +689,38 @@ export default function VisitLedger() {
                       ))}
                     </select>
                   </td>
-                  <td className="px-3 py-2">
-                    {visit.status === "paid" ? (
-                      <input
-                        type="date"
-                        value={visit.paidDate ?? ""}
-                        onChange={(e) => setPaidDate(visit, e.target.value)}
-                        aria-label={t("ledger.colPaidDate")}
-                        className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
-                      />
-                    ) : (
-                      <span className="text-[13px] text-(--color-ink-faint)">—</span>
-                    )}
-                  </td>
-                  <td className="hidden px-3 py-2 text-[12px] whitespace-nowrap text-(--color-ink-faint) tabular-nums sm:table-cell">
-                    {timestamp(lastTouchedAt(visit), lang)}
-                  </td>
+                  {/* Each step's own day, correctable — the week's work is not always ticked
+                      off on the day it happened. */}
+                  {(
+                    [
+                      ["enteredDate", "ledger.colEnteredDate"],
+                      ["submittedDate", "ledger.colSubmittedDate"],
+                      ["paidDate", "ledger.colPaidDate"],
+                    ] as const
+                  ).map(([field, label]) => {
+                    const dates = operationDates(visit);
+                    const value =
+                      field === "enteredDate"
+                        ? dates.entered
+                        : field === "submittedDate"
+                          ? dates.submitted
+                          : dates.paid;
+                    return (
+                      <td key={field} className="px-3 py-2">
+                        {value ? (
+                          <input
+                            type="date"
+                            value={value}
+                            onChange={(e) => setStepDate(visit, field, e.target.value)}
+                            aria-label={t(label)}
+                            className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-1 text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                          />
+                        ) : (
+                          <span className="pl-1 text-[13px] text-(--color-ink-faint)">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -1248,6 +1307,9 @@ function BatchPanel({
               onChange={(e) => setVisitDate(e.target.value)}
               className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink) outline-none focus:border-(--color-primary)"
             />
+            <span className="mt-0.5 block text-[11px] text-(--color-ink-faint)">
+              {t("ledger.yearHint")}
+            </span>
           </label>
           <label className="block">
             <span className="mb-1 block text-[12px] font-semibold text-(--color-ink-faint)">

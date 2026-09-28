@@ -36,6 +36,17 @@ export interface Visit {
   /** yyyy-mm-dd — the day the patient was seen. */
   visitDate: string;
   status: VisitStatus;
+  /**
+   * The day each step actually happened — not the day somebody got round to recording it.
+   *
+   * "哪一天我们报了 OA，哪一天回的钱" is the question the clinic could never answer, and an
+   * event timestamp cannot answer it either: a batch submitted on Monday and ticked off on
+   * Wednesday would read as Wednesday. So each step keeps its own date, defaulted to today
+   * when the status changes and editable afterwards. {@link history} still records when the
+   * click happened; these record when the work happened.
+   */
+  enteredDate?: string;
+  submittedDate?: string;
   /** yyyy-mm-dd — the day the money arrived. Only meaningful once paid. */
   paidDate?: string;
   note?: string;
@@ -79,20 +90,86 @@ export function lastTouchedAt(visit: Visit): number {
   return trail[trail.length - 1]?.at ?? visit.createdAt;
 }
 
-/** Apply a status change and record it, in one place so nothing can move without a trail. */
+/**
+ * Apply a status change and record it, in one place so nothing can move without a trail.
+ *
+ * `onDate` is the day the work happened, which is not always today — a batch reported to
+ * Office Ally on Friday may only be ticked off on Monday. Steps after the new status have
+ * their dates cleared: a visit pushed back from paid to submitted has no payment date any
+ * more, and leaving one behind would keep it in the week's payout figure.
+ */
 export function withStatus(
   visit: Visit,
   status: VisitStatus,
-  paidDate?: string,
+  onDate?: string,
   at = Date.now(),
 ): Visit {
-  return {
+  const next: Visit = {
     ...visit,
     status,
-    paidDate: status === "paid" ? paidDate : undefined,
     history: [...visitHistory(visit), { status, at }],
   };
+
+  for (const field of ["enteredDate", "submittedDate", "paidDate"] as const) {
+    if (FIELD_RANK[field] > STEP_RANK[status]) next[field] = undefined;
+  }
+
+  const field = DATE_FIELD[status];
+  if (field) next[field] = onDate ?? formatDateKey(new Date(at));
+
+  return next;
 }
+
+/**
+ * When each step happened, for a visit that may predate the dates being stored.
+ *
+ * A record written before this existed has only its trail, so the day of its last event with
+ * that status is the best that is actually known. Nothing is invented for a step that never
+ * happened.
+ */
+export function operationDates(visit: Visit): {
+  entered?: string;
+  submitted?: string;
+  paid?: string;
+} {
+  const fromHistory = (status: VisitStatus): string | undefined => {
+    const events = visitHistory(visit).filter((event) => event.status === status);
+    const last = events[events.length - 1];
+    return last ? formatDateKey(new Date(last.at)) : undefined;
+  };
+
+  return {
+    entered: visit.enteredDate ?? (STEP_RANK[visit.status] >= 1 ? fromHistory("entered") : undefined),
+    submitted:
+      visit.submittedDate ?? (STEP_RANK[visit.status] >= 2 ? fromHistory("submitted") : undefined),
+    paid: visit.paidDate,
+  };
+}
+
+/**
+ * How far through the clinic's own work a status is. `denied` sits level with `submitted`:
+ * it has been reported to Office Ally, it just has to go again.
+ */
+const STEP_RANK: Record<VisitStatus, number> = {
+  new: 0,
+  entered: 1,
+  submitted: 2,
+  denied: 2,
+  paid: 3,
+};
+
+/** Which date field a status owns, if any. `new` owns none — that is the other clinic's doing. */
+const DATE_FIELD: Partial<Record<VisitStatus, "enteredDate" | "submittedDate" | "paidDate">> = {
+  entered: "enteredDate",
+  submitted: "submittedDate",
+  paid: "paidDate",
+};
+
+const FIELD_RANK: Record<"enteredDate" | "submittedDate" | "paidDate", number> = {
+  enteredDate: 1,
+  submittedDate: 2,
+  paidDate: 3,
+};
 
 /** Money is owed to the other clinic per visit reimbursed, so only paid visits count. */
 export function isPayable(visit: Visit): boolean {
@@ -422,10 +499,17 @@ export function matchesQuery(visit: Visit, query: string): boolean {
  * one day for visits scattered across months, which is the whole reason the sheet stopped
  * working. Unpaid visits simply have no cell in the paid calendar.
  */
-export function bucketByDate(visits: Visit[], mode: "visit" | "paid"): Map<string, Visit[]> {
+export type DateLens = "visit" | "submitted" | "paid";
+
+export function bucketByDate(visits: Visit[], mode: DateLens): Map<string, Visit[]> {
   const byDay = new Map<string, Visit[]>();
   for (const visit of visits) {
-    const key = mode === "paid" ? visit.paidDate : visit.visitDate;
+    const key =
+      mode === "paid"
+        ? operationDates(visit).paid
+        : mode === "submitted"
+          ? operationDates(visit).submitted
+          : visit.visitDate;
     if (!key) continue;
     const bucket = byDay.get(key);
     if (bucket) bucket.push(visit);
@@ -466,13 +550,128 @@ export interface ParsedVisitRow {
  *
  * One name per line either way, so a plain list of names still works.
  */
+/**
+ * Split one pasted line into cells.
+ *
+ * Tabs are what a spreadsheet actually sends, so they win outright. Falling back to whitespace
+ * alone was wrong for a .csv: the whole line stayed one cell, and a header of "Name,Date" then
+ * looked like a patient with a visit under it.
+ */
+function splitCells(line: string): string[] {
+  const by = line.includes("\t") ? /\t/ : /\s{2,}/.test(line) ? /\s{2,}/ : /,/;
+  return line.split(by).map((cell) => cell.trim());
+}
+
+/**
+ * A date written without a year, which is how people write dates in a working sheet.
+ *
+ * The year is taken from the date the user is importing against. A sheet opened in January can
+ * still hold December's visits, so a date landing far in the future is read as last year's
+ * rather than next year's — being three months early is possible, being nine months late is not.
+ */
+function withInferredYear(month: number, day: number, reference: string): string {
+  const iso = (year: number) =>
+    `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const year = Number(reference.slice(0, 4));
+  const guess = iso(year);
+  const ahead = (Date.parse(guess) - Date.parse(reference)) / 86400000;
+  return ahead > 92 ? iso(year - 1) : guess;
+}
+
+/**
+ * Read one cell as "a date, and whatever else was written next to it".
+ *
+ * Their sheet writes a visit as "09/18 肩颈" — the date and the body area share a cell, with a
+ * single space between, so neither can be found by splitting on whitespace.
+ */
+export function readCellDate(
+  cell: string,
+  reference: string,
+): { date: string; rest: string } | null {
+  const strip = (text: string, from: number, length: number) =>
+    (text.slice(0, from) + " " + text.slice(from + length)).replace(/\s+/g, " ").trim();
+
+  const full = datesInLine(cell);
+  if (full.length > 0) {
+    return { date: full[0], rest: cell.replace(DATE_TOKEN, " ").replace(/\s+/g, " ").trim() };
+  }
+
+  const partial = /(?:^|[^\d])(\d{1,2})[-/.](\d{1,2})(?![\d/.-])/.exec(cell);
+  if (!partial) return null;
+  const month = Number(partial[1]);
+  const day = Number(partial[2]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const at = partial.index + partial[0].length - (partial[1].length + partial[2].length + 1);
+  return {
+    date: withInferredYear(month, day, reference),
+    rest: strip(cell, at, partial[1].length + partial[2].length + 1),
+  };
+}
+
+/**
+ * Is this grid one patient per *column*?
+ *
+ * Their sheet puts each patient's name in the header row and that patient's visits down the
+ * column beneath it, which is the opposite of one-row-per-record and was being read as garbage.
+ * The two shapes are told apart by a single question: in a columnar sheet every filled cell
+ * below the header carries a date, because every one of them *is* a visit. A row-per-record
+ * sheet always has a name cell with no date in it.
+ */
+function looksColumnar(grid: string[][], reference: string): boolean {
+  if (grid.length < 2) return false;
+  const header = grid[0].filter(Boolean);
+  if (header.length === 0) return false;
+  // A header naming a patient never states a date; a row of data always does.
+  if (header.some((cell) => readCellDate(cell, reference))) return false;
+
+  const body = grid.slice(1).flatMap((row) => row.filter(Boolean));
+  if (body.length === 0) return false;
+  return body.every((cell) => readCellDate(cell, reference) !== null);
+}
+
+const COLUMN_LABEL = /^(name|patient|patient name|date|service|area|姓名|患者|病人|日期|部位)$/i;
+
+/**
+ * Rows pasted or read out of a spreadsheet, in either shape the clinic writes.
+ *
+ * Which column is which is never assumed: a row's date is whatever in it looks like a date, and
+ * the name is what is left once dates, money and bare numbers are taken out. A row with no date
+ * of its own falls back to the date the user picked, and says so, rather than being silently
+ * dated today.
+ */
 export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitRow[] {
+  const grid = text
+    .split(/\r?\n/)
+    .map(splitCells)
+    .filter((row) => row.some((cell) => cell.length > 0));
+
+  if (grid.length === 0) return [];
+
+  if (looksColumnar(grid, fallbackDate)) {
+    const rows: ParsedVisitRow[] = [];
+    grid[0].forEach((name, column) => {
+      const patient = name.trim();
+      if (!patient || COLUMN_LABEL.test(patient)) return;
+      for (const row of grid.slice(1)) {
+        const cell = row[column]?.trim();
+        if (!cell) continue;
+        const read = readCellDate(cell, fallbackDate);
+        if (!read) continue;
+        rows.push({
+          name: patient,
+          visitDate: read.date,
+          usedFallbackDate: false,
+          ...(read.rest ? { service: read.rest } : {}),
+        });
+      }
+    });
+    return rows;
+  }
+
   const rows: ParsedVisitRow[] = [];
-
-  for (const raw of text.split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line) continue;
-
+  for (const cells of grid) {
+    const line = cells.join("\t");
     const dates = datesInLine(line);
     const cleaned = line
       .replace(DATE_TOKEN, "\t")
@@ -482,18 +681,17 @@ export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitR
     const words = cleaned
       .split(/\t|\s{2,}|,/)
       .map((cell) => cell.trim().replace(/\s+/g, " "))
-      // Two characters minimum for Latin, so a stray initial is not read as a name \u2014 but a
-      // single Chinese character is a whole word, and "\u5934" is exactly the kind of thing this
+      // Two characters minimum for Latin, so a stray initial is not read as a name — but a
+      // single Chinese character is a whole word, and "头" is exactly the kind of thing this
       // column holds.
       .filter(
-        (cell) =>
-          /[\u4e00-\u9fff]/.test(cell) || (cell.length > 1 && /[A-Za-z]/.test(cell)),
+        (cell) => /[\u4e00-\u9fff]/.test(cell) || (cell.length > 1 && /[A-Za-z]/.test(cell)),
       );
 
     const [name, ...rest] = words;
     if (!name) continue;
     // A spreadsheet's header row names its columns; it is not a patient.
-    if (/^(name|patient|patient name|姓名|患者|病人)$/i.test(name)) continue;
+    if (COLUMN_LABEL.test(name)) continue;
 
     rows.push({
       name,
@@ -518,11 +716,17 @@ export interface DayActivity {
   entries: ActivityEntry[];
   /** How many of each kind of change happened that day. */
   counts: Record<VisitStatus, number>;
+  /** Work this clinic did — everything except a visit first appearing. */
   total: number;
+  /** Visits that arrived that day, counted apart from the work. */
+  added: number;
 }
 
 /**
  * What was actually done on a given day.
+ *
+ * `new` is left out of the total on purpose: a visit appearing is the other clinic booking
+ * someone, not work this clinic did. It is counted separately so an import is still visible.
  *
  * This is the question the clinic asked the page to answer — "让我知道我今天弄了多少事情" — and
  * it is only answerable because every status change is timestamped. A spreadsheet of coloured
@@ -550,5 +754,7 @@ export function activityOn(visits: Visit[], dateKey: string): DayActivity {
   }
 
   entries.sort((a, b) => b.at - a.at);
-  return { date: dateKey, entries, counts, total: entries.length };
+  // The work is UP, Office Ally and chasing the money. A booking arriving is not this clinic
+  // doing something, so it is reported beside the figure rather than inside it.
+  return { date: dateKey, entries, counts, total: entries.length - counts.new, added: counts.new };
 }

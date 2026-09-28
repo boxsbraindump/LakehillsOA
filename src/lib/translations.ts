@@ -834,10 +834,17 @@ export const translations = {
 
   "ledger.addTitle": { zh: "一次录入一批", en: "Add a batch" },
   "ledger.addHelp": {
-    zh: "一行一个名字，可以直接打，也可以从别处整段贴进来。名字后面跟着别的内容没关系。",
-    en: "One name per line — type them or paste from anywhere. Anything after the name is ignored.",
+    zh: "选文件，或者在 Excel 里选中格子直接粘进来。两种排法都认：名字在列头、下面一列是他的每次就诊；或者一行一条记录。",
+    en: "Pick the file, or select the cells in Excel and paste. Both layouts work: a patient per column with their visits beneath, or one record per row.",
   },
-  "ledger.addPlaceholder": { zh: "王小明\n李华\n…", en: "Jane Doe\nRobert Smith\n…" },
+  "ledger.addPlaceholder": {
+    zh: "cici he\tjonathan zhu\n09/18 肩颈\t09/18 肩颈\n09/19 肩颈\t09/19 肩颈",
+    en: "cici he\tjonathan zhu\n09/18 neck\t09/18 neck",
+  },
+  "ledger.yearHint": {
+    zh: "表里只写了 09/18 这种没有年份的日期时，按这个日期的年份算；没写日期的那几行也用它。",
+    en: "Used for the year when the sheet writes dates like 09/18, and as the date for rows that state none.",
+  },
   "ledger.visitDate": { zh: "就诊日期", en: "Visit date" },
   "ledger.importAs": { zh: "导入为", en: "Import as" },
   "ledger.importAsHint": {
@@ -957,6 +964,11 @@ export const translations = {
   "ledger.sheetReading": { zh: "正在读…", en: "Reading…" },
   "ledger.sheetEmpty": { zh: "这个文件里没读到内容。如果有多个工作表，目前只读第一个。", en: "Nothing readable in that file. Only the first sheet is read." },
   "ledger.sheetFailed": { zh: "这个文件读不了。也可以在 Excel 里选中格子复制，直接粘到下面。", en: "Could not read that file. You can also select the cells in Excel and paste them below." },
+  "ledger.onDate": { zh: "日期", en: "on" },
+  "ledger.colEnteredDate": { zh: "录入 UP", en: "Into UP" },
+  "ledger.colSubmittedDate": { zh: "报 OA", en: "To OA" },
+  "ledger.addedApart": { zh: "另外录进来 {count} 条（他们那边的预约，不算我们的操作）", en: "{count} bookings also came in (theirs, not work you did)" },
+  "ledger.viewBySubmitted": { zh: "按报 OA 日期", en: "By the day claimed" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
