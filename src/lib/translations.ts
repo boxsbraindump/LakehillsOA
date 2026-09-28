@@ -792,6 +792,89 @@ export const translations = {
   },
 
 
+
+  "sidebar.visits": { zh: "就诊台账", en: "Visit ledger" },
+
+  "ledger.title": { zh: "就诊台账", en: "Visit ledger" },
+  "ledger.subtitle": {
+    zh: "另一家诊所的就诊记录走到哪一步、哪天回的钱、这周该结几个 —— 都不用再数。",
+    en: "Where each visit from the other clinic has got to, when the money came back, and how many to settle this week — without counting.",
+  },
+  "ledger.add": { zh: "添加", en: "Add" },
+  "ledger.reconcile": { zh: "对账", en: "Reconcile" },
+
+  "ledger.statusNew": { zh: "待录入 UP", en: "Not entered yet" },
+  "ledger.statusEntered": { zh: "已录入 UP", en: "In Unified Practice" },
+  "ledger.statusSubmitted": { zh: "已报 OA", en: "Submitted to OA" },
+  "ledger.statusPaid": { zh: "已回钱", en: "Paid" },
+  "ledger.statusDenied": { zh: "拒付待重报", en: "Denied — resubmit" },
+
+  "ledger.viewList": { zh: "全部", en: "All" },
+  "ledger.viewByPaid": { zh: "按回款日期", en: "By payment date" },
+  "ledger.viewByVisit": { zh: "按就诊日期", en: "By visit date" },
+  "ledger.filterAll": { zh: "全部", en: "All" },
+  "ledger.filterOpen": { zh: "等钱中", en: "Awaiting money" },
+  "ledger.showing": { zh: "共 {count} 条", en: "{count} shown" },
+  "ledger.selectAll": { zh: "全选", en: "Select all" },
+  "ledger.selectedCount": { zh: "选中 {count} 条", en: "{count} selected" },
+  "ledger.paidOn": { zh: "{date} 回款", en: "paid {date}" },
+  "ledger.stale": { zh: "已超过 {days} 天没回", en: "no money for over {days} days" },
+
+  "ledger.emptyTitle": { zh: "还没有记录", en: "Nothing here yet" },
+  "ledger.emptyBody": {
+    zh: "把 Excel 里的名字贴进来就能开始。绿色的贴一次选「已回钱」，黄色的选「已报 OA」，这样原来的状态就带过来了。",
+    en: "Paste the names from the spreadsheet to start. Bring the colours across by pasting each batch with its status.",
+  },
+
+  "ledger.addTitle": { zh: "添加就诊记录", en: "Add visits" },
+  "ledger.addHelp": { zh: "一行一个名字。名字后面跟着别的内容也没关系。", en: "One name per line. Anything after the name is ignored." },
+  "ledger.addPlaceholder": { zh: "王小明\n李华\n…", en: "Jane Doe\nRobert Smith\n…" },
+  "ledger.visitDate": { zh: "就诊日期", en: "Visit date" },
+  "ledger.importAs": { zh: "导入为", en: "Import as" },
+  "ledger.importAsHint": {
+    zh: "从旧表导入时用这个把颜色带过来：绿色的选「已回钱」，黄色的选「已报 OA」。",
+    en: "Use this to carry the old sheet's colours across — paste the green rows as paid, the yellow as submitted.",
+  },
+  "ledger.importPaidDateHint": {
+    zh: "旧表的绿色只说明回了钱，说不出是哪天回的。不确定就挑那一批大概的日期。",
+    en: "The old sheet's green says money arrived, not when. Pick roughly when that batch came back.",
+  },
+  "ledger.willAdd": { zh: "将添加 {count} 条", en: "{count} to add" },
+  "ledger.addConfirm": { zh: "添加", en: "Add" },
+  "ledger.addedToast": { zh: "添加了 {count} 条", en: "Added {count}" },
+  "ledger.deleteConfirm": { zh: "删除选中的 {count} 条？", en: "Delete {count} selected?" },
+  "ledger.deletedToast": { zh: "删除了 {count} 条", en: "Deleted {count}" },
+
+  "ledger.reconcileTitle": { zh: "对账", en: "Reconcile a remittance" },
+  "ledger.reconcileHelp": {
+    zh: "把保险公司的回款单整段复制粘贴进来。台账里有 {count} 条在等钱，我会去这段文字里找它们。",
+    en: "Paste the whole remittance. {count} visits are waiting on money; each one is looked for in the text.",
+  },
+  "ledger.reconcilePlaceholder": {
+    zh: "整段粘贴，不用整理格式…",
+    en: "Paste it all — no tidying needed…",
+  },
+  "ledger.matched": { zh: "对上了 {count} 条", en: "{count} matched" },
+  "ledger.matchedNone": { zh: "这段文字里没找到台账上的人。", en: "None of the waiting visits appear in this text." },
+  "ledger.ambiguous": { zh: "{count} 个重名要你确认", en: "{count} duplicate names need you" },
+  "ledger.ambiguousHint": {
+    zh: "同名的有多条在等钱，金额又都一样，分不出是哪一次。点一下你要结的那一次。",
+    en: "More than one open visit shares this name and every visit reimburses the same, so it cannot be told apart. Pick the one to settle.",
+  },
+  "ledger.ambiguousLines": { zh: "单子上出现 {lines} 次", en: "appears {lines}× in the remittance" },
+  "ledger.notReturned": { zh: "这次没回的 {count} 条", en: "{count} not in this remittance" },
+  "ledger.notReturnedHint": {
+    zh: "这些会留在原状态等下一批，不用你记。",
+    en: "These stay as they are and wait for the next one — nothing to remember.",
+  },
+  "ledger.paidDate": { zh: "回款日期", en: "Payment date" },
+  "ledger.settle": { zh: "把 {count} 条标为已回钱", en: "Mark {count} paid" },
+  "ledger.settledToast": { zh: "{count} 条已标为 {date} 回款", en: "{count} marked paid on {date}" },
+
+  "ledger.paidCount": { zh: "回了 {count} 个", en: "{count} came back" },
+  "ledger.dayBreakdown": { zh: "共 {total} · 已回 {paid} · 没回 {outstanding}", en: "{total} total · {paid} paid · {outstanding} outstanding" },
+  "ledger.noPayments": { zh: "还没有任何回款记录。", en: "No payments recorded yet." },
+  "ledger.noVisits": { zh: "还没有就诊记录。", en: "No visits yet." },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

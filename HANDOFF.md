@@ -93,6 +93,53 @@ live workspace **every OA case carried a `payer` field, no folder entry did, and
 thirty folder entries named an insurer only in their prose.** Any insurer-based grouping that
 honours the payer field alone will therefore look almost empty and leave a tagging chore behind.
 
+### Visit ledger (`src/pages/VisitLedger.tsx`, `src/lib/visitLedger.ts`)
+
+The owner's second clinic (Renton, massage only) cannot be given Unified Practice access without
+also seeing the first clinic's business, so its appointments arrive outside the system and
+Bellevue works each one through four steps. That was a spreadsheet with four cell colours, and it
+broke the week a single Kaiser remittance covered about sixty patients across both clinics and
+six thousand dollars.
+
+**Why colours could not hold it.** A colour says what state a row is in. It cannot say *which
+payment settled which visit* — so telling this round from the last one meant light green versus
+dark green, which caps you at two rounds; a partial return left no trace of what was still
+outstanding; and the weekly figure owed to the other clinic had to be counted by eye. One
+miscount cost a second pass through sixty rows.
+
+The ledger gives each visit a **paid date**, which makes rounds unlimited and the weekly figure a
+sum. Five statuses map onto the old sheet: `new` is the blank cell, then entered / submitted /
+paid / denied. Denied is not terminal — it goes back to submitted once resubmitted.
+
+- **Reconciliation searches the pasted remittance rather than parsing it.** For each open visit
+  it asks "is this patient named on any line of this text". A remittance has no format worth
+  relying on, and parsing one would fail invisibly; this way column layout, wrapping and codes
+  are all irrelevant, and the only thing it can miss is a name genuinely written differently —
+  which is reported as "not in this remittance" rather than swallowed. **Do not replace this with
+  a parser.**
+- Matching requires *every* part of the name on one line, so "DOE, JANE" finds a ledger entry of
+  "Jane Doe" while a shared surname alone settles nobody. Tokens under two characters are dropped.
+- **Duplicate names are never guessed.** Two open visits sharing a name go to a separate pile for
+  the front desk to pick from, because every visit reimburses the same amount and nothing in the
+  data can tell them apart. There are one or two such patients in real life.
+- It cannot report how many names in the remittance belong to the *other* clinic — nothing reads
+  the remittance's own list. It does not need to: matched visits are this clinic's, and that is
+  the number being asked for.
+- Two groupings, both wanted for different reasons: **by paid date** answers what the other clinic
+  is owed this week; **by visit date** shows a day where everything around it came back and that
+  one did not, which is how a bad day used to reveal itself on the sheet.
+- Importing the old sheet carries its colours across by pasting each batch with a status. When
+  that status is paid the payment date is **asked for**, never derived from the visit date — the
+  colour says money arrived, not when, and inventing a date would corrupt the payroll view.
+
+**Access, as of 2026-09-28.** Both users are already on `ALLOWED_EMAILS`, so this runs today in
+any workspace they create. Letting the other clinic's staff in still needs two things that do not
+exist yet: a member-management endpoint (workspace creation only enrols its creator), and a login
+path for an invited-but-not-allowlisted email — today such an email gets 403 unless
+`PUBLIC_SIGNUPS` is on, and adding them to `ALLOWED_EMAILS` would hand them the primary
+workspace, which is the one thing the owner must not do. The right shape is "a member of any
+workspace may sign in", checked against `user_workspaces`.
+
 ### VA request for service (`src/pages/VaRfs.tsx`, `src/lib/vaRfsForm.ts`)
 
 A veteran who runs out of authorised visits needs a fresh RFS. The ask sounded like a letter

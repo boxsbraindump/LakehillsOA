@@ -14,6 +14,7 @@ import {
   FileSearch,
   CreditCard,
   FileText,
+  Stethoscope,
   Sparkles,
   Trash2,
   Folder,
@@ -76,6 +77,12 @@ const NAV_ITEMS = [
     key: "sidebar.vaRfs",
     category: "oa-cases",
     icon: FileText,
+  },
+  {
+    to: "/visits",
+    key: "sidebar.visits",
+    category: "payments",
+    icon: Stethoscope,
   },
 ] as const;
 
