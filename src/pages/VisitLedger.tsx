@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
+  ListChecks,
+  Rows3,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -26,6 +28,7 @@ import {
 import {
   VISIT_STATUSES,
   activityLog,
+  activityOn,
   bucketByDate,
   groupByPaidDate,
   groupByPatient,
@@ -117,7 +120,17 @@ export default function VisitLedger() {
   const [quickDate, setQuickDate] = useState(today);
   const [batchOpen, setBatchOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
-  const [byDate, setByDate] = useState<null | DateLens>(null);
+  /**
+   * Three views, one page.
+   *
+   * Measured at eight weeks of real use, the day log had grown to 1,496px and pushed the first
+   * ledger row 2,191px down — two and a half screens before you could see your own records, and
+   * growing forever. Splitting these into separate routes was the obvious fix and the wrong one:
+   * reconciling and changing statuses both need the records in front of you, so the value here
+   * is that everything is one place. They are views, not pages.
+   */
+  const [view, setView] = useState<"table" | "log" | "calendar">("table");
+  const [lens, setLens] = useState<DateLens>("submitted");
   const [month, setMonth] = useState(() => monthKeyOf(todayKey()));
   const [serviceTags, setServiceTags] = useSyncedStorage<ServiceTag[]>(
     "lh-visit-service-tags",
@@ -141,9 +154,10 @@ export default function VisitLedger() {
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
   const log = useMemo(() => activityLog(visits), [visits]);
+  const todayWork = useMemo(() => activityOn(visits, today), [visits, today]);
   const dayGroups = useMemo(() => {
-    if (byDate === "visit") return groupByVisitDate(visits);
-    if (byDate === "paid") return groupByPaidDate(visits);
+    if (lens === "visit") return groupByVisitDate(visits);
+    if (lens === "paid") return groupByPaidDate(visits);
     const byDay = bucketByDate(visits, "submitted");
     return [...byDay.entries()]
       .map(([date, group]) => ({
@@ -154,7 +168,7 @@ export default function VisitLedger() {
         visits: group,
       }))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [visits, byDate]);
+  }, [visits, lens]);
   const detail = detailName ? patients.find((p) => p.name === detailName) ?? null : null;
 
   const thisWeek = useMemo(() => {
@@ -274,13 +288,176 @@ export default function VisitLedger() {
         )}
       </div>
 
-      {/* A run of days, each saying what was done on it.
+      {/* One row of tabs, not a nav: the same records seen three ways. */}
+      <div className="mt-5 flex flex-wrap gap-1.5">
+        {(
+          [
+            ["table", "ledger.viewTable", Rows3],
+            ["log", "ledger.viewLog", ListChecks],
+            ["calendar", "ledger.viewCalendar", CalendarDays],
+          ] as const
+        ).map(([key, label, Icon]) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            className={[
+              "flex items-center gap-1.5 rounded-(--radius-sm) border px-3 py-1.5 text-[13px]",
+              view === key
+                ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
+                : "border-(--color-hairline) text-(--color-ink-muted) hover:text-(--color-primary)",
+            ].join(" ")}
+          >
+            <Icon size={13} />
+            {t(label)}
+          </button>
+        ))}
+      </div>
 
-          The clinic does one kind of work per day — the week's visits go into Unified Practice
-          on one day, the claims go to Office Ally on another, the money lands on a third — so
-          "today" alone was the wrong shape. A sheet of coloured cells cannot show any of this:
-          recolouring a cell leaves no trace of when, so the day's work vanishes as it is done. */}
-      {visits.length > 0 && (
+      {view === "table" && todayWork && (
+        <button
+          onClick={() => setView("log")}
+          className="mt-3 flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-(--radius-md) border border-(--color-primary)/25 bg-(--color-primary)/[0.05] px-3 py-2 text-left"
+        >
+          <span className="text-[13px] font-medium text-(--color-ink)">
+            {t("ledger.todayLabel")}
+          </span>
+          {VISIT_STATUSES.filter(
+            (status) => status !== "new" && todayWork.counts[status] > 0,
+          ).map((status) => (
+            <span
+              key={status}
+              className={[
+                "rounded-full border px-2 py-0.5 text-[12px] font-medium",
+                STATUS_TONE[status],
+              ].join(" ")}
+            >
+              {t(STATUS_LABEL[status])} {todayWork.counts[status]}
+            </span>
+          ))}
+          {todayWork.total === 0 && (
+            <span className="text-[13px] text-(--color-ink-muted)">{t("ledger.todayNothing")}</span>
+          )}
+          <span className="ml-auto text-[12px] text-(--color-ink-muted)">
+            {t("ledger.viewLog")} →
+          </span>
+        </button>
+      )}
+
+      {/* Search first: the list is long by design, and finding a patient is the common errand. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        {/* Search filters the table, so it is only offered where there is a table to filter. */}
+        <div className={["relative w-full min-w-0 sm:w-auto sm:flex-1", view === "table" ? "" : "hidden"].join(" ")}>
+          <Search
+            size={14}
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-(--color-ink-faint)"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("ledger.searchPlaceholder")}
+            className="w-full rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) py-2 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+          />
+        </div>
+        <button
+          onClick={() => setBatchOpen(true)}
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
+        >
+          <Plus size={13} />
+          {t("ledger.addMany")}
+        </button>
+        <button
+          onClick={() => setReconciling(true)}
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-primary)/40 px-3 py-2 text-[13px] font-medium text-(--color-primary)"
+        >
+          <Scale size={13} />
+          {t("ledger.reconcileShort")}
+        </button>
+
+      </div>
+
+      {view === "table" && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            quickAdd();
+          }}
+          className="mt-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
+        >
+          <input
+            type="date"
+            value={quickDate}
+            onChange={(e) => setQuickDate(e.target.value)}
+            aria-label={t("ledger.visitDate")}
+            className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+          />
+          <input
+            value={quickName}
+            onChange={(e) => setQuickName(e.target.value)}
+            placeholder={t("ledger.quickAddPlaceholder")}
+            className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+          />
+          <button
+            type="submit"
+            disabled={!quickName.trim()}
+            className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
+          >
+            {t("ledger.quickAdd")}
+          </button>
+        </form>
+      )}
+
+      {/* The weekly batch lives here: select rows, say what happened to them. */}
+      {selected.length > 0 && view === "table" && (
+        <div className="sticky top-2 z-10 mt-3 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-primary)/40 bg-(--color-primary)/[0.07] px-3 py-2 backdrop-blur">
+          <span className="text-[13px] font-medium text-(--color-ink)">
+            {t("ledger.selectedCount", { count: String(selected.length) })}
+          </span>
+          <label className="flex items-center gap-1 text-[12px] text-(--color-ink-muted)">
+            {t("ledger.onDate")}
+            <input
+              type="date"
+              value={batchDate}
+              onChange={(e) => setBatchDate(e.target.value)}
+              className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+            />
+          </label>
+          {VISIT_STATUSES.map((status) => (
+            <button
+              key={status}
+              onClick={() => {
+                setStatusWithUndo(selected, status, batchDate);
+                setSelected([]);
+              }}
+              className={[
+                "rounded-full border px-2.5 py-1 text-[12px] font-medium",
+                STATUS_TONE[status],
+              ].join(" ")}
+            >
+              {t(STATUS_LABEL[status])}
+            </button>
+          ))}
+          <button
+            onClick={() => remove(selected)}
+            className="ml-auto flex items-center gap-1 text-[12px] text-rose-700"
+          >
+            <Trash2 size={12} />
+            {t("common.delete")}
+          </button>
+          <button
+            onClick={() => setSelected([])}
+            className="text-[12px] text-(--color-ink-muted)"
+          >
+            {t("common.cancel")}
+          </button>
+        </div>
+      )}
+
+      {visits.length === 0 ? (
+        <div className="mt-4 rounded-(--radius-lg) border border-dashed border-(--color-hairline) px-6 py-10 text-center">
+          <p className="text-[14px] text-(--color-ink-muted)">{t("ledger.emptyBody")}</p>
+        </div>
+      ) : view === "log" ? (
+        <div className="mt-4">
         <div className="mt-4 overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
           <p className="border-b border-(--color-hairline) bg-(--color-surface) px-4 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
             {t("ledger.logTitle")}
@@ -369,129 +546,8 @@ export default function VisitLedger() {
             </button>
           )}
         </div>
-      )}
-
-
-      {/* Search first: the list is long by design, and finding a patient is the common errand. */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        {/* Its own row on a phone: sharing one with three buttons squeezed it to 94px. */}
-        <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
-          <Search
-            size={14}
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-(--color-ink-faint)"
-          />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("ledger.searchPlaceholder")}
-            className="w-full rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) py-2 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
-          />
         </div>
-        <button
-          onClick={() => setBatchOpen(true)}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
-        >
-          <Plus size={13} />
-          {t("ledger.addMany")}
-        </button>
-        <button
-          onClick={() => setReconciling(true)}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-primary)/40 px-3 py-2 text-[13px] font-medium text-(--color-primary)"
-        >
-          <Scale size={13} />
-          {t("ledger.reconcileShort")}
-        </button>
-        <button
-          onClick={() => setByDate(byDate ? null : "paid")}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
-        >
-          <CalendarDays size={13} />
-          {t(byDate ? "ledger.backToList" : "ledger.seeByDate")}
-        </button>
-      </div>
-
-      {!byDate && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            quickAdd();
-          }}
-          className="mt-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
-        >
-          <input
-            type="date"
-            value={quickDate}
-            onChange={(e) => setQuickDate(e.target.value)}
-            aria-label={t("ledger.visitDate")}
-            className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
-          />
-          <input
-            value={quickName}
-            onChange={(e) => setQuickName(e.target.value)}
-            placeholder={t("ledger.quickAddPlaceholder")}
-            className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
-          />
-          <button
-            type="submit"
-            disabled={!quickName.trim()}
-            className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
-          >
-            {t("ledger.quickAdd")}
-          </button>
-        </form>
-      )}
-
-      {/* The weekly batch lives here: select rows, say what happened to them. */}
-      {selected.length > 0 && !byDate && (
-        <div className="sticky top-2 z-10 mt-3 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-primary)/40 bg-(--color-primary)/[0.07] px-3 py-2 backdrop-blur">
-          <span className="text-[13px] font-medium text-(--color-ink)">
-            {t("ledger.selectedCount", { count: String(selected.length) })}
-          </span>
-          <label className="flex items-center gap-1 text-[12px] text-(--color-ink-muted)">
-            {t("ledger.onDate")}
-            <input
-              type="date"
-              value={batchDate}
-              onChange={(e) => setBatchDate(e.target.value)}
-              className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
-            />
-          </label>
-          {VISIT_STATUSES.map((status) => (
-            <button
-              key={status}
-              onClick={() => {
-                setStatusWithUndo(selected, status, batchDate);
-                setSelected([]);
-              }}
-              className={[
-                "rounded-full border px-2.5 py-1 text-[12px] font-medium",
-                STATUS_TONE[status],
-              ].join(" ")}
-            >
-              {t(STATUS_LABEL[status])}
-            </button>
-          ))}
-          <button
-            onClick={() => remove(selected)}
-            className="ml-auto flex items-center gap-1 text-[12px] text-rose-700"
-          >
-            <Trash2 size={12} />
-            {t("common.delete")}
-          </button>
-          <button
-            onClick={() => setSelected([])}
-            className="text-[12px] text-(--color-ink-muted)"
-          >
-            {t("common.cancel")}
-          </button>
-        </div>
-      )}
-
-      {visits.length === 0 ? (
-        <div className="mt-4 rounded-(--radius-lg) border border-dashed border-(--color-hairline) px-6 py-10 text-center">
-          <p className="text-[14px] text-(--color-ink-muted)">{t("ledger.emptyBody")}</p>
-        </div>
-      ) : byDate ? (
+      ) : view === "calendar" ? (
         <div className="mt-4">
           <div className="mb-3 flex flex-wrap items-center gap-1.5">
             {(
@@ -504,12 +560,12 @@ export default function VisitLedger() {
               <button
                 key={mode}
                 onClick={() => {
-                  setByDate(mode);
+                  setLens(mode);
                   setPickedDay(null);
                 }}
                 className={[
                   "rounded-full border px-3 py-1.5 text-[13px]",
-                  byDate === mode
+                  lens === mode
                     ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
                     : "border-(--color-hairline) text-(--color-ink-muted)",
                 ].join(" ")}
@@ -551,7 +607,7 @@ export default function VisitLedger() {
           <MonthCalendar
             month={month}
             today={today}
-            byDay={bucketByDate(visits, byDate)}
+            byDay={bucketByDate(visits, lens)}
             picked={pickedDay}
             onPick={(day) => setPickedDay(day === pickedDay ? null : day)}
           />
@@ -564,14 +620,14 @@ export default function VisitLedger() {
                 </p>
                 <DayView
                   groups={dayGroups.filter((g) => g.date === pickedDay)}
-                  mode={byDate === "visit" ? "visit" : "paid"}
+                  mode={lens === "visit" ? "visit" : "paid"}
                   lang={lang}
                 />
               </>
             ) : (
               <DayView
                 groups={dayGroups}
-                mode={byDate === "visit" ? "visit" : "paid"}
+                mode={lens === "visit" ? "visit" : "paid"}
                 lang={lang}
               />
             )}

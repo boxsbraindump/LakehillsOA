@@ -226,6 +226,22 @@ The bulk bar carries a date, because a batch shares one: select the week's rows,
 actually went out, then say what happened to it. The calendar has a third lens over that same
 date (按报 OA 日期), so a day's submissions are as findable as a day's payments.
 
+**Three views, one page — and why not three pages.** At eight weeks of real use the day log
+had grown to 629px and pushed the first ledger row past a screen's worth of scrolling, growing
+without bound as the clinic kept using it. Routed sub-pages were the obvious fix and the wrong
+one: reconciling a payment and changing a status both need the records in front of you, and a
+nav layer is exactly what got the three earlier structures rejected. So `view` switches
+台账 / 每天干了什么 / 日历 in place, over one set of records. The table view keeps a single
+clickable line of today's work, which opens the log. Search only appears over the table, since
+that is the only thing it filters. The first ledger row now sits about a third of a screen down
+instead of past the fold.
+
+**Measure in a real viewport.** An earlier pass at this measured the page while the browser pane
+was collapsed to 0×0, where every block wraps to one character per line and heights are
+meaningless — it reported the title alone as 297px tall. Any layout measurement taken through
+the pane must set a viewport size first and check `document.documentElement.clientWidth`
+is non-zero before trusting a number.
+
 **The main view of the day's work is a log of days, not a card for today.** The clinic does
 one kind of work per day — the week's visits go into Unified Practice on one day, the claims go
 to Office Ally on another, the money lands on a third — so a single-day card with arrows was the

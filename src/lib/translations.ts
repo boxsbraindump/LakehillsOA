@@ -910,7 +910,6 @@ export const translations = {
   "ledger.markDenied": { zh: "标为拒付", en: "Mark denied" },
   "ledger.more": { zh: "更多", en: "More" },
 
-  "ledger.seeByDate": { zh: "按日期看", en: "By date" },
   "ledger.movedManyToast": { zh: "{count} 条 → {step}", en: "{count} moved → {step}" },
   "ledger.reconcileShort": { zh: "收到 EOB 了", en: "EOB arrived" },
   "ledger.summaryLine": {
@@ -922,7 +921,6 @@ export const translations = {
     en: "Search a patient, or a date (e.g. 2026-09-15)",
   },
   "ledger.noMatches": { zh: "没有匹配「{query}」的记录", en: "Nothing matches “{query}”" },
-  "ledger.backToList": { zh: "回到列表", en: "Back to the list" },
   "ledger.colPatient": { zh: "患者", en: "Patient" },
   "ledger.colVisitDate": { zh: "就诊日期", en: "Visit date" },
   "ledger.colStatus": { zh: "状态", en: "Status" },
@@ -966,6 +964,10 @@ export const translations = {
   "ledger.logTitle": { zh: "每天干了什么", en: "What was done, day by day" },
   "ledger.logEmpty": { zh: "还没有操作记录。", en: "Nothing done yet." },
   "ledger.logMore": { zh: "还有 {count} 天", en: "{count} more days" },
+  "ledger.viewTable": { zh: "台账", en: "Ledger" },
+  "ledger.viewLog": { zh: "每天干了什么", en: "Day by day" },
+  "ledger.viewCalendar": { zh: "日历", en: "Calendar" },
+  "ledger.todayNothing": { zh: "今天还没动过", en: "nothing yet today" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
