@@ -119,9 +119,16 @@ paid / denied. Denied is not terminal — it goes back to submitted once resubmi
   a parser.**
 - Matching requires *every* part of the name on one line, so "DOE, JANE" finds a ledger entry of
   "Jane Doe" while a shared surname alone settles nobody. Tokens under two characters are dropped.
-- **Duplicate names are never guessed.** Two open visits sharing a name go to a separate pile for
-  the front desk to pick from, because every visit reimburses the same amount and nothing in the
-  data can tell them apart. There are one or two such patients in real life.
+- **One remittance covers visits months apart, and prints one patient's payments pages apart.**
+  Both fall out of searching rather than reading in order, but they shape how a shared name is
+  handled: `datesInLine` reads the service dates a line states, and a namesake is settled only
+  when the remittance names *its* date. Two visits both dated are both settled, with nothing to
+  decide; one dated leaves the other open; **undated duplicates still go to a person**, because
+  every visit reimburses the same and nothing in the data separates them. A stated date that
+  matches no open visit is surfaced on the match rather than acted on — that is how a payment
+  landing on the wrong visit becomes visible.
+- The payment-date view shows the span of visit dates a payment covered and each name with its
+  own visit date, since "which visits did this cheque pay for" is not answerable otherwise.
 - It cannot report how many names in the remittance belong to the *other* clinic — nothing reads
   the remittance's own list. It does not need to: matched visits are this clinic's, and that is
   the number being asked for.

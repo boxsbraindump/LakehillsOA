@@ -395,8 +395,20 @@ function DayView({
               </span>
             )}
           </div>
-          <p className="mt-1 truncate text-[12px] text-(--color-ink-faint)">
-            {group.visits.map((visit) => visit.name).join(" · ")}
+          {mode === "byPaid" && group.visits.length > 0 && (
+            <p className="mt-0.5 text-[12px] text-(--color-ink-muted)">
+              {t("ledger.covers", {
+                from: [...group.visits].sort((a, b) => a.visitDate.localeCompare(b.visitDate))[0].visitDate,
+                to: [...group.visits].sort((a, b) => b.visitDate.localeCompare(a.visitDate))[0].visitDate,
+              })}
+            </p>
+          )}
+          <p className="mt-1 text-[12px] text-(--color-ink-faint)">
+            {mode === "byPaid"
+              ? group.visits
+                  .map((visit) => `${visit.name}（${visit.visitDate}）`)
+                  .join(" · ")
+              : group.visits.map((visit) => visit.name).join(" · ")}
           </p>
         </li>
       ))}
@@ -580,10 +592,18 @@ function ReconcilePanel({
                 <p className="text-[12px] text-(--color-ink-faint)">{t("ledger.matchedNone")}</p>
               ) : (
                 <ul className="max-h-40 overflow-y-auto rounded-(--radius-md) border border-(--color-hairline)">
-                  {result.matched.map(({ visit }) => (
-                    <li key={visit.id} className="flex justify-between gap-3 border-b border-(--color-hairline) px-3 py-1.5 text-[13px] last:border-0">
-                      <span className="truncate text-(--color-ink)">{visit.name}</span>
-                      <span className="shrink-0 text-(--color-ink-faint)">{visit.visitDate}</span>
+                  {result.matched.map(({ visit, datesOnRemittance }) => (
+                    <li key={visit.id} className="border-b border-(--color-hairline) px-3 py-1.5 text-[13px] last:border-0">
+                      <span className="flex justify-between gap-3">
+                        <span className="truncate text-(--color-ink)">{visit.name}</span>
+                        <span className="shrink-0 text-(--color-ink-faint)">{visit.visitDate}</span>
+                      </span>
+                      {datesOnRemittance && (
+                        <span className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700">
+                          <AlertTriangle size={11} className="shrink-0" />
+                          {t("ledger.dateMismatch", { dates: datesOnRemittance.join(" · ") })}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -603,6 +623,11 @@ function ReconcilePanel({
                       <p className="text-[13px] font-medium text-amber-900">
                         {group.name} · {t("ledger.ambiguousLines", { lines: String(group.lines) })}
                       </p>
+                      {group.datesOnRemittance.length > 0 && (
+                        <p className="text-[11px] text-amber-800">
+                          {t("ledger.remittanceSays", { dates: group.datesOnRemittance.join(" · ") })}
+                        </p>
+                      )}
                       <div className="mt-1 flex flex-wrap gap-1.5">
                         {group.visits.map((visit) => (
                           <button

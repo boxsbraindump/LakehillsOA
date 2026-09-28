@@ -880,6 +880,12 @@ export const translations = {
   "ledger.settle": { zh: "把 {count} 条标为已回钱", en: "Mark {count} paid" },
   "ledger.settledToast": { zh: "{count} 条已标为 {date} 回款", en: "{count} marked paid on {date}" },
 
+  "ledger.covers": { zh: "结的是 {from} 到 {to} 的就诊", en: "covers visits from {from} to {to}" },
+  "ledger.dateMismatch": {
+    zh: "单子上写的就诊日期是 {dates}，和台账对不上 —— 可能配错人了",
+    en: "the remittance says {dates}, which is not this visit — check it is the right one",
+  },
+  "ledger.remittanceSays": { zh: "单子上的就诊日期：{dates}", en: "remittance service dates: {dates}" },
   "ledger.paidCount": { zh: "回了 {count} 个", en: "{count} came back" },
   "ledger.dayBreakdown": { zh: "共 {total} · 已回 {paid} · 没回 {outstanding}", en: "{total} total · {paid} paid · {outstanding} outstanding" },
   "ledger.noPayments": { zh: "还没有任何回款记录。", en: "No payments recorded yet." },

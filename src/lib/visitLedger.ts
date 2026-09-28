@@ -72,16 +72,50 @@ export function lineNamesPatient(line: string, name: string): boolean {
   return tokens.every((token) => haystack.includes(compactForSearch(token)));
 }
 
+/**
+ * Dates written on one line of a remittance, normalised. Payers write the service date in
+ * whatever style they like, and a line also carries claim numbers and amounts, so anything
+ * that is not a plausible date is thrown away.
+ */
+export function datesInLine(line: string): string[] {
+  const found = new Set<string>();
+  const keep = (y: number, m: number, d: number) => {
+    if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return;
+    found.add(`${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  };
+
+  for (const [, y, m, d] of line.matchAll(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g)) {
+    keep(Number(y), Number(m), Number(d));
+  }
+  for (const [, m, d, y] of line.matchAll(/\b(\d{1,2})[/](\d{1,2})[/](\d{2}|\d{4})\b/g)) {
+    const year = Number(y) < 100 ? Number(y) + 2000 : Number(y);
+    keep(year, Number(m), Number(d));
+  }
+  // Compact yyyymmdd, which is what most remittances actually print.
+  for (const [, y, m, d] of line.matchAll(/\b(\d{4})(\d{2})(\d{2})\b/g)) {
+    keep(Number(y), Number(m), Number(d));
+  }
+  return [...found];
+}
+
 export interface RemittanceMatch {
   visit: Visit;
   /** How many lines of the pasted text name this person — >1 usually means repeat visits. */
   lines: number;
+  /**
+   * Set when the remittance states a service date for this patient and none of them is the
+   * date on the ledger. One remittance often settles visits months apart, so this is how a
+   * payment landing on the wrong visit shows itself instead of passing silently.
+   */
+  datesOnRemittance?: string[];
 }
 
 export interface AmbiguousMatch {
   name: string;
   visits: Visit[];
   lines: number;
+  /** Service dates the remittance gives for this patient, to inform the choice. */
+  datesOnRemittance: string[];
 }
 
 export interface RemittanceResult {
@@ -121,17 +155,38 @@ export function matchRemittance(visits: Visit[], text: string): RemittanceResult
   const notReturned: Visit[] = [];
 
   for (const group of byName.values()) {
-    const hits = lines.filter((line) => lineNamesPatient(line, group[0].name)).length;
+    const named = lines.filter((line) => lineNamesPatient(line, group[0].name));
+    const hits = named.length;
     if (hits === 0) {
       notReturned.push(...group);
       continue;
     }
+    const datesOnRemittance = [...new Set(named.flatMap(datesInLine))].sort();
     if (group.length === 1) {
-      matched.push({ visit: group[0], lines: hits });
+      const visit = group[0];
+      // Only a stated date can disagree; a remittance that prints none says nothing either way.
+      const disagrees =
+        datesOnRemittance.length > 0 && !datesOnRemittance.includes(visit.visitDate);
+      matched.push({
+        visit,
+        lines: hits,
+        ...(disagrees ? { datesOnRemittance } : {}),
+      });
+      continue;
+    }
+
+    // A shared name. A remittance scatters one patient's payments across its pages, so two
+    // lines far apart may be two different visits — but when each line states its service
+    // date there is nothing to choose between, and asking would be busywork. Only a visit the
+    // remittance dates explicitly is settled; a namesake it says nothing about stays open.
+    const datedHere = group.filter((visit) => datesOnRemittance.includes(visit.visitDate));
+    if (datedHere.length > 0) {
+      for (const visit of datedHere) matched.push({ visit, lines: hits });
+      notReturned.push(...group.filter((visit) => !datedHere.includes(visit)));
     } else {
-      // Same name, more than one visit still open: the remittance cannot tell them apart and
-      // neither can we. Amounts do not help — every visit reimburses the same.
-      ambiguous.push({ name: group[0].name, visits: group, lines: hits });
+      // No dates to separate them by, and amounts cannot help — every visit reimburses the
+      // same. This is the one case a person has to decide.
+      ambiguous.push({ name: group[0].name, visits: group, lines: hits, datesOnRemittance });
     }
   }
 
