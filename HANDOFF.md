@@ -270,6 +270,13 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**One way to add people, not two.** There used to be an inline name field under the search bar
+as well as a batch dialog. Two fields stacked under each other, one of which searched and one of
+which added, is a trap — and the batch dialog was always able to take a single name, since it
+reads one name per line. The inline form is gone and the dialog is the only entry point, with
+its copy leading on the simple case and its box focused on open. Adding one person is now: click
+加患者, type, Enter-Enter for a second, click 添加.
+
 **Sortable by patient, visit date or last step, either way up.** Clicking the active column
 turns it over; clicking a new one starts it the way that column reads (names up, dates down).
 Every comparator falls back to the other two keys, so a column of identical dates still comes out

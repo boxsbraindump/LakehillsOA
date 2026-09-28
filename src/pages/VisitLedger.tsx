@@ -179,9 +179,8 @@ export default function VisitLedger() {
    */
   const [justChanged, setJustChanged] = useState<string[]>([]);
   const [detailName, setDetailName] = useState<string | null>(null);
-  const [quickName, setQuickName] = useState("");
-  // The date sticks between adds: a batch is one day's bookings typed straight through.
-  const [quickDate, setQuickDate] = useState(today);
+
+
   const [batchOpen, setBatchOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   /**
@@ -252,23 +251,6 @@ export default function VisitLedger() {
   const selectedSet = new Set(selected);
   const allShownSelected = rows.length > 0 && rows.every((v) => selectedSet.has(v.id));
 
-  function quickAdd() {
-    const name = quickName.trim();
-    if (!name) return;
-    const at = Date.now();
-    setVisits((prev) => [
-      ...prev,
-      {
-        id: newVisitId() + Math.random().toString(36).slice(2, 5),
-        name,
-        visitDate: quickDate,
-        status: "new",
-        createdAt: at,
-        history: [{ status: "new", at }],
-      },
-    ]);
-    setQuickName("");
-  }
 
   /** Every status change goes through here, so nothing can move without leaving a trail. */
   function setStatus(ids: string[], status: VisitStatus, onDate?: string): Visit[] {
@@ -424,10 +406,10 @@ export default function VisitLedger() {
         </div>
         <button
           onClick={() => setBatchOpen(true)}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
         >
           <Plus size={13} />
-          {t("ledger.addMany")}
+          {t("ledger.addPatients")}
         </button>
         <button
           onClick={() => setReconciling(true)}
@@ -439,35 +421,6 @@ export default function VisitLedger() {
 
       </div>
 
-      {view === "table" && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            quickAdd();
-          }}
-          className="mt-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
-        >
-          <DatePicker
-            value={quickDate}
-            onChange={setQuickDate}
-            ariaLabel={t("ledger.visitDate")}
-            className="shrink-0 border-(--color-hairline)! bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink)"
-          />
-          <input
-            value={quickName}
-            onChange={(e) => setQuickName(e.target.value)}
-            placeholder={t("ledger.quickAddPlaceholder")}
-            className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
-          />
-          <button
-            type="submit"
-            disabled={!quickName.trim()}
-            className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
-          >
-            {t("ledger.quickAdd")}
-          </button>
-        </form>
-      )}
 
       {/* The weekly batch lives here: select rows, say what happened to them.
 
@@ -1528,6 +1481,7 @@ function BatchPanel({
         )}
 
         <textarea
+          autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t("ledger.addPlaceholder")}

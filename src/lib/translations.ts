@@ -824,21 +824,15 @@ export const translations = {
     zh: "上面填个名字按回车，就开始了。",
     en: "Type a name above and press enter — that is the whole of it.",
   },
-  "ledger.addMany": { zh: "一次录入一批", en: "Add a batch at once" },
-  "ledger.quickAdd": { zh: "加入", en: "Add" },
-  "ledger.quickAddPlaceholder": {
-    zh: "输入姓名按回车 —— 日期会留着，可以一个接一个加",
-    en: "Type a name and press enter — the date stays, so you can keep going",
-  },
 
-  "ledger.addTitle": { zh: "一次录入一批", en: "Add a batch" },
+  "ledger.addTitle": { zh: "加患者", en: "Add patients" },
   "ledger.addHelp": {
-    zh: "选文件，或者在 Excel 里选中格子直接粘进来。两种排法都认：名字在列头、下面一列是他的每次就诊；或者一行一条记录。",
-    en: "Pick the file, or select the cells in Excel and paste. Both layouts work: a patient per column with their visits beneath, or one record per row.",
+    zh: "一行一个名字，加一个也行。或者选 Excel 文件、在 Excel 里选中格子直接粘进来 —— 名字在列头、下面一列是他的每次就诊，或者一行一条记录，两种排法都认。",
+    en: "One name per line — one is fine too. Or pick an Excel file, or select the cells and paste: a patient per column with their visits beneath, or one record per row, both work.",
   },
   "ledger.addPlaceholder": {
-    zh: "cici he\tjonathan zhu\n09/18 肩颈\t09/18 肩颈\n09/19 肩颈\t09/19 肩颈",
-    en: "cici he\tjonathan zhu\n09/18 neck\t09/18 neck",
+    zh: "cici he\njonathan zhu\n\n…或者从 Excel 整块粘进来，带日期和部位也认",
+    en: "cici he\njonathan zhu\n\n…or paste a block from Excel — dates and areas are read too",
   },
   "ledger.yearHint": {
     zh: "表里只写了 09/18 这种没有年份的日期时，按这个日期的年份算；没写日期的那几行也用它。",
@@ -972,6 +966,7 @@ export const translations = {
   "ledger.deleteOne": { zh: "{name} · {date} 这一次就诊会被删掉。", en: "{name}’s visit on {date} will be removed." },
   "ledger.deleteMany": { zh: "选中的 {count} 条记录都会被删掉。", en: "All {count} selected records will be removed." },
   "ledger.thisMonthToday": { zh: "今天", en: "Today" },
+  "ledger.addPatients": { zh: "加患者", en: "Add patients" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
