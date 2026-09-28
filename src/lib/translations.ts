@@ -860,8 +860,8 @@ export const translations = {
     en: "Paste the whole remittance. {count} visits are waiting on money; each one is looked for in the text.",
   },
   "ledger.reconcilePlaceholder": {
-    zh: "整段粘贴，不用整理格式…",
-    en: "Paste it all — no tidying needed…",
+    zh: "整段粘贴 EOB，不用整理格式。或者照着打，一行一个：\ncici 9-28-2026 $99\njessica 9-15-2026 $99\nnathan 8-29-2026 $99",
+    en: "Paste the whole EOB — no tidying needed. Or type one per line:\ncici 9-28-2026 $99\njessica 9-15-2026 $99",
   },
   "ledger.matched": { zh: "对上了 {count} 条", en: "{count} matched" },
   "ledger.matchedNone": { zh: "这段文字里没找到台账上的人。", en: "None of the waiting visits appear in this text." },
@@ -894,12 +894,6 @@ export const translations = {
   "ledger.thisWeekLabel": { zh: "这一周（{from} – {to}）", en: "This week ({from} – {to})" },
   "ledger.thisWeekCount": { zh: "回了 {count} 个，这就是要结的数", en: "{count} came back — that is what is owed" },
 
-  "ledger.stageTodo": { zh: "① 还没报出去", en: "1. Not sent yet" },
-  "ledger.stageTodoHint": { zh: "录进 Unified Practice，再报到 Office Ally", en: "Put into Unified Practice, then submit to Office Ally" },
-  "ledger.stageWaiting": { zh: "② 等钱", en: "2. Waiting on money" },
-  "ledger.stageWaitingHint": { zh: "已经报出去了，等保险公司回款", en: "Submitted — waiting for the payer" },
-  "ledger.stageDone": { zh: "③ 钱回来了", en: "3. Money arrived" },
-  "ledger.stageDoneHint": { zh: "这些才算数，按周结给另一家诊所", en: "Only these count towards what the other clinic is paid" },
   "ledger.stageEmpty": { zh: "这里暂时没有人。", en: "Nobody here right now." },
 
   "ledger.stepEntered": { zh: "已录入 UP →", en: "In UP →" },
@@ -910,9 +904,27 @@ export const translations = {
   "ledger.markDenied": { zh: "标为拒付", en: "Mark denied" },
   "ledger.more": { zh: "更多", en: "More" },
 
-  "ledger.reconcileCta": { zh: "回款单来了？对一下这 {count} 条", en: "Remittance arrived? Match it against these {count}" },
   "ledger.seeByDate": { zh: "按日期看", en: "By date" },
   "ledger.backToStages": { zh: "回到三步", en: "Back to the steps" },
+  "ledger.stageToUp": { zh: "① 放进 UP", en: "1. Into Unified Practice" },
+  "ledger.stageToUpHint": {
+    zh: "这些人还没排班 —— 去 UP 上一个个排，排完在这里标一下",
+    en: "Not scheduled yet — book each one in UP, then mark them here",
+  },
+  "ledger.stageToOa": { zh: "② 报到 Office Ally", en: "2. Claim to Office Ally" },
+  "ledger.stageToOaHint": {
+    zh: "已经在 UP 上了，等每周统一报一次 —— 报完点右边，一次全标",
+    en: "In UP already, waiting for the weekly upload — one button marks them all",
+  },
+  "ledger.stageToPay": { zh: "③ 回钱", en: "3. Waiting on payment" },
+  "ledger.stageToPayHint": {
+    zh: "已经报出去了 —— 收到 EOB 就粘贴进来，自动对上是哪几个人哪几天",
+    en: "Claimed and waiting — paste the EOB in and it matches the names and dates for you",
+  },
+  "ledger.bulkEntered": { zh: "这 {count} 个都放好了", en: "All {count} scheduled" },
+  "ledger.bulkSubmitted": { zh: "这 {count} 个都报了", en: "All {count} claimed" },
+  "ledger.movedManyToast": { zh: "{count} 条 → {step}", en: "{count} moved → {step}" },
+  "ledger.reconcileShort": { zh: "收到 EOB 了", en: "EOB arrived" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

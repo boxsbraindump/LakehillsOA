@@ -31,16 +31,38 @@ const STATUS_LABEL: Record<VisitStatus, TranslationKey> = {
 /**
  * The page is the job, not the data model.
  *
- * The first version put the whole machine on screen at once — five statuses as filter chips,
- * three view tabs, and two separate buttons that both added people — so an empty ledger
- * offered nine controls and no clue which to touch first. There are only ever three piles:
- * work not yet sent, work waiting on money, and money that has arrived. A row moves to the
- * next pile with one button, and anything unusual hides behind a second one.
+ * The week has exactly three jobs in it — put them into Unified Practice, send the claims to
+ * Office Ally, chase the money — so the page is those three jobs and nothing else. A pile is
+ * named for the work still owed on it, and each pile's own button does that work for everyone
+ * in it at once, because that is how two of the three actually happen: one upload, one batch.
+ * Paid visits leave the piles entirely; they are the figure at the top, which is the number
+ * the other clinic gets paid on.
  */
 const STAGES = [
-  { key: "todo", statuses: ["new", "entered"] as VisitStatus[], title: "ledger.stageTodo", hint: "ledger.stageTodoHint" },
-  { key: "waiting", statuses: ["submitted", "denied"] as VisitStatus[], title: "ledger.stageWaiting", hint: "ledger.stageWaitingHint" },
-  { key: "done", statuses: ["paid"] as VisitStatus[], title: "ledger.stageDone", hint: "ledger.stageDoneHint" },
+  {
+    key: "toUp",
+    statuses: ["new"] as VisitStatus[],
+    title: "ledger.stageToUp",
+    hint: "ledger.stageToUpHint",
+    // Scheduling is one patient at a time in UP, but a day's worth often goes in together.
+    bulk: { to: "entered" as VisitStatus, label: "ledger.bulkEntered" as TranslationKey },
+  },
+  {
+    key: "toOa",
+    statuses: ["entered"] as VisitStatus[],
+    title: "ledger.stageToOa",
+    hint: "ledger.stageToOaHint",
+    // The week's claims go to Office Ally in a single upload. One click, not one per person.
+    bulk: { to: "submitted" as VisitStatus, label: "ledger.bulkSubmitted" as TranslationKey },
+  },
+  {
+    key: "toPay",
+    statuses: ["submitted", "denied"] as VisitStatus[],
+    title: "ledger.stageToPay",
+    hint: "ledger.stageToPayHint",
+    // Money comes back per patient on an EOB, so this pile empties by matching, not marking.
+    bulk: null,
+  },
 ] as const;
 
 /** What the single button on a row should do, given where that row is now. */
@@ -63,9 +85,8 @@ export default function VisitLedger() {
   const [batchOpen, setBatchOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [byDate, setByDate] = useState<null | "paid" | "visit">(null);
-  const [expanded, setExpanded] = useState<string | null>("waiting");
+  const [expanded, setExpanded] = useState<string | null>("toUp");
 
-  const openCount = visits.filter(isOpen).length;
 
   /** The one number the week turns on: how many visits the other clinic gets paid for. */
   const thisWeek = useMemo(() => {
@@ -110,6 +131,23 @@ export default function VisitLedger() {
       label: t("common.undo"),
       onClick: () => setVisits((prev) => prev.map((v) => (v.id === before.id ? before : v))),
     });
+  }
+
+  /** Two of the three weekly jobs happen to everyone at once, so they undo that way too. */
+  function moveManyWithUndo(group: readonly Visit[], status: VisitStatus) {
+    if (group.length === 0) return;
+    const before = move(group.map((v) => v.id), status);
+    showToast(
+      t("ledger.movedManyToast", { count: String(group.length), step: t(STATUS_LABEL[status]) }),
+      {
+        label: t("common.undo"),
+        onClick: () =>
+          setVisits((prev) => {
+            const byId = new Map(before.map((v) => [v.id, v]));
+            return prev.map((v) => byId.get(v.id) ?? v);
+          }),
+      },
+    );
   }
 
   function remove(visit: Visit) {
@@ -187,16 +225,7 @@ export default function VisitLedger() {
         >
           {t("ledger.addMany")}
         </button>
-        {/* Offered only once there is something a payment could actually settle. */}
-        {openCount > 0 && (
-          <button
-            onClick={() => setReconciling(true)}
-            className="flex items-center gap-1 text-[12px] font-medium text-(--color-primary)"
-          >
-            <Scale size={12} />
-            {t("ledger.reconcileCta", { count: String(openCount) })}
-          </button>
-        )}
+        {/* Reconciling lives on pile ③, which is the pile it empties. */}
         {visits.length > 0 && (
           <button
             onClick={() => setByDate(byDate ? null : "paid")}
@@ -245,27 +274,47 @@ export default function VisitLedger() {
                 key={stage.key}
                 className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas)"
               >
-                <button
-                  onClick={() => setExpanded(open ? null : stage.key)}
-                  className="flex w-full items-center gap-2 px-4 py-3 text-left"
-                >
-                  <ChevronRight
-                    size={15}
-                    className={[
-                      "shrink-0 text-(--color-ink-faint) transition-transform",
-                      open ? "rotate-90" : "",
-                    ].join(" ")}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-bold text-(--color-ink)">
-                      {t(stage.title)}
-                      <span className="ml-1.5 text-[14px] font-medium text-(--color-ink-muted) tabular-nums">
-                        {stage.visits.length}
+                <div className="flex items-center gap-2 px-4 py-3">
+                  <button
+                    onClick={() => setExpanded(open ? null : stage.key)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
+                    <ChevronRight
+                      size={15}
+                      className={[
+                        "shrink-0 text-(--color-ink-faint) transition-transform",
+                        open ? "rotate-90" : "",
+                      ].join(" ")}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-bold text-(--color-ink)">
+                        {t(stage.title)}
+                        <span className="ml-1.5 text-[14px] font-medium text-(--color-ink-muted) tabular-nums">
+                          {stage.visits.length}
+                        </span>
                       </span>
+                      <span className="block text-[12px] text-(--color-ink-faint)">{t(stage.hint)}</span>
                     </span>
-                    <span className="block text-[12px] text-(--color-ink-faint)">{t(stage.hint)}</span>
-                  </span>
-                </button>
+                  </button>
+                  {/* The whole pile at once — that is what the weekly job actually is. */}
+                  {stage.bulk && stage.visits.length > 0 && (
+                    <button
+                      onClick={() => moveManyWithUndo(stage.visits, stage.bulk.to)}
+                      className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary)"
+                    >
+                      {t(stage.bulk.label, { count: String(stage.visits.length) })}
+                    </button>
+                  )}
+                  {stage.key === "toPay" && stage.visits.length > 0 && (
+                    <button
+                      onClick={() => setReconciling(true)}
+                      className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-primary)/40 px-2.5 py-1.5 text-[12px] font-medium text-(--color-primary)"
+                    >
+                      <Scale size={12} />
+                      {t("ledger.reconcileShort")}
+                    </button>
+                  )}
+                </div>
 
                 {open && stage.visits.length > 0 && (
                   <ul className="flex flex-col divide-y divide-(--color-hairline) border-t border-(--color-hairline)">
