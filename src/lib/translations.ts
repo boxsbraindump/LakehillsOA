@@ -926,6 +926,22 @@ export const translations = {
     en: "{total} visits · {paid} paid · {open} still waiting",
   },
   "ledger.patientSpan": { zh: "{from} 到 {to}", en: "{from} to {to}" },
+  "ledger.prevMonth": { zh: "上个月", en: "Previous month" },
+  "ledger.nextMonth": { zh: "下个月", en: "Next month" },
+  "ledger.thisMonth": { zh: "本月", en: "This month" },
+  "ledger.dayCount": { zh: "{count} 人", en: "{count}" },
+  "ledger.sun": { zh: "日", en: "Sun" },
+  "ledger.mon": { zh: "一", en: "Mon" },
+  "ledger.tue": { zh: "二", en: "Tue" },
+  "ledger.wed": { zh: "三", en: "Wed" },
+  "ledger.thu": { zh: "四", en: "Thu" },
+  "ledger.fri": { zh: "五", en: "Fri" },
+  "ledger.sat": { zh: "六", en: "Sat" },
+  "ledger.pdfPick": { zh: "选 EOB 的 PDF —— 直接读，不用复制粘贴", en: "Choose the EOB PDF — read directly, no copying" },
+  "ledger.pdfReading": { zh: "正在读…", en: "Reading…" },
+  "ledger.pdfNoText": { zh: "这份 PDF 里没有可读的文字，应该是扫描件。只能先手打几行，或者换一份原始 PDF。", en: "No text in this PDF — it looks like a scan. Type a few lines instead, or use the original PDF." },
+  "ledger.pdfFailed": { zh: "这份 PDF 读不了。可以先手打几行。", en: "Could not read this PDF. Type a few lines instead." },
+  "ledger.undatedRows": { zh: "{count} 行没写就诊日期，用了上面选的那个日期", en: "{count} rows had no date of their own and used the date above" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

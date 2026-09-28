@@ -1,11 +1,30 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, Plus, Scale, Search, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Scale,
+  Search,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "../components/LanguageProvider";
 import { useToast } from "../components/ToastProvider";
-import { todayKey, formatDisplayDate, shiftDateKey } from "../lib/date";
+import {
+  todayKey,
+  formatDisplayDate,
+  shiftDateKey,
+  monthKeyOf,
+  shiftMonthKey,
+  monthGridDays,
+} from "../lib/date";
 import {
   VISIT_STATUSES,
+  bucketByDate,
   groupByPaidDate,
   groupByPatient,
   groupByVisitDate,
@@ -14,11 +33,12 @@ import {
   matchRemittance,
   matchesQuery,
   newVisitId,
-  parseNameList,
+  parseVisitRows,
   visitHistory,
   withStatus,
 } from "../lib/visitLedger";
 import type { PatientRecord, Visit, VisitStatus } from "../lib/visitLedger";
+import { extractPdfText } from "../lib/pdfText";
 import type { TranslationKey } from "../lib/translations";
 
 
@@ -82,6 +102,8 @@ export default function VisitLedger() {
   const [batchOpen, setBatchOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [byDate, setByDate] = useState<null | "paid" | "visit">(null);
+  const [month, setMonth] = useState(() => monthKeyOf(todayKey()));
+  const [pickedDay, setPickedDay] = useState<string | null>(null);
 
   const rows = useMemo(
     () =>
@@ -160,6 +182,19 @@ export default function VisitLedger() {
     setVisits((prev) =>
       prev.map((v) => (v.id === visit.id ? { ...v, paidDate: paidDate || undefined } : v)),
     );
+  }
+
+  /**
+   * The visit date is editable, not fixed at entry.
+   *
+   * One payment settles visits from months apart, so a remittance regularly states a service
+   * date the ledger has wrong — the quick-add form carries the last date typed, which is what
+   * makes a run of entries fast and also what makes one of them wrong. Correcting it has to be
+   * possible in the row itself; a status change cannot fix a date.
+   */
+  function setVisitDate(visit: Visit, visitDate: string) {
+    if (!visitDate) return;
+    setVisits((prev) => prev.map((v) => (v.id === visit.id ? { ...v, visitDate } : v)));
   }
 
   function remove(ids: string[]) {
@@ -306,11 +341,14 @@ export default function VisitLedger() {
         </div>
       ) : byDate ? (
         <div className="mt-4">
-          <div className="mb-3 flex gap-1.5">
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
             {(["paid", "visit"] as const).map((mode) => (
               <button
                 key={mode}
-                onClick={() => setByDate(mode)}
+                onClick={() => {
+                  setByDate(mode);
+                  setPickedDay(null);
+                }}
                 className={[
                   "rounded-full border px-3 py-1.5 text-[13px]",
                   byDate === mode
@@ -321,12 +359,67 @@ export default function VisitLedger() {
                 {t(mode === "paid" ? "ledger.viewByPaid" : "ledger.viewByVisit")}
               </button>
             ))}
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                onClick={() => setMonth(shiftMonthKey(month, -1))}
+                aria-label={t("ledger.prevMonth")}
+                className="rounded-(--radius-xs) p-1.5 text-(--color-ink-muted) hover:text-(--color-primary)"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="min-w-[7ch] text-center text-[14px] font-medium text-(--color-ink) tabular-nums">
+                {month}
+              </span>
+              <button
+                onClick={() => setMonth(shiftMonthKey(month, 1))}
+                aria-label={t("ledger.nextMonth")}
+                className="rounded-(--radius-xs) p-1.5 text-(--color-ink-muted) hover:text-(--color-primary)"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <button
+                onClick={() => {
+                  setMonth(monthKeyOf(today));
+                  setPickedDay(null);
+                }}
+                className="rounded-(--radius-sm) border border-(--color-hairline) px-2 py-1 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
+              >
+                {t("ledger.thisMonth")}
+              </button>
+            </div>
           </div>
-          <DayView
-            groups={byDate === "paid" ? groupByPaidDate(visits) : groupByVisitDate(visits)}
-            mode={byDate}
-            lang={lang}
+
+          <MonthCalendar
+            month={month}
+            today={today}
+            byDay={bucketByDate(visits, byDate)}
+            picked={pickedDay}
+            onPick={(day) => setPickedDay(day === pickedDay ? null : day)}
           />
+
+          <div className="mt-4">
+            {pickedDay ? (
+              <>
+                <p className="mb-2 text-[13px] font-medium text-(--color-ink)">
+                  {formatDisplayDate(pickedDay, lang)}
+                </p>
+                <DayView
+                  groups={(byDate === "paid"
+                    ? groupByPaidDate(visits)
+                    : groupByVisitDate(visits)
+                  ).filter((g) => g.date === pickedDay)}
+                  mode={byDate}
+                  lang={lang}
+                />
+              </>
+            ) : (
+              <DayView
+                groups={byDate === "paid" ? groupByPaidDate(visits) : groupByVisitDate(visits)}
+                mode={byDate}
+                lang={lang}
+              />
+            )}
+          </div>
         </div>
       ) : rows.length === 0 ? (
         <p className="mt-4 rounded-(--radius-lg) border border-dashed border-(--color-hairline) py-10 text-center text-[14px] text-(--color-ink-faint)">
@@ -389,8 +482,14 @@ export default function VisitLedger() {
                       {visit.name}
                     </button>
                   </td>
-                  <td className="px-3 py-2 text-[13px] whitespace-nowrap text-(--color-ink-muted) tabular-nums">
-                    {visit.visitDate}
+                  <td className="px-3 py-2">
+                    <input
+                      type="date"
+                      value={visit.visitDate}
+                      onChange={(e) => setVisitDate(visit, e.target.value)}
+                      aria-label={t("ledger.colVisitDate")}
+                      className="rounded-(--radius-xs) border border-transparent bg-transparent px-1.5 py-1 text-[13px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                    />
                   </td>
                   <td className="px-3 py-2">
                     {/* A status is a cell you change, not a stage you graduate from. */}
@@ -439,6 +538,10 @@ export default function VisitLedger() {
           lang={lang}
           onClose={() => setDetailName(null)}
           onSetStatus={(id, status) => setStatusWithUndo([id], status)}
+          onSetVisitDate={(id, date) => {
+            const visit = visits.find((v) => v.id === id);
+            if (visit) setVisitDate(visit, date);
+          }}
           onRemove={(id) => remove([id])}
         />
       )}
@@ -489,12 +592,14 @@ function PatientPanel({
   lang,
   onClose,
   onSetStatus,
+  onSetVisitDate,
   onRemove,
 }: {
   record: PatientRecord;
   lang: "zh" | "en";
   onClose: () => void;
   onSetStatus: (id: string, status: VisitStatus) => void;
+  onSetVisitDate: (id: string, visitDate: string) => void;
   onRemove: (id: string) => void;
 }) {
   const { t } = useLanguage();
@@ -531,9 +636,13 @@ function PatientPanel({
           {record.visits.map((visit) => (
             <li key={visit.id} className="px-5 py-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[14px] font-medium text-(--color-ink) tabular-nums">
-                  {formatDisplayDate(visit.visitDate, lang)}
-                </span>
+                <input
+                  type="date"
+                  value={visit.visitDate}
+                  onChange={(e) => onSetVisitDate(visit.id, e.target.value)}
+                  aria-label={t("ledger.colVisitDate")}
+                  className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-[14px] font-medium text-(--color-ink) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                />
                 <select
                   value={visit.status}
                   onChange={(e) => onSetStatus(visit.id, e.target.value as VisitStatus)}
@@ -580,6 +689,105 @@ function PatientPanel({
             </li>
           ))}
         </ul>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A month of visits.
+ *
+ * Which date a cell stands for is the caller's choice, and both readings matter: the visit
+ * calendar shows a day where everything around it settled and that one did not, and the payment
+ * calendar shows what a single day's remittance actually covered. A cell carries the statuses in
+ * it as colour, because that is how the clinic read the sheet it replaced.
+ */
+function MonthCalendar({
+  month,
+  today,
+  byDay,
+  picked,
+  onPick,
+}: {
+  month: string;
+  today: string;
+  byDay: Map<string, Visit[]>;
+  picked: string | null;
+  onPick: (day: string) => void;
+}) {
+  const { t } = useLanguage();
+  const days = monthGridDays(month);
+  const weekdays: TranslationKey[] = [
+    "ledger.sun",
+    "ledger.mon",
+    "ledger.tue",
+    "ledger.wed",
+    "ledger.thu",
+    "ledger.fri",
+    "ledger.sat",
+  ];
+
+  return (
+    <div className="overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
+      <div className="grid grid-cols-7 border-b border-(--color-hairline) bg-(--color-surface)">
+        {weekdays.map((key) => (
+          <div
+            key={key}
+            className="px-1 py-1.5 text-center text-[11px] font-medium text-(--color-ink-muted)"
+          >
+            {t(key)}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {days.map((day) => {
+          const inMonth = day.startsWith(month);
+          const visits = byDay.get(day) ?? [];
+          const isToday = day === today;
+          const isPicked = day === picked;
+          return (
+            <button
+              key={day}
+              onClick={() => onPick(day)}
+              disabled={visits.length === 0}
+              className={[
+                "min-h-[62px] border-r border-b border-(--color-hairline) p-1 text-left align-top last:border-r-0 disabled:cursor-default",
+                inMonth ? "" : "opacity-40",
+                isPicked ? "bg-(--color-primary)/10" : "",
+              ].join(" ")}
+            >
+              <span
+                className={[
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] tabular-nums",
+                  isToday
+                    ? "bg-(--color-primary) font-bold text-(--color-on-primary)"
+                    : "text-(--color-ink-muted)",
+                ].join(" ")}
+              >
+                {Number(day.slice(8))}
+              </span>
+              {visits.length > 0 && (
+                <span className="mt-0.5 flex flex-wrap gap-0.5">
+                  {visits.slice(0, 6).map((visit) => (
+                    <span
+                      key={visit.id}
+                      title={`${visit.name} · ${t(STATUS_LABEL[visit.status])}`}
+                      className={[
+                        "h-1.5 w-1.5 rounded-full border",
+                        STATUS_TONE[visit.status],
+                      ].join(" ")}
+                    />
+                  ))}
+                </span>
+              )}
+              {visits.length > 0 && (
+                <span className="mt-0.5 block truncate text-[10px] text-(--color-ink-faint)">
+                  {visits.length === 1 ? visits[0].name : t("ledger.dayCount", { count: String(visits.length) })}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -667,7 +875,8 @@ function BatchPanel({
   const [status, setStatus] = useState<VisitStatus>("new");
   // Never derived from the visit date: the batch's status says money arrived, not when.
   const [paidDate, setPaidDate] = useState(today);
-  const preview = useMemo(() => parseNameList(text, visitDate), [text, visitDate]);
+  const preview = useMemo(() => parseVisitRows(text, visitDate), [text, visitDate]);
+  const undated = preview.filter((row) => row.usedFallbackDate).length;
 
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
@@ -694,6 +903,35 @@ function BatchPanel({
           rows={7}
           className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
         />
+
+        {/* Show what was understood, because a paste is not a form: column order varies. */}
+        {preview.length > 0 && (
+          <div className="mt-3 max-h-40 overflow-y-auto rounded-(--radius-xs) border border-(--color-hairline)">
+            <table className="w-full text-left">
+              <tbody>
+                {preview.map((row, i) => (
+                  <tr key={`${row.name}-${i}`} className="border-b border-(--color-hairline) last:border-0">
+                    <td className="px-2.5 py-1 text-[13px] text-(--color-ink)">{row.name}</td>
+                    <td className="px-2.5 py-1 text-right text-[12px] tabular-nums">
+                      <span
+                        className={
+                          row.usedFallbackDate ? "text-amber-700" : "text-(--color-ink-muted)"
+                        }
+                      >
+                        {row.visitDate}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {undated > 0 && (
+          <p className="mt-1 text-[11px] text-amber-700">
+            {t("ledger.undatedRows", { count: String(undated) })}
+          </p>
+        )}
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="block">
@@ -756,7 +994,19 @@ function BatchPanel({
             </button>
             <button
               disabled={preview.length === 0}
-              onClick={() => onAdd(preview, status, paidDate)}
+              onClick={() =>
+                onAdd(
+                  preview.map((row) => ({
+                    id: "",
+                    name: row.name,
+                    visitDate: row.visitDate,
+                    status,
+                    createdAt: Date.now(),
+                  })),
+                  status,
+                  paidDate,
+                )
+              }
               className="rounded-(--radius-sm) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
             >
               {t("ledger.addConfirm")}
@@ -783,7 +1033,31 @@ function ReconcilePanel({
   const [text, setText] = useState("");
   const [paidDate, setPaidDate] = useState(today);
   const [chosen, setChosen] = useState<string[]>([]);
+  const [reading, setReading] = useState(false);
+  const [readError, setReadError] = useState<TranslationKey | null>(null);
   const result = useMemo(() => (text.trim() ? matchRemittance(visits, text) : null), [visits, text]);
+
+  /**
+   * A medical EOB is a PDF that does not survive being selected and copied, so the file is read
+   * directly. What comes out is the same free text the box takes — the matcher is unchanged.
+   */
+  async function readPdf(file: File) {
+    setReading(true);
+    setReadError(null);
+    try {
+      const extracted = await extractPdfText(file);
+      if (!extracted.hasTextLayer) {
+        // A scan has no text in it. Saying so beats matching nothing and looking broken.
+        setReadError("ledger.pdfNoText");
+        return;
+      }
+      setText((prev) => (prev.trim() ? prev + "\n" + extracted.text : extracted.text));
+    } catch {
+      setReadError("ledger.pdfFailed");
+    } finally {
+      setReading(false);
+    }
+  }
   const openCount = visits.filter(isOpen).length;
   const total = (result?.matched.length ?? 0) + chosen.length;
 
@@ -806,8 +1080,28 @@ function ReconcilePanel({
           </button>
         </div>
 
+        <label className="mb-2 flex cursor-pointer items-center justify-center gap-2 rounded-(--radius-sm) border border-dashed border-(--color-primary)/50 px-3 py-3 text-[13px] font-medium text-(--color-primary) hover:bg-(--color-primary)/[0.04]">
+          <Upload size={14} />
+          {reading ? t("ledger.pdfReading") : t("ledger.pdfPick")}
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void readPdf(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {readError && (
+          <p className="mb-2 flex items-start gap-1 text-[12px] text-amber-700">
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            {t(readError)}
+          </p>
+        )}
+
         <textarea
-          autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t("ledger.reconcilePlaceholder")}

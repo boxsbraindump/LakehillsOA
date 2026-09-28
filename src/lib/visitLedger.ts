@@ -403,3 +403,81 @@ export function matchesQuery(visit: Visit, query: string): boolean {
     (visit.paidDate ?? "").includes(q.trim())
   );
 }
+
+/**
+ * Visits keyed by the day a calendar cell stands for.
+ *
+ * Which day that is depends on the question: "when was this person seen" and "when did the
+ * money for it arrive" are different calendars, and the clinic needs both — a payment lands on
+ * one day for visits scattered across months, which is the whole reason the sheet stopped
+ * working. Unpaid visits simply have no cell in the paid calendar.
+ */
+export function bucketByDate(visits: Visit[], mode: "visit" | "paid"): Map<string, Visit[]> {
+  const byDay = new Map<string, Visit[]>();
+  for (const visit of visits) {
+    const key = mode === "paid" ? visit.paidDate : visit.visitDate;
+    if (!key) continue;
+    const bucket = byDay.get(key);
+    if (bucket) bucket.push(visit);
+    else byDay.set(key, [visit]);
+  }
+  for (const bucket of byDay.values()) bucket.sort((a, b) => a.name.localeCompare(b.name));
+  return byDay;
+}
+
+/** Anything shaped like a date, so it can be lifted out of a cell and off a name. */
+const DATE_TOKEN = /\b(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{8})\b/g;
+
+/** Money, row numbers and codes — never a name, always in the way of finding one. */
+const NOISE_TOKEN = /\$\s?[\d,]+(?:\.\d{2})?|\b\d+(?:\.\d{2})?\b/g;
+
+export interface ParsedVisitRow {
+  name: string;
+  visitDate: string;
+  /** True when the row stated no date of its own and fell back to the one the user chose. */
+  usedFallbackDate: boolean;
+}
+
+/**
+ * Rows pasted straight out of a spreadsheet.
+ *
+ * The other clinic keeps its bookings in Excel, and retyping them is the data-entry step this
+ * tool exists to remove. A pasted selection arrives tab-separated, but which column is which is
+ * not knowable — so nothing is assumed about column order: each row's date is whatever in it
+ * looks like a date, and the name is the first thing left once dates, money and bare numbers
+ * are taken out. A row with no date of its own falls back to the date the user picked, and says
+ * so, rather than being silently dated today.
+ *
+ * One name per line either way, so a plain list of names still works.
+ */
+export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitRow[] {
+  const rows: ParsedVisitRow[] = [];
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    const dates = datesInLine(line);
+    const cleaned = line
+      .replace(DATE_TOKEN, "\t")
+      .replace(NOISE_TOKEN, " ")
+      .replace(/[|;]/g, "\t");
+
+    const name = cleaned
+      .split(/\t|\s{2,}|,/)
+      .map((cell) => cell.trim().replace(/\s+/g, " "))
+      .find((cell) => cell.length > 1 && /[A-Za-z\u4e00-\u9fff]/.test(cell));
+
+    if (!name) continue;
+    // A spreadsheet's header row names its columns; it is not a patient.
+    if (/^(name|patient|patient name|姓名|患者|病人)$/i.test(name)) continue;
+
+    rows.push({
+      name,
+      visitDate: dates[0] ?? fallbackDate,
+      usedFallbackDate: dates.length === 0,
+    });
+  }
+
+  return rows;
+}

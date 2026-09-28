@@ -27,3 +27,30 @@ export function formatDisplayDate(dateKey: string, lang: "zh" | "en" = "zh") {
     weekday: "short",
   });
 }
+
+/** "2026-09-28" -> "2026-09". */
+export function monthKeyOf(dateKey: string) {
+  return dateKey.slice(0, 7);
+}
+
+export function shiftMonthKey(monthKey: string, months: number) {
+  const [y, m] = monthKey.split("-").map(Number);
+  const date = new Date(y, m - 1 + months, 1);
+  return monthKeyOf(formatDateKey(date));
+}
+
+/**
+ * The 42 days a month grid shows: the month itself, padded with the tail of the previous month
+ * and the head of the next so every row is a full week. Six rows always, so the grid does not
+ * change height as you page through months.
+ */
+export function monthGridDays(monthKey: string, weekStartsOn = 0): string[] {
+  const [y, m] = monthKey.split("-").map(Number);
+  const first = new Date(y, m - 1, 1);
+  const lead = (first.getDay() - weekStartsOn + 7) % 7;
+  const start = new Date(y, m - 1, 1 - lead);
+  return Array.from({ length: 42 }, (_, i) => {
+    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    return formatDateKey(day);
+  });
+}
