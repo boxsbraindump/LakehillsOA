@@ -925,10 +925,6 @@ export const translations = {
   "ledger.colStatus": { zh: "状态", en: "Status" },
   "ledger.colPaidDate": { zh: "回款日期", en: "Paid on" },
   "ledger.colLastTouched": { zh: "最近操作", en: "Last change" },
-  "ledger.patientSummary": {
-    zh: "一共 {total} 次 service · 回了 {paid} 次钱 · {open} 次还在等",
-    en: "{total} visits · {paid} paid · {open} still waiting",
-  },
   "ledger.patientSpan": { zh: "{from} 到 {to}", en: "{from} to {to}" },
   "ledger.prevMonth": { zh: "上个月", en: "Previous month" },
   "ledger.nextMonth": { zh: "下个月", en: "Next month" },
@@ -967,6 +963,11 @@ export const translations = {
   "ledger.viewLog": { zh: "每天干了什么", en: "Day by day" },
   "ledger.viewCalendar": { zh: "日历", en: "Calendar" },
   "ledger.colLastStep": { zh: "上次操作", en: "Last step" },
+  "ledger.totalVisits": { zh: "{count} 次 service", en: "{count} visits" },
+  "ledger.paidCountChip": { zh: "回了 {count} 次", en: "{count} paid" },
+  "ledger.waitingChip": { zh: "{count} 次还在等", en: "{count} waiting" },
+  "ledger.showTrail": { zh: "操作记录", en: "Change log" },
+  "ledger.hideTrail": { zh: "收起操作记录", en: "Hide change log" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

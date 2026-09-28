@@ -226,6 +226,21 @@ The bulk bar carries a date, because a batch shares one: select the week's rows,
 actually went out, then say what happened to it. The calendar has a third lens over that same
 date (按报 OA 日期), so a day's submissions are as findable as a day's payments.
 
+**The patient panel is a step track, because it was stating every step twice.** It used to put
+three labelled date inputs in a row and, directly beneath them, the raw trail of status changes
+— so one visit read "报 OA 09/28" from the stored date and "已报 OA 9/28 15:25" from the click,
+adjacent, with different times. Two readings of one fact next to each other are worse than
+either alone. Each visit now shows a three-dot track: a filled dot is a step that happened, with
+its day beneath it and the step still editable there; a hollow dot and a dash is one that has
+not. Progress is legible at a glance and each step is stated once. The click trail is audit
+data, so it sits behind a 操作记录 toggle.
+
+The visit date used to be the largest, boldest thing on each row while carrying the least
+meaning; it is now ordinary weight, with the status chip given the emphasis. The header's
+counts became chips coloured to match the statuses they count, and the native date-picker glyph
+is hidden until hover on every inline date cell — at three per visit it was most of the visual
+noise.
+
 **The ledger shows one date, not three.** Three date columns beside a status column stated the
 same fact twice: a row reading 已报 OA with 09/22 beside it *is* "we reported it on the 22nd".
 So the table is 患者 / 就诊日期 / 部位 / 状态 / 上次操作 — six columns including the checkbox —

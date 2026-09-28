@@ -678,7 +678,7 @@ export default function VisitLedger() {
                       value={visit.visitDate}
                       onChange={(e) => setVisitDate(visit, e.target.value)}
                       aria-label={t("ledger.colVisitDate")}
-                      className="rounded-(--radius-xs) border border-transparent bg-transparent px-1.5 py-1 text-[13px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                      className="rounded-(--radius-xs) border border-transparent bg-transparent px-1.5 py-1 text-[13px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
                     />
                   </td>
                   <td className="px-3 py-2">
@@ -739,7 +739,7 @@ export default function VisitLedger() {
                           value={step.date}
                           onChange={(e) => setStepDate(visit, step.field!, e.target.value)}
                           aria-label={t("ledger.colLastStep")}
-                          className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-1 text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                          className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-1 text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
                         />
                       );
                     })()}
@@ -754,12 +754,17 @@ export default function VisitLedger() {
       {detail && (
         <PatientPanel
           record={detail}
+          tags={serviceTags}
           lang={lang}
           onClose={() => setDetailName(null)}
           onSetStatus={(id, status) => setStatusWithUndo([id], status)}
           onSetVisitDate={(id, date) => {
             const visit = visits.find((v) => v.id === id);
             if (visit) setVisitDate(visit, date);
+          }}
+          onSetServiceTag={(id, tagId) => {
+            const visit = visits.find((v) => v.id === id);
+            if (visit) setServiceTag(visit, tagId);
           }}
           onSetStepDate={(id, field, date) => {
             const visit = visits.find((v) => v.id === id);
@@ -831,16 +836,204 @@ export default function VisitLedger() {
  * One patient's whole record — the thing a spreadsheet of coloured cells could never show,
  * because a colour is overwritten by the next colour. Every visit keeps its trail.
  */
+/**
+ * The three steps a visit goes through, as a track.
+ *
+ * The first version of this panel put three labelled date inputs in a row and, directly beneath
+ * them, the raw trail of status changes — so every visit stated each step twice with two
+ * different times: "报 OA 09/28" from the stored date, "已报 OA 9/28 15:25" from the click. Two
+ * readings of one fact, adjacent, is worse than either alone.
+ *
+ * A track states it once and shows progress at the same time: a filled dot is a step that
+ * happened, with the day it happened under it. The click trail is audit data, so it moves
+ * behind a toggle.
+ */
+const VISIT_STEPS = [
+  { field: "enteredDate", label: "ledger.colEnteredDate" },
+  { field: "submittedDate", label: "ledger.colSubmittedDate" },
+  { field: "paidDate", label: "ledger.colPaidDate" },
+] as const;
+
+function VisitCard({
+  visit,
+  tags,
+  lang,
+  onSetStatus,
+  onSetVisitDate,
+  onSetStepDate,
+  onSetServiceTag,
+  onRemove,
+}: {
+  visit: Visit;
+  tags: ServiceTag[];
+  lang: "zh" | "en";
+  onSetStatus: (id: string, status: VisitStatus) => void;
+  onSetVisitDate: (id: string, visitDate: string) => void;
+  onSetStepDate: (
+    id: string,
+    field: "enteredDate" | "submittedDate" | "paidDate",
+    date: string,
+  ) => void;
+  onSetServiceTag: (id: string, tagId: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const { t } = useLanguage();
+  const [showTrail, setShowTrail] = useState(false);
+  const dates = operationDates(visit);
+  const done = [dates.entered, dates.submitted, dates.paid];
+  const tag = tagById(tags, visit.serviceTag);
+
+  return (
+    <li className="px-5 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="date"
+          value={visit.visitDate}
+          onChange={(e) => onSetVisitDate(visit.id, e.target.value)}
+          aria-label={t("ledger.colVisitDate")}
+          className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-[13px] text-(--color-ink) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
+        />
+        <select
+          value={visit.serviceTag ?? ""}
+          onChange={(e) => onSetServiceTag(visit.id, e.target.value)}
+          aria-label={t("ledger.colService")}
+          className={[
+            "cursor-pointer rounded-full border px-2 py-0.5 text-[12px] outline-none",
+            tag
+              ? TAG_COLORS[tag.color % TAG_COLORS.length]
+              : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)",
+          ].join(" ")}
+        >
+          <option value="">{t("ledger.noService")}</option>
+          {tags.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={visit.status}
+          onChange={(e) => onSetStatus(visit.id, e.target.value as VisitStatus)}
+          aria-label={t("ledger.colStatus")}
+          className={[
+            "ml-auto cursor-pointer rounded-full border px-2 py-0.5 text-[12px] font-medium outline-none",
+            STATUS_TONE[visit.status],
+          ].join(" ")}
+        >
+          {VISIT_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {t(STATUS_LABEL[status])}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => onRemove(visit.id)}
+          aria-label={t("common.delete")}
+          className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-rose-600"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+
+      <ol className="mt-3 flex items-start">
+        {VISIT_STEPS.map(({ field, label }, i) => {
+          const date = done[i];
+          const reached = Boolean(date);
+          return (
+            <li key={field} className="flex min-w-0 flex-1 flex-col items-center">
+              <div className="flex w-full items-center">
+                <span
+                  className={[
+                    "h-px flex-1",
+                    i === 0 ? "bg-transparent" : reached ? "bg-(--color-primary)" : "bg-(--color-hairline)",
+                  ].join(" ")}
+                />
+                <span
+                  className={[
+                    "h-2.5 w-2.5 shrink-0 rounded-full border-2",
+                    reached
+                      ? "border-(--color-primary) bg-(--color-primary)"
+                      : "border-(--color-hairline) bg-(--color-canvas)",
+                  ].join(" ")}
+                />
+                <span
+                  className={[
+                    "h-px flex-1",
+                    i === VISIT_STEPS.length - 1
+                      ? "bg-transparent"
+                      : done[i + 1]
+                        ? "bg-(--color-primary)"
+                        : "bg-(--color-hairline)",
+                  ].join(" ")}
+                />
+              </div>
+              <span
+                className={[
+                  "mt-1.5 text-[12px] whitespace-nowrap",
+                  reached ? "font-medium text-(--color-ink)" : "text-(--color-ink-faint)",
+                ].join(" ")}
+              >
+                {t(label)}
+              </span>
+              {reached ? (
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => onSetStepDate(visit.id, field, e.target.value)}
+                  aria-label={t(label)}
+                  className="w-full rounded-(--radius-xs) border border-transparent bg-transparent text-center text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary) [&::-webkit-calendar-picker-indicator]:opacity-0 hover:[&::-webkit-calendar-picker-indicator]:opacity-50 focus:[&::-webkit-calendar-picker-indicator]:opacity-50"
+                />
+              ) : (
+                <span className="text-[12px] text-(--color-ink-faint)">—</span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+
+      <button
+        onClick={() => setShowTrail(!showTrail)}
+        className="mt-2 text-[11px] text-(--color-ink-faint) hover:text-(--color-primary)"
+      >
+        {t(showTrail ? "ledger.hideTrail" : "ledger.showTrail")}
+      </button>
+      {showTrail && (
+        <ol className="mt-1 flex flex-col gap-0.5 border-l-2 border-(--color-hairline) pl-3">
+          {visitHistory(visit).map((event, i) => (
+            <li
+              key={`${event.status}-${event.at}-${i}`}
+              className="flex flex-wrap items-baseline gap-x-2 text-[11px]"
+            >
+              <span className="text-(--color-ink-muted)">{t(STATUS_LABEL[event.status])}</span>
+              <span className="text-(--color-ink-faint) tabular-nums">
+                {timestamp(event.at, lang)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </li>
+  );
+}
+
+/**
+ * One patient's whole record — the thing a spreadsheet of coloured cells could never show,
+ * because a colour is overwritten by the next colour. Every visit keeps its trail.
+ */
 function PatientPanel({
   record,
+  tags,
   lang,
   onClose,
   onSetStatus,
   onSetVisitDate,
   onSetStepDate,
+  onSetServiceTag,
   onRemove,
 }: {
   record: PatientRecord;
+  tags: ServiceTag[];
   lang: "zh" | "en";
   onClose: () => void;
   onSetStatus: (id: string, status: VisitStatus) => void;
@@ -850,23 +1043,34 @@ function PatientPanel({
     field: "enteredDate" | "submittedDate" | "paidDate",
     date: string,
   ) => void;
+  onSetServiceTag: (id: string, tagId: string) => void;
   onRemove: (id: string) => void;
 }) {
   const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
       <div className="w-full max-w-xl rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-lg">
-        <div className="flex items-start gap-3 border-b border-(--color-hairline) px-5 py-4">
+        <div className="sticky top-0 flex items-start gap-3 rounded-t-(--radius-lg) border-b border-(--color-hairline) bg-(--color-canvas) px-5 py-4">
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-[18px] font-bold text-(--color-ink)">{record.name}</h2>
-            <p className="mt-0.5 text-[13px] text-(--color-ink-muted)">
-              {t("ledger.patientSummary", {
-                total: String(record.total),
-                paid: String(record.paid),
-                open: String(record.open),
-              })}
+            <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
+              <span className="rounded-full border border-(--color-hairline) bg-(--color-surface) px-2 py-0.5 text-(--color-ink-muted)">
+                {t("ledger.totalVisits", { count: String(record.total) })}
+              </span>
+              {record.paid > 0 && (
+                <span className={["rounded-full border px-2 py-0.5", STATUS_TONE.paid].join(" ")}>
+                  {t("ledger.paidCountChip", { count: String(record.paid) })}
+                </span>
+              )}
+              {record.open > 0 && (
+                <span
+                  className={["rounded-full border px-2 py-0.5", STATUS_TONE.submitted].join(" ")}
+                >
+                  {t("ledger.waitingChip", { count: String(record.open) })}
+                </span>
+              )}
             </p>
-            <p className="mt-0.5 text-[12px] text-(--color-ink-faint)">
+            <p className="mt-1 text-[12px] text-(--color-ink-faint)">
               {t("ledger.patientSpan", {
                 from: formatDisplayDate(record.firstVisit, lang),
                 to: formatDisplayDate(record.lastVisit, lang),
@@ -884,86 +1088,17 @@ function PatientPanel({
 
         <ul className="flex flex-col divide-y divide-(--color-hairline)">
           {record.visits.map((visit) => (
-            <li key={visit.id} className="px-5 py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="date"
-                  value={visit.visitDate}
-                  onChange={(e) => onSetVisitDate(visit.id, e.target.value)}
-                  aria-label={t("ledger.colVisitDate")}
-                  className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-[14px] font-medium text-(--color-ink) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
-                />
-                <select
-                  value={visit.status}
-                  onChange={(e) => onSetStatus(visit.id, e.target.value as VisitStatus)}
-                  aria-label={t("ledger.colStatus")}
-                  className={[
-                    "cursor-pointer rounded-full border px-2 py-0.5 text-[12px] font-medium outline-none",
-                    STATUS_TONE[visit.status],
-                  ].join(" ")}
-                >
-                  {VISIT_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {t(STATUS_LABEL[status])}
-                    </option>
-                  ))}
-                </select>
-                {/* All three steps live here now — the ledger shows only the current one. */}
-                {(
-                  [
-                    ["enteredDate", "ledger.colEnteredDate"],
-                    ["submittedDate", "ledger.colSubmittedDate"],
-                    ["paidDate", "ledger.colPaidDate"],
-                  ] as const
-                ).map(([field, label]) => {
-                  const dates = operationDates(visit);
-                  const value =
-                    field === "enteredDate"
-                      ? dates.entered
-                      : field === "submittedDate"
-                        ? dates.submitted
-                        : dates.paid;
-                  if (!value) return null;
-                  return (
-                    <span
-                      key={field}
-                      className="flex items-center gap-1 text-[12px] text-(--color-ink-muted)"
-                    >
-                      {t(label)}
-                      <input
-                        type="date"
-                        value={value}
-                        onChange={(e) => onSetStepDate(visit.id, field, e.target.value)}
-                        aria-label={t(label)}
-                        className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-(--color-ink) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
-                      />
-                    </span>
-                  );
-                })}
-                <button
-                  onClick={() => onRemove(visit.id)}
-                  aria-label={t("common.delete")}
-                  className="ml-auto shrink-0 text-(--color-ink-faint) hover:text-rose-600"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-
-              {/* When each thing was done. The sheet had nowhere to put this. */}
-              <ol className="mt-1.5 flex flex-col gap-0.5 border-l-2 border-(--color-hairline) pl-3">
-                {visitHistory(visit).map((event, i) => (
-                  <li
-                    key={`${event.status}-${event.at}-${i}`}
-                    className="flex flex-wrap items-baseline gap-x-2 text-[12px]"
-                  >
-                    <span className="text-(--color-ink-muted)">{t(STATUS_LABEL[event.status])}</span>
-                    <span className="text-(--color-ink-faint) tabular-nums">
-                      {timestamp(event.at, lang)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </li>
+            <VisitCard
+              key={visit.id}
+              visit={visit}
+              tags={tags}
+              lang={lang}
+              onSetStatus={onSetStatus}
+              onSetVisitDate={onSetVisitDate}
+              onSetStepDate={onSetStepDate}
+              onSetServiceTag={onSetServiceTag}
+              onRemove={onRemove}
+            />
           ))}
         </ul>
       </div>
