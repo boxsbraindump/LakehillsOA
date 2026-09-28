@@ -28,7 +28,7 @@ import {
 import {
   VISIT_STATUSES,
   activityLog,
-  activityOn,
+
   bucketByDate,
   groupByPaidDate,
   groupByPatient,
@@ -36,6 +36,7 @@ import {
   isOpen,
   matchRemittance,
   matchesQuery,
+  currentStep,
   operationDates,
   newVisitId,
   parseVisitRows,
@@ -154,7 +155,7 @@ export default function VisitLedger() {
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
   const log = useMemo(() => activityLog(visits), [visits]);
-  const todayWork = useMemo(() => activityOn(visits, today), [visits, today]);
+
   const dayGroups = useMemo(() => {
     if (lens === "visit") return groupByVisitDate(visits);
     if (lens === "paid") return groupByPaidDate(visits);
@@ -313,35 +314,6 @@ export default function VisitLedger() {
         ))}
       </div>
 
-      {view === "table" && todayWork && (
-        <button
-          onClick={() => setView("log")}
-          className="mt-3 flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-(--radius-md) border border-(--color-primary)/25 bg-(--color-primary)/[0.05] px-3 py-2 text-left"
-        >
-          <span className="text-[13px] font-medium text-(--color-ink)">
-            {t("ledger.todayLabel")}
-          </span>
-          {VISIT_STATUSES.filter(
-            (status) => status !== "new" && todayWork.counts[status] > 0,
-          ).map((status) => (
-            <span
-              key={status}
-              className={[
-                "rounded-full border px-2 py-0.5 text-[12px] font-medium",
-                STATUS_TONE[status],
-              ].join(" ")}
-            >
-              {t(STATUS_LABEL[status])} {todayWork.counts[status]}
-            </span>
-          ))}
-          {todayWork.total === 0 && (
-            <span className="text-[13px] text-(--color-ink-muted)">{t("ledger.todayNothing")}</span>
-          )}
-          <span className="ml-auto text-[12px] text-(--color-ink-muted)">
-            {t("ledger.viewLog")} →
-          </span>
-        </button>
-      )}
 
       {/* Search first: the list is long by design, and finding a patient is the common errand. */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -670,13 +642,7 @@ export default function VisitLedger() {
                   {t("ledger.colStatus")}
                 </th>
                 <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
-                  {t("ledger.colEnteredDate")}
-                </th>
-                <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
-                  {t("ledger.colSubmittedDate")}
-                </th>
-                <th className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-(--color-ink-muted)">
-                  {t("ledger.colPaidDate")}
+                  {t("ledger.colLastStep")}
                 </th>
               </tr>
             </thead>
@@ -757,38 +723,27 @@ export default function VisitLedger() {
                       ))}
                     </select>
                   </td>
-                  {/* Each step's own day, correctable — the week's work is not always ticked
-                      off on the day it happened. */}
-                  {(
-                    [
-                      ["enteredDate", "ledger.colEnteredDate"],
-                      ["submittedDate", "ledger.colSubmittedDate"],
-                      ["paidDate", "ledger.colPaidDate"],
-                    ] as const
-                  ).map(([field, label]) => {
-                    const dates = operationDates(visit);
-                    const value =
-                      field === "enteredDate"
-                        ? dates.entered
-                        : field === "submittedDate"
-                          ? dates.submitted
-                          : dates.paid;
-                    return (
-                      <td key={field} className="px-3 py-2">
-                        {value ? (
-                          <input
-                            type="date"
-                            value={value}
-                            onChange={(e) => setStepDate(visit, field, e.target.value)}
-                            aria-label={t(label)}
-                            className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-1 text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
-                          />
-                        ) : (
-                          <span className="pl-1 text-[13px] text-(--color-ink-faint)">—</span>
-                        )}
-                      </td>
-                    );
-                  })}
+                  {/* One date, not three: the status already says which step this is, so
+                      "已报 OA" plus 09/22 *is* "we reported it on the 22nd". Editing it edits
+                      whichever step the status owns — the week's work is not always ticked off
+                      on the day it happened. The other two dates stay on the patient's page. */}
+                  <td className="px-3 py-2">
+                    {(() => {
+                      const step = currentStep(visit);
+                      if (!step.field || !step.date) {
+                        return <span className="pl-1 text-[13px] text-(--color-ink-faint)">—</span>;
+                      }
+                      return (
+                        <input
+                          type="date"
+                          value={step.date}
+                          onChange={(e) => setStepDate(visit, step.field!, e.target.value)}
+                          aria-label={t("ledger.colLastStep")}
+                          className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-1 text-[12px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                        />
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -805,6 +760,10 @@ export default function VisitLedger() {
           onSetVisitDate={(id, date) => {
             const visit = visits.find((v) => v.id === id);
             if (visit) setVisitDate(visit, date);
+          }}
+          onSetStepDate={(id, field, date) => {
+            const visit = visits.find((v) => v.id === id);
+            if (visit) setStepDate(visit, field, date);
           }}
           onRemove={(id) => remove([id])}
         />
@@ -878,6 +837,7 @@ function PatientPanel({
   onClose,
   onSetStatus,
   onSetVisitDate,
+  onSetStepDate,
   onRemove,
 }: {
   record: PatientRecord;
@@ -885,6 +845,11 @@ function PatientPanel({
   onClose: () => void;
   onSetStatus: (id: string, status: VisitStatus) => void;
   onSetVisitDate: (id: string, visitDate: string) => void;
+  onSetStepDate: (
+    id: string,
+    field: "enteredDate" | "submittedDate" | "paidDate",
+    date: string,
+  ) => void;
   onRemove: (id: string) => void;
 }) {
   const { t } = useLanguage();
@@ -943,11 +908,38 @@ function PatientPanel({
                     </option>
                   ))}
                 </select>
-                {visit.paidDate && (
-                  <span className="text-[12px] text-emerald-700 tabular-nums">
-                    {t("ledger.paidOn", { date: formatDisplayDate(visit.paidDate, lang) })}
-                  </span>
-                )}
+                {/* All three steps live here now — the ledger shows only the current one. */}
+                {(
+                  [
+                    ["enteredDate", "ledger.colEnteredDate"],
+                    ["submittedDate", "ledger.colSubmittedDate"],
+                    ["paidDate", "ledger.colPaidDate"],
+                  ] as const
+                ).map(([field, label]) => {
+                  const dates = operationDates(visit);
+                  const value =
+                    field === "enteredDate"
+                      ? dates.entered
+                      : field === "submittedDate"
+                        ? dates.submitted
+                        : dates.paid;
+                  if (!value) return null;
+                  return (
+                    <span
+                      key={field}
+                      className="flex items-center gap-1 text-[12px] text-(--color-ink-muted)"
+                    >
+                      {t(label)}
+                      <input
+                        type="date"
+                        value={value}
+                        onChange={(e) => onSetStepDate(visit.id, field, e.target.value)}
+                        aria-label={t(label)}
+                        className="rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-(--color-ink) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
+                      />
+                    </span>
+                  );
+                })}
                 <button
                   onClick={() => onRemove(visit.id)}
                   aria-label={t("common.delete")}

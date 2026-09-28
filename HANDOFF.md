@@ -226,6 +226,18 @@ The bulk bar carries a date, because a batch shares one: select the week's rows,
 actually went out, then say what happened to it. The calendar has a third lens over that same
 date (按报 OA 日期), so a day's submissions are as findable as a day's payments.
 
+**The ledger shows one date, not three.** Three date columns beside a status column stated the
+same fact twice: a row reading 已报 OA with 09/22 beside it *is* "we reported it on the 22nd".
+So the table is 患者 / 就诊日期 / 部位 / 状态 / 上次操作 — six columns including the checkbox —
+and `currentStep` picks which stored date to show from the status. Editing that cell edits
+whichever step the status owns, so a date can still be corrected from the ledger. All three step
+dates remain on the patient's panel, editable, for the times an earlier step needs checking.
+`new` shows no date at all: a visit appearing is the other clinic's booking, not a step
+this clinic performed.
+
+The today banner went with it — the 每天干了什么 tab sits directly above it and says the same
+thing. The table now starts 274px down, with about fifteen rows visible before any scrolling.
+
 **Three views, one page — and why not three pages.** At eight weeks of real use the day log
 had grown to 629px and pushed the first ledger row past a screen's worth of scrolling, growing
 without bound as the clinic kept using it. Routed sub-pages were the obvious fix and the wrong

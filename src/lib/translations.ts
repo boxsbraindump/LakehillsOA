@@ -817,7 +817,6 @@ export const translations = {
   "ledger.showing": { zh: "共 {count} 条", en: "{count} shown" },
   "ledger.selectAll": { zh: "全选", en: "Select all" },
   "ledger.selectedCount": { zh: "已选 {count} 条 —— 标为：", en: "{count} selected — mark as:" },
-  "ledger.paidOn": { zh: "{date} 回款", en: "paid {date}" },
   "ledger.stale": { zh: "已超过 {days} 天没回", en: "no money for over {days} days" },
 
   "ledger.emptyTitle": { zh: "还没有记录", en: "Nothing here yet" },
@@ -967,7 +966,7 @@ export const translations = {
   "ledger.viewTable": { zh: "台账", en: "Ledger" },
   "ledger.viewLog": { zh: "每天干了什么", en: "Day by day" },
   "ledger.viewCalendar": { zh: "日历", en: "Calendar" },
-  "ledger.todayNothing": { zh: "今天还没动过", en: "nothing yet today" },
+  "ledger.colLastStep": { zh: "上次操作", en: "Last step" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

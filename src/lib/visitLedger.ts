@@ -777,3 +777,26 @@ export function activityLog(visits: Visit[]): DayActivity[] {
     .map((day) => activityOn(visits, day))
     .filter((day) => day.total > 0 || day.added > 0);
 }
+
+/**
+ * The step this visit is currently at, and the day that step was done.
+ *
+ * Three date columns beside a status column said the same thing twice: a visit reading
+ * "已报 OA" with a date of 09/22 *is* "we reported it on the 22nd". So the ledger shows the
+ * status and one date, and which field that date belongs to follows from the status.
+ *
+ * `new` has no date of its own on purpose — a visit appearing is the other clinic booking
+ * someone, not a step this clinic performed.
+ */
+export function currentStep(visit: Visit): {
+  field?: "enteredDate" | "submittedDate" | "paidDate";
+  date?: string;
+} {
+  const dates = operationDates(visit);
+  if (visit.status === "paid") return { field: "paidDate", date: dates.paid };
+  if (visit.status === "submitted" || visit.status === "denied") {
+    return { field: "submittedDate", date: dates.submitted };
+  }
+  if (visit.status === "entered") return { field: "enteredDate", date: dates.entered };
+  return {};
+}
