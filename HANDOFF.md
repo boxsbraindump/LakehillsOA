@@ -172,6 +172,36 @@ are kept, because reading a column of them at a glance was the one thing it did 
 - Paid visits stay in the list like everything else; the two date groupings behind 按日期看 remain
   for "what did this cheque settle" and "which day never came back".
 
+**What the page is for, in the clinic's own words: 让我知道我今天弄了多少事情.** The EOB is
+theirs to read; the page's job is to show the day's work. A dated block at the top counts every
+status change made on a given day, broken down by kind, expandable to exactly which visits and
+at what time, with arrows back to earlier days. This is only answerable because changes are
+timestamped — a sheet of coloured cells cannot answer it at all, since recolouring leaves no
+trace of when, and so the day's work vanishes the moment it is done.
+
+**An import that failed twice, and why.** Reading the EOB out of its PDF was built and then
+removed: it did not work on their real EOB. Commit 46b39b6 still has it, with pdfjs-dist, if it is
+ever worth retrying on a PDF that has a text layer. The spreadsheet import failed for two
+separate reasons, both now fixed: there was no file picker at all, only a paste box; and
+`datesInLine` did not know `2026/10/2`, which is what a Chinese-locale Excel writes — it read
+that as month 2026, gave up, and imported nothing at all. Dates now parse year-first and
+year-last with any of three separators, plus 年月日.
+
+**The .xlsx is read without a dependency.** An .xlsx is a ZIP of XML and the browser can already
+inflate, so `sheetImport.ts` walks the zip's central directory, inflates entries with
+`DecompressionStream("deflate-raw")`, and turns the first worksheet into tab-separated text —
+the same shape pasting cells produces, so both routes land in one parser and there is only one
+thing to get right. Styles are parsed too, because a date in a sheet is only a number: without
+its number format a visit date imports as 46296.
+
+**Service area is a Notion-style select** (`serviceTags.ts`). A visit stores the option's
+**id**, never its label, so renaming an option changes every visit already tagged with it —
+which is exactly what was asked for ("把里面的字自己改了就行"), and nothing has to be migrated.
+The four defaults are a starting point meant to be renamed or deleted. An import invents options
+for labels it has not seen, since their sheet already carries this column. A single Chinese
+character is a valid label, so the row parser's two-character minimum applies only to Latin
+text — "头" was being silently dropped.
+
 **Resist re-introducing a workflow shell here.** Three attempts at one were all rejected, each
 time because the page has to be the record first.
 

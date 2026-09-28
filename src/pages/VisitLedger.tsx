@@ -8,6 +8,7 @@ import {
   Scale,
   Search,
   Trash2,
+  Tag,
   Upload,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
 } from "../lib/date";
 import {
   VISIT_STATUSES,
+  activityOn,
   bucketByDate,
   groupByPaidDate,
   groupByPatient,
@@ -37,8 +39,16 @@ import {
   visitHistory,
   withStatus,
 } from "../lib/visitLedger";
-import type { PatientRecord, Visit, VisitStatus } from "../lib/visitLedger";
-import { extractPdfText } from "../lib/pdfText";
+import type { ParsedVisitRow, PatientRecord, Visit, VisitStatus } from "../lib/visitLedger";
+import { readSheetFile } from "../lib/sheetImport";
+import {
+  DEFAULT_SERVICE_TAGS,
+  TAG_COLORS,
+  newTagId,
+  resolveImportedTags,
+  tagById,
+} from "../lib/serviceTags";
+import type { ServiceTag } from "../lib/serviceTags";
 import type { TranslationKey } from "../lib/translations";
 
 
@@ -103,6 +113,14 @@ export default function VisitLedger() {
   const [reconciling, setReconciling] = useState(false);
   const [byDate, setByDate] = useState<null | "paid" | "visit">(null);
   const [month, setMonth] = useState(() => monthKeyOf(todayKey()));
+  const [serviceTags, setServiceTags] = useSyncedStorage<ServiceTag[]>(
+    "lh-visit-service-tags",
+    DEFAULT_SERVICE_TAGS,
+  );
+  const [managingTags, setManagingTags] = useState(false);
+  // What was done, and when — the question the clinic actually asked this page to answer.
+  const [activityDay, setActivityDay] = useState(today);
+  const [activityOpen, setActivityOpen] = useState(false);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
 
   const rows = useMemo(
@@ -114,6 +132,7 @@ export default function VisitLedger() {
   );
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
+  const activity = useMemo(() => activityOn(visits, activityDay), [visits, activityDay]);
   const detail = detailName ? patients.find((p) => p.name === detailName) ?? null : null;
 
   const thisWeek = useMemo(() => {
@@ -178,6 +197,12 @@ export default function VisitLedger() {
     });
   }
 
+  function setServiceTag(visit: Visit, tagId: string) {
+    setVisits((prev) =>
+      prev.map((v) => (v.id === visit.id ? { ...v, serviceTag: tagId || undefined } : v)),
+    );
+  }
+
   function setPaidDate(visit: Visit, paidDate: string) {
     setVisits((prev) =>
       prev.map((v) => (v.id === visit.id ? { ...v, paidDate: paidDate || undefined } : v)),
@@ -226,6 +251,85 @@ export default function VisitLedger() {
               week: String(thisWeek),
             })}
           </p>
+        )}
+      </div>
+
+      {/* What you got done. A sheet of coloured cells could never show this: recolouring a
+          cell leaves no trace of when, so the day's work vanishes the moment it is done. */}
+      <div className="mt-4 rounded-(--radius-lg) border border-(--color-primary)/25 bg-(--color-primary)/[0.05] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <button
+            onClick={() => setActivityDay(shiftDateKey(activityDay, -1))}
+            aria-label={t("ledger.prevDay")}
+            className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-[13px] font-medium text-(--color-ink)">
+            {activityDay === today ? t("ledger.todayLabel") : formatDisplayDate(activityDay, lang)}
+          </span>
+          <button
+            onClick={() => setActivityDay(shiftDateKey(activityDay, 1))}
+            disabled={activityDay >= today}
+            aria-label={t("ledger.nextDay")}
+            className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary) disabled:opacity-30"
+          >
+            <ChevronRight size={15} />
+          </button>
+          {activityDay !== today && (
+            <button
+              onClick={() => setActivityDay(today)}
+              className="text-[12px] text-(--color-primary)"
+            >
+              {t("ledger.backToToday")}
+            </button>
+          )}
+        </div>
+
+        <p className="mt-1 text-[20px] font-bold text-(--color-ink) tabular-nums">
+          {t("ledger.didCount", { count: String(activity.total) })}
+        </p>
+
+        {activity.total > 0 && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {VISIT_STATUSES.filter((status) => activity.counts[status] > 0).map((status) => (
+              <span
+                key={status}
+                className={[
+                  "rounded-full border px-2 py-0.5 text-[12px] font-medium",
+                  STATUS_TONE[status],
+                ].join(" ")}
+              >
+                {t(STATUS_LABEL[status])} {activity.counts[status]}
+              </span>
+            ))}
+            <button
+              onClick={() => setActivityOpen(!activityOpen)}
+              className="ml-auto text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
+            >
+              {t(activityOpen ? "ledger.hideWhich" : "ledger.showWhich")}
+            </button>
+          </div>
+        )}
+
+        {activityOpen && activity.entries.length > 0 && (
+          <ul className="mt-2 flex flex-col divide-y divide-(--color-hairline) border-t border-(--color-hairline)">
+            {activity.entries.map((entry, i) => (
+              <li
+                key={`${entry.visit.id}-${entry.at}-${i}`}
+                className="flex flex-wrap items-baseline gap-x-2 py-1 text-[12px]"
+              >
+                <span className="font-medium text-(--color-ink)">{entry.visit.name}</span>
+                <span className="text-(--color-ink-faint) tabular-nums">
+                  {entry.visit.visitDate}
+                </span>
+                <span className="text-(--color-ink-muted)">→ {t(STATUS_LABEL[entry.status])}</span>
+                <span className="ml-auto text-(--color-ink-faint) tabular-nums">
+                  {timestamp(entry.at, lang)}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
@@ -446,6 +550,15 @@ export default function VisitLedger() {
                   {t("ledger.colVisitDate")}
                 </th>
                 <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                  <button
+                    onClick={() => setManagingTags(true)}
+                    className="flex items-center gap-1 hover:text-(--color-primary)"
+                  >
+                    {t("ledger.colService")}
+                    <Tag size={11} />
+                  </button>
+                </th>
+                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colStatus")}
                 </th>
                 <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
@@ -490,6 +603,30 @@ export default function VisitLedger() {
                       aria-label={t("ledger.colVisitDate")}
                       className="rounded-(--radius-xs) border border-transparent bg-transparent px-1.5 py-1 text-[13px] text-(--color-ink-muted) tabular-nums outline-none hover:border-(--color-hairline) focus:border-(--color-primary)"
                     />
+                  </td>
+                  <td className="px-3 py-2">
+                    <select
+                      value={visit.serviceTag ?? ""}
+                      onChange={(e) => {
+                        if (e.target.value === "__manage") setManagingTags(true);
+                        else setServiceTag(visit, e.target.value);
+                      }}
+                      aria-label={t("ledger.colService")}
+                      className={[
+                        "cursor-pointer rounded-full border px-2 py-1 text-[12px] outline-none",
+                        tagById(serviceTags, visit.serviceTag)
+                          ? TAG_COLORS[tagById(serviceTags, visit.serviceTag)!.color % TAG_COLORS.length]
+                          : "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-faint)",
+                      ].join(" ")}
+                    >
+                      <option value="">{t("ledger.noService")}</option>
+                      {serviceTags.map((tag) => (
+                        <option key={tag.id} value={tag.id}>
+                          {tag.label}
+                        </option>
+                      ))}
+                      <option value="__manage">{t("ledger.manageTags")}</option>
+                    </select>
                   </td>
                   <td className="px-3 py-2">
                     {/* A status is a cell you change, not a stage you graduate from. */}
@@ -546,20 +683,41 @@ export default function VisitLedger() {
         />
       )}
 
+      {managingTags && (
+        <TagManager
+          tags={serviceTags}
+          onChange={setServiceTags}
+          onClose={() => setManagingTags(false)}
+        />
+      )}
+
       {batchOpen && (
         <BatchPanel
           today={today}
           onClose={() => setBatchOpen(false)}
           onAdd={(newRows, status, paidDate) => {
             const at = Date.now();
+            // Their sheet already says which part was treated; an import that dropped that
+            // column would leave them re-entering by hand what they had written down.
+            const { tags, idFor } = resolveImportedTags(
+              serviceTags,
+              newRows.map((r) => r.service),
+            );
+            if (tags.length !== serviceTags.length) setServiceTags(tags);
+
             setVisits((prev) => [
               ...prev,
               ...newRows.map((r) => ({
-                ...r,
                 id: newVisitId() + Math.random().toString(36).slice(2, 5),
+                name: r.name,
+                visitDate: r.visitDate,
                 status,
                 paidDate: status === "paid" ? paidDate : undefined,
+                createdAt: at,
                 history: [{ status, at }],
+                ...(r.service
+                  ? { serviceTag: idFor.get(r.service.trim().toLowerCase().replace(/\s+/g, "")) }
+                  : {}),
               })),
             ]);
             setBatchOpen(false);
@@ -860,6 +1018,109 @@ function DayView({
   );
 }
 
+/**
+ * The service-part options, edited the way Notion edits a select.
+ *
+ * Visits store the option's id, so renaming one here changes every visit already tagged with
+ * it — which is the point: the clinic wanted to "把里面的字自己改了就行". Deleting an option
+ * leaves those visits untagged rather than silently rewriting them to something else.
+ */
+function TagManager({
+  tags,
+  onChange,
+  onClose,
+}: {
+  tags: ServiceTag[];
+  onChange: (tags: ServiceTag[]) => void;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [draft, setDraft] = useState("");
+
+  function rename(id: string, label: string) {
+    onChange(tags.map((tag) => (tag.id === id ? { ...tag, label } : tag)));
+  }
+
+  function remove(id: string) {
+    onChange(tags.filter((tag) => tag.id !== id));
+  }
+
+  function add() {
+    const label = draft.trim();
+    if (!label) return;
+    onChange([...tags, { id: newTagId(), label, color: tags.length % TAG_COLORS.length }]);
+    setDraft("");
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
+      <div className="w-full max-w-sm rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-3)">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-[17px] font-bold text-(--color-ink)">{t("ledger.tagsTitle")}</h2>
+            <p className="mt-0.5 text-[12px] text-(--color-ink-muted)">{t("ledger.tagsHelp")}</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t("common.cancel")}
+            className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <ul className="flex flex-col gap-1.5">
+          {tags.map((tag) => (
+            <li key={tag.id} className="flex items-center gap-2">
+              <span
+                className={[
+                  "h-3 w-3 shrink-0 rounded-full border",
+                  TAG_COLORS[tag.color % TAG_COLORS.length],
+                ].join(" ")}
+              />
+              <input
+                value={tag.label}
+                onChange={(e) => rename(tag.id, e.target.value)}
+                aria-label={t("ledger.tagName")}
+                className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1 text-[14px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+              />
+              <button
+                onClick={() => remove(tag.id)}
+                aria-label={t("common.delete")}
+                className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-rose-600"
+              >
+                <Trash2 size={14} />
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+          className="mt-3 flex gap-2"
+        >
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={t("ledger.tagNew")}
+            className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+          />
+          <button
+            type="submit"
+            disabled={!draft.trim()}
+            className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
+          >
+            {t("ledger.tagAdd")}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function BatchPanel({
   today,
   onClose,
@@ -867,7 +1128,7 @@ function BatchPanel({
 }: {
   today: string;
   onClose: () => void;
-  onAdd: (rows: Visit[], status: VisitStatus, paidDate: string) => void;
+  onAdd: (rows: ParsedVisitRow[], status: VisitStatus, paidDate: string) => void;
 }) {
   const { t } = useLanguage();
   const [text, setText] = useState("");
@@ -877,6 +1138,26 @@ function BatchPanel({
   const [paidDate, setPaidDate] = useState(today);
   const preview = useMemo(() => parseVisitRows(text, visitDate), [text, visitDate]);
   const undated = preview.filter((row) => row.usedFallbackDate).length;
+  const [reading, setReading] = useState(false);
+  const [readError, setReadError] = useState<string | null>(null);
+
+  /** The other clinic's own .xlsx, read as-is — retyping it is the step this page removes. */
+  async function pickSheet(file: File) {
+    setReading(true);
+    setReadError(null);
+    try {
+      const sheet = await readSheetFile(file);
+      if (!sheet.text.trim()) {
+        setReadError(t("ledger.sheetEmpty"));
+        return;
+      }
+      setText((prev) => (prev.trim() ? prev + "\n" + sheet.text : sheet.text));
+    } catch {
+      setReadError(t("ledger.sheetFailed"));
+    } finally {
+      setReading(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
@@ -895,12 +1176,32 @@ function BatchPanel({
           </button>
         </div>
 
+        <label className="mb-2 flex cursor-pointer items-center justify-center gap-2 rounded-(--radius-sm) border border-dashed border-(--color-primary)/50 px-3 py-3 text-[13px] font-medium text-(--color-primary) hover:bg-(--color-primary)/[0.04]">
+          <Upload size={14} />
+          {reading ? t("ledger.sheetReading") : t("ledger.pickSheet")}
+          <input
+            type="file"
+            accept=".xlsx,.xlsm,.csv,.tsv,.txt"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void pickSheet(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {readError && (
+          <p className="mb-2 flex items-start gap-1 text-[12px] text-amber-700">
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            {readError}
+          </p>
+        )}
+
         <textarea
-          autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t("ledger.addPlaceholder")}
-          rows={7}
+          rows={6}
           className="w-full rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
         />
 
@@ -912,6 +1213,9 @@ function BatchPanel({
                 {preview.map((row, i) => (
                   <tr key={`${row.name}-${i}`} className="border-b border-(--color-hairline) last:border-0">
                     <td className="px-2.5 py-1 text-[13px] text-(--color-ink)">{row.name}</td>
+                    <td className="px-2.5 py-1 text-[12px] text-(--color-ink-muted)">
+                      {row.service ?? ""}
+                    </td>
                     <td className="px-2.5 py-1 text-right text-[12px] tabular-nums">
                       <span
                         className={
@@ -994,19 +1298,7 @@ function BatchPanel({
             </button>
             <button
               disabled={preview.length === 0}
-              onClick={() =>
-                onAdd(
-                  preview.map((row) => ({
-                    id: "",
-                    name: row.name,
-                    visitDate: row.visitDate,
-                    status,
-                    createdAt: Date.now(),
-                  })),
-                  status,
-                  paidDate,
-                )
-              }
+              onClick={() => onAdd(preview, status, paidDate)}
               className="rounded-(--radius-sm) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
             >
               {t("ledger.addConfirm")}
@@ -1033,31 +1325,7 @@ function ReconcilePanel({
   const [text, setText] = useState("");
   const [paidDate, setPaidDate] = useState(today);
   const [chosen, setChosen] = useState<string[]>([]);
-  const [reading, setReading] = useState(false);
-  const [readError, setReadError] = useState<TranslationKey | null>(null);
   const result = useMemo(() => (text.trim() ? matchRemittance(visits, text) : null), [visits, text]);
-
-  /**
-   * A medical EOB is a PDF that does not survive being selected and copied, so the file is read
-   * directly. What comes out is the same free text the box takes — the matcher is unchanged.
-   */
-  async function readPdf(file: File) {
-    setReading(true);
-    setReadError(null);
-    try {
-      const extracted = await extractPdfText(file);
-      if (!extracted.hasTextLayer) {
-        // A scan has no text in it. Saying so beats matching nothing and looking broken.
-        setReadError("ledger.pdfNoText");
-        return;
-      }
-      setText((prev) => (prev.trim() ? prev + "\n" + extracted.text : extracted.text));
-    } catch {
-      setReadError("ledger.pdfFailed");
-    } finally {
-      setReading(false);
-    }
-  }
   const openCount = visits.filter(isOpen).length;
   const total = (result?.matched.length ?? 0) + chosen.length;
 
@@ -1080,28 +1348,8 @@ function ReconcilePanel({
           </button>
         </div>
 
-        <label className="mb-2 flex cursor-pointer items-center justify-center gap-2 rounded-(--radius-sm) border border-dashed border-(--color-primary)/50 px-3 py-3 text-[13px] font-medium text-(--color-primary) hover:bg-(--color-primary)/[0.04]">
-          <Upload size={14} />
-          {reading ? t("ledger.pdfReading") : t("ledger.pdfPick")}
-          <input
-            type="file"
-            accept="application/pdf,.pdf"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void readPdf(file);
-              e.target.value = "";
-            }}
-          />
-        </label>
-        {readError && (
-          <p className="mb-2 flex items-start gap-1 text-[12px] text-amber-700">
-            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-            {t(readError)}
-          </p>
-        )}
-
         <textarea
+          autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t("ledger.reconcilePlaceholder")}

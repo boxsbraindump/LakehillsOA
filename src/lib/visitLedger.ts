@@ -13,6 +13,7 @@
  * figure a sum rather than a tally.
  */
 import { compactForSearch } from "./searchIndex";
+import { formatDateKey } from "./date";
 
 /**
  * The spreadsheet's four colours plus the case it had no colour for. `new` is the blank cell —
@@ -39,6 +40,8 @@ export interface Visit {
   paidDate?: string;
   note?: string;
   createdAt: number;
+  /** A {@link ServiceTag} id — which part of the body this visit treated. */
+  serviceTag?: string;
   /**
    * Every status this visit has been through, oldest first. `status` is the last entry's
    * status; this exists so a patient's page can answer "when did we do that" — which the old
@@ -141,12 +144,19 @@ export function datesInLine(line: string): string[] {
     found.add(`${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
   };
 
-  for (const [, y, m, d] of line.matchAll(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g)) {
+  // Year first is unambiguous, whatever the separator. A Chinese-locale Excel writes
+  // "2026/10/2", which is what a pasted spreadsheet actually contains — reading that as
+  // month 2026 and giving up was why a real paste imported nothing.
+  for (const [, y, m, d] of line.matchAll(/\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b/g)) {
     keep(Number(y), Number(m), Number(d));
   }
-  for (const [, m, d, y] of line.matchAll(/\b(\d{1,2})[/](\d{1,2})[/](\d{2}|\d{4})\b/g)) {
+  // Year last: the US order a remittance prints, with any of the three separators.
+  for (const [, m, d, y] of line.matchAll(/\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})\b/g)) {
     const year = Number(y) < 100 ? Number(y) + 2000 : Number(y);
     keep(year, Number(m), Number(d));
+  }
+  for (const [, y, m, d] of line.matchAll(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?/g)) {
+    keep(Number(y), Number(m), Number(d));
   }
   // Compact yyyymmdd, which is what most remittances actually print.
   for (const [, y, m, d] of line.matchAll(/\b(\d{4})(\d{2})(\d{2})\b/g)) {
@@ -426,7 +436,8 @@ export function bucketByDate(visits: Visit[], mode: "visit" | "paid"): Map<strin
 }
 
 /** Anything shaped like a date, so it can be lifted out of a cell and off a name. */
-const DATE_TOKEN = /\b(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{8})\b/g;
+const DATE_TOKEN =
+  /(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日?)|\b(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{8})\b/g;
 
 /** Money, row numbers and codes — never a name, always in the way of finding one. */
 const NOISE_TOKEN = /\$\s?[\d,]+(?:\.\d{2})?|\b\d+(?:\.\d{2})?\b/g;
@@ -436,6 +447,11 @@ export interface ParsedVisitRow {
   visitDate: string;
   /** True when the row stated no date of its own and fell back to the one the user chose. */
   usedFallbackDate: boolean;
+  /**
+   * Whatever text the row carried besides the name — their sheet already has a column saying
+   * which part of the body was treated, and re-entering that by hand would be absurd.
+   */
+  service?: string;
 }
 
 /**
@@ -463,11 +479,18 @@ export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitR
       .replace(NOISE_TOKEN, " ")
       .replace(/[|;]/g, "\t");
 
-    const name = cleaned
+    const words = cleaned
       .split(/\t|\s{2,}|,/)
       .map((cell) => cell.trim().replace(/\s+/g, " "))
-      .find((cell) => cell.length > 1 && /[A-Za-z\u4e00-\u9fff]/.test(cell));
+      // Two characters minimum for Latin, so a stray initial is not read as a name \u2014 but a
+      // single Chinese character is a whole word, and "\u5934" is exactly the kind of thing this
+      // column holds.
+      .filter(
+        (cell) =>
+          /[\u4e00-\u9fff]/.test(cell) || (cell.length > 1 && /[A-Za-z]/.test(cell)),
+      );
 
+    const [name, ...rest] = words;
     if (!name) continue;
     // A spreadsheet's header row names its columns; it is not a patient.
     if (/^(name|patient|patient name|姓名|患者|病人)$/i.test(name)) continue;
@@ -476,8 +499,56 @@ export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitR
       name,
       visitDate: dates[0] ?? fallbackDate,
       usedFallbackDate: dates.length === 0,
+      ...(rest[0] ? { service: rest[0] } : {}),
     });
   }
 
   return rows;
+}
+
+/** One thing that was done, and to whom. */
+export interface ActivityEntry {
+  visit: Visit;
+  status: VisitStatus;
+  at: number;
+}
+
+export interface DayActivity {
+  date: string;
+  entries: ActivityEntry[];
+  /** How many of each kind of change happened that day. */
+  counts: Record<VisitStatus, number>;
+  total: number;
+}
+
+/**
+ * What was actually done on a given day.
+ *
+ * This is the question the clinic asked the page to answer — "让我知道我今天弄了多少事情" — and
+ * it is only answerable because every status change is timestamped. A spreadsheet of coloured
+ * cells cannot answer it at all: recolouring a cell leaves no trace of when, so a day's work
+ * disappears the moment it is done.
+ *
+ * Days are compared in local time, because "today" means the user's today, not UTC's.
+ */
+export function activityOn(visits: Visit[], dateKey: string): DayActivity {
+  const entries: ActivityEntry[] = [];
+  const counts: Record<VisitStatus, number> = {
+    new: 0,
+    entered: 0,
+    submitted: 0,
+    paid: 0,
+    denied: 0,
+  };
+
+  for (const visit of visits) {
+    for (const event of visitHistory(visit)) {
+      if (formatDateKey(new Date(event.at)) !== dateKey) continue;
+      entries.push({ visit, status: event.status, at: event.at });
+      counts[event.status] += 1;
+    }
+  }
+
+  entries.sort((a, b) => b.at - a.at);
+  return { date: dateKey, entries, counts, total: entries.length };
 }
