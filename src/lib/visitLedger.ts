@@ -758,3 +758,22 @@ export function activityOn(visits: Visit[], dateKey: string): DayActivity {
   // doing something, so it is reported beside the figure rather than inside it.
   return { date: dateKey, entries, counts, total: entries.length - counts.new, added: counts.new };
 }
+
+/**
+ * Every day that had activity, newest first.
+ *
+ * The clinic does one kind of work per day — Monday the week's visits go into Unified Practice,
+ * Friday the claims go to Office Ally, some later day the money lands — so the useful shape is
+ * not "today" but a run of days, each saying what was done on it. That is the page's whole job:
+ * 主页面显示那一天我干了什么.
+ */
+export function activityLog(visits: Visit[]): DayActivity[] {
+  const days = new Set<string>();
+  for (const visit of visits) {
+    for (const event of visitHistory(visit)) days.add(formatDateKey(new Date(event.at)));
+  }
+  return [...days]
+    .sort((a, b) => b.localeCompare(a))
+    .map((day) => activityOn(visits, day))
+    .filter((day) => day.total > 0 || day.added > 0);
+}

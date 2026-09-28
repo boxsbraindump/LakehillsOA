@@ -226,6 +226,13 @@ The bulk bar carries a date, because a batch shares one: select the week's rows,
 actually went out, then say what happened to it. The calendar has a third lens over that same
 date (按报 OA 日期), so a day's submissions are as findable as a day's payments.
 
+**The main view of the day's work is a log of days, not a card for today.** The clinic does
+one kind of work per day — the week's visits go into Unified Practice on one day, the claims go
+to Office Ally on another, the money lands on a third — so a single-day card with arrows was the
+wrong shape and had to be paged through to find anything. `activityLog` returns every day
+that had activity, newest first, each row naming what was done and how many; clicking one opens
+exactly which visits and at what time. Today is highlighted and open by default.
+
 **`new` is not counted as work done.** A visit appearing is the other clinic booking someone,
 not this clinic doing something, so the day's figure excludes it and reports it on its own line
 underneath. Counting an import of sixty bookings as sixty things handled would make the one

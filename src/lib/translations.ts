@@ -946,12 +946,6 @@ export const translations = {
   "ledger.sat": { zh: "六", en: "Sat" },
   "ledger.undatedRows": { zh: "{count} 行没写就诊日期，用了上面选的那个日期", en: "{count} rows had no date of their own and used the date above" },
   "ledger.todayLabel": { zh: "今天", en: "Today" },
-  "ledger.prevDay": { zh: "前一天", en: "Previous day" },
-  "ledger.nextDay": { zh: "后一天", en: "Next day" },
-  "ledger.backToToday": { zh: "回到今天", en: "Back to today" },
-  "ledger.didCount": { zh: "你处理了 {count} 条", en: "You handled {count}" },
-  "ledger.showWhich": { zh: "看是哪些", en: "Which ones" },
-  "ledger.hideWhich": { zh: "收起", en: "Hide" },
   "ledger.colService": { zh: "部位", en: "Area" },
   "ledger.noService": { zh: "—", en: "—" },
   "ledger.manageTags": { zh: "⚙ 改这些选项…", en: "⚙ Edit these options…" },
@@ -969,6 +963,9 @@ export const translations = {
   "ledger.colSubmittedDate": { zh: "报 OA", en: "To OA" },
   "ledger.addedApart": { zh: "另外录进来 {count} 条（他们那边的预约，不算我们的操作）", en: "{count} bookings also came in (theirs, not work you did)" },
   "ledger.viewBySubmitted": { zh: "按报 OA 日期", en: "By the day claimed" },
+  "ledger.logTitle": { zh: "每天干了什么", en: "What was done, day by day" },
+  "ledger.logEmpty": { zh: "还没有操作记录。", en: "Nothing done yet." },
+  "ledger.logMore": { zh: "还有 {count} 天", en: "{count} more days" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

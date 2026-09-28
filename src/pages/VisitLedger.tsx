@@ -25,7 +25,7 @@ import {
 } from "../lib/date";
 import {
   VISIT_STATUSES,
-  activityOn,
+  activityLog,
   bucketByDate,
   groupByPaidDate,
   groupByPatient,
@@ -127,8 +127,8 @@ export default function VisitLedger() {
   // "哪一天是我把这个 batch 报到 OA 的" — a batch shares one date, and it is often not today.
   const [batchDate, setBatchDate] = useState(today);
   // What was done, and when — the question the clinic actually asked this page to answer.
-  const [activityDay, setActivityDay] = useState(today);
-  const [activityOpen, setActivityOpen] = useState(false);
+  const [openDay, setOpenDay] = useState<string | null>(today);
+  const [logLimit, setLogLimit] = useState(14);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
 
   const rows = useMemo(
@@ -140,7 +140,7 @@ export default function VisitLedger() {
   );
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
-  const activity = useMemo(() => activityOn(visits, activityDay), [visits, activityDay]);
+  const log = useMemo(() => activityLog(visits), [visits]);
   const dayGroups = useMemo(() => {
     if (byDate === "visit") return groupByVisitDate(visits);
     if (byDate === "paid") return groupByPaidDate(visits);
@@ -274,91 +274,103 @@ export default function VisitLedger() {
         )}
       </div>
 
-      {/* What you got done. A sheet of coloured cells could never show this: recolouring a
-          cell leaves no trace of when, so the day's work vanishes the moment it is done. */}
-      <div className="mt-4 rounded-(--radius-lg) border border-(--color-primary)/25 bg-(--color-primary)/[0.05] px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <button
-            onClick={() => setActivityDay(shiftDateKey(activityDay, -1))}
-            aria-label={t("ledger.prevDay")}
-            className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <span className="text-[13px] font-medium text-(--color-ink)">
-            {activityDay === today ? t("ledger.todayLabel") : formatDisplayDate(activityDay, lang)}
-          </span>
-          <button
-            onClick={() => setActivityDay(shiftDateKey(activityDay, 1))}
-            disabled={activityDay >= today}
-            aria-label={t("ledger.nextDay")}
-            className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary) disabled:opacity-30"
-          >
-            <ChevronRight size={15} />
-          </button>
-          {activityDay !== today && (
+      {/* A run of days, each saying what was done on it.
+
+          The clinic does one kind of work per day — the week's visits go into Unified Practice
+          on one day, the claims go to Office Ally on another, the money lands on a third — so
+          "today" alone was the wrong shape. A sheet of coloured cells cannot show any of this:
+          recolouring a cell leaves no trace of when, so the day's work vanishes as it is done. */}
+      {visits.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
+          <p className="border-b border-(--color-hairline) bg-(--color-surface) px-4 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
+            {t("ledger.logTitle")}
+          </p>
+          {log.length === 0 ? (
+            <p className="px-4 py-5 text-center text-[13px] text-(--color-ink-faint)">
+              {t("ledger.logEmpty")}
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-(--color-hairline)">
+              {log.slice(0, logLimit).map((day) => {
+                const open = openDay === day.date;
+                return (
+                  <li key={day.date} className={day.date === today ? "bg-(--color-primary)/[0.05]" : ""}>
+                    <button
+                      onClick={() => setOpenDay(open ? null : day.date)}
+                      className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-left"
+                    >
+                      <span
+                        className={[
+                          "text-[13px] whitespace-nowrap",
+                          day.date === today
+                            ? "font-bold text-(--color-ink)"
+                            : "text-(--color-ink-muted)",
+                        ].join(" ")}
+                      >
+                        {day.date === today && `${t("ledger.todayLabel")} · `}
+                        {formatDisplayDate(day.date, lang)}
+                      </span>
+                      <span className="ml-auto flex flex-wrap items-center justify-end gap-1">
+                        {VISIT_STATUSES.filter(
+                          (status) => status !== "new" && day.counts[status] > 0,
+                        ).map((status) => (
+                          <span
+                            key={status}
+                            className={[
+                              "rounded-full border px-2 py-0.5 text-[12px] font-medium whitespace-nowrap",
+                              STATUS_TONE[status],
+                            ].join(" ")}
+                          >
+                            {t(STATUS_LABEL[status])} {day.counts[status]}
+                          </span>
+                        ))}
+                        {/* Bookings arriving are the other clinic's doing, so they are shown
+                            without being dressed up as work this clinic did. */}
+                        {day.added > 0 && (
+                          <span className="text-[12px] whitespace-nowrap text-(--color-ink-faint)">
+                            {t("ledger.addedApart", { count: String(day.added) })}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+
+                    {open && day.entries.length > 0 && (
+                      <ul className="border-t border-(--color-hairline) px-4 pt-1 pb-2">
+                        {day.entries.map((entry, i) => (
+                          <li
+                            key={`${entry.visit.id}-${entry.at}-${i}`}
+                            className="flex flex-wrap items-baseline gap-x-2 py-0.5 text-[12px]"
+                          >
+                            <span className="font-medium text-(--color-ink)">{entry.visit.name}</span>
+                            <span className="text-(--color-ink-faint) tabular-nums">
+                              {entry.visit.visitDate}
+                            </span>
+                            <span className="text-(--color-ink-muted)">
+                              → {t(STATUS_LABEL[entry.status])}
+                            </span>
+                            <span className="ml-auto text-(--color-ink-faint) tabular-nums">
+                              {timestamp(entry.at, lang)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {log.length > logLimit && (
             <button
-              onClick={() => setActivityDay(today)}
-              className="text-[12px] text-(--color-primary)"
+              onClick={() => setLogLimit(logLimit + 14)}
+              className="w-full border-t border-(--color-hairline) py-2 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
             >
-              {t("ledger.backToToday")}
+              {t("ledger.logMore", { count: String(log.length - logLimit) })}
             </button>
           )}
         </div>
+      )}
 
-        <p className="mt-1 text-[20px] font-bold text-(--color-ink) tabular-nums">
-          {t("ledger.didCount", { count: String(activity.total) })}
-        </p>
-        {activity.added > 0 && (
-          <p className="text-[12px] text-(--color-ink-faint)">
-            {t("ledger.addedApart", { count: String(activity.added) })}
-          </p>
-        )}
-
-        {activity.total > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {VISIT_STATUSES.filter(
-              (status) => status !== "new" && activity.counts[status] > 0,
-            ).map((status) => (
-              <span
-                key={status}
-                className={[
-                  "rounded-full border px-2 py-0.5 text-[12px] font-medium",
-                  STATUS_TONE[status],
-                ].join(" ")}
-              >
-                {t(STATUS_LABEL[status])} {activity.counts[status]}
-              </span>
-            ))}
-            <button
-              onClick={() => setActivityOpen(!activityOpen)}
-              className="ml-auto text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
-            >
-              {t(activityOpen ? "ledger.hideWhich" : "ledger.showWhich")}
-            </button>
-          </div>
-        )}
-
-        {activityOpen && activity.entries.length > 0 && (
-          <ul className="mt-2 flex flex-col divide-y divide-(--color-hairline) border-t border-(--color-hairline)">
-            {activity.entries.map((entry, i) => (
-              <li
-                key={`${entry.visit.id}-${entry.at}-${i}`}
-                className="flex flex-wrap items-baseline gap-x-2 py-1 text-[12px]"
-              >
-                <span className="font-medium text-(--color-ink)">{entry.visit.name}</span>
-                <span className="text-(--color-ink-faint) tabular-nums">
-                  {entry.visit.visitDate}
-                </span>
-                <span className="text-(--color-ink-muted)">→ {t(STATUS_LABEL[entry.status])}</span>
-                <span className="ml-auto text-(--color-ink-faint) tabular-nums">
-                  {timestamp(entry.at, lang)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
       {/* Search first: the list is long by design, and finding a patient is the common errand. */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
