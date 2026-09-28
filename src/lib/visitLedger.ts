@@ -22,6 +22,13 @@ export type VisitStatus = "new" | "entered" | "submitted" | "paid" | "denied";
 
 export const VISIT_STATUSES: VisitStatus[] = ["new", "entered", "submitted", "paid", "denied"];
 
+/** One status change, and when somebody made it. */
+export interface StatusEvent {
+  status: VisitStatus;
+  /** Epoch ms — when the person clicked, not the date the thing happened out in the world. */
+  at: number;
+}
+
 export interface Visit {
   id: string;
   name: string;
@@ -32,6 +39,56 @@ export interface Visit {
   paidDate?: string;
   note?: string;
   createdAt: number;
+  /**
+   * Every status this visit has been through, oldest first. `status` is the last entry's
+   * status; this exists so a patient's page can answer "when did we do that" — which the old
+   * spreadsheet could never answer, because a cell colour overwrites the colour before it.
+   *
+   * Optional, because records written before this existed have none. Read it through
+   * {@link visitHistory}, never directly.
+   */
+  history?: StatusEvent[];
+}
+
+/**
+ * The visit's trail, back-filled for records that predate it.
+ *
+ * A legacy record knows two things for certain: it was created at `createdAt`, and if it is
+ * paid, the money arrived on `paidDate`. Everything between those was not recorded and is not
+ * invented — the trail simply starts where the evidence does.
+ */
+export function visitHistory(visit: Visit): StatusEvent[] {
+  if (visit.history && visit.history.length > 0) return visit.history;
+  const trail: StatusEvent[] = [{ status: "new", at: visit.createdAt }];
+  if (visit.status !== "new") {
+    trail.push({
+      status: visit.status,
+      // A paid date is a date, not a time; noon keeps it on the right day in any timezone.
+      at: visit.paidDate ? new Date(`${visit.paidDate}T12:00:00`).getTime() : visit.createdAt,
+    });
+  }
+  return trail;
+}
+
+/** When the visit last moved. Used for the "最近操作" column, so it sorts. */
+export function lastTouchedAt(visit: Visit): number {
+  const trail = visitHistory(visit);
+  return trail[trail.length - 1]?.at ?? visit.createdAt;
+}
+
+/** Apply a status change and record it, in one place so nothing can move without a trail. */
+export function withStatus(
+  visit: Visit,
+  status: VisitStatus,
+  paidDate?: string,
+  at = Date.now(),
+): Visit {
+  return {
+    ...visit,
+    status,
+    paidDate: status === "paid" ? paidDate : undefined,
+    history: [...visitHistory(visit), { status, at }],
+  };
 }
 
 /** Money is owed to the other clinic per visit reimbursed, so only paid visits count. */
@@ -278,4 +335,71 @@ export function parseNameList(text: string, visitDate: string, now = Date.now())
     });
   }
   return visits;
+}
+
+/** What one patient's whole record adds up to. */
+export interface PatientRecord {
+  name: string;
+  visits: Visit[];
+  total: number;
+  paid: number;
+  /** Claimed and still waiting — submitted or denied. */
+  open: number;
+  denied: number;
+  /** Not claimed yet: still to go into UP, or in UP and not yet sent to Office Ally. */
+  notClaimed: number;
+  firstVisit: string;
+  lastVisit: string;
+}
+
+/**
+ * Everyone, folded by name.
+ *
+ * Names are matched case- and spacing-insensitively so "Wen Li" and "wen  li" are one person,
+ * but the spelling shown is the one first entered — correcting a patient's name is the user's
+ * call, not something to do silently behind their back.
+ */
+export function groupByPatient(visits: Visit[]): PatientRecord[] {
+  const byKey = new Map<string, Visit[]>();
+  for (const visit of visits) {
+    const key = compactForSearch(visit.name);
+    const bucket = byKey.get(key);
+    if (bucket) bucket.push(visit);
+    else byKey.set(key, [visit]);
+  }
+
+  return [...byKey.values()]
+    .map((group) => {
+      const sorted = [...group].sort((a, b) => a.visitDate.localeCompare(b.visitDate));
+      return {
+        name: sorted[0].name,
+        visits: [...sorted].reverse(),
+        total: sorted.length,
+        paid: sorted.filter((v) => v.status === "paid").length,
+        open: sorted.filter(isOpen).length,
+        denied: sorted.filter((v) => v.status === "denied").length,
+        notClaimed: sorted.filter((v) => v.status === "new" || v.status === "entered").length,
+        firstVisit: sorted[0].visitDate,
+        lastVisit: sorted[sorted.length - 1].visitDate,
+      };
+    })
+    .sort((a, b) => b.lastVisit.localeCompare(a.lastVisit) || a.name.localeCompare(b.name));
+}
+
+/**
+ * Free-text filter over the flat list: matches a name, or any part of a date.
+ *
+ * Typing "09-15" should find that day and typing "li" should find Wen Li, without the user
+ * having to say which kind of thing they are typing.
+ */
+export function matchesQuery(visit: Visit, query: string): boolean {
+  const q = query.trim();
+  if (!q) return true;
+  const needle = compactForSearch(q);
+  if (!needle) return true;
+  return (
+    compactForSearch(visit.name).includes(needle) ||
+    visit.visitDate.includes(q.trim()) ||
+    (visit.paidDate ?? "").includes(q.trim())
+  );
 }

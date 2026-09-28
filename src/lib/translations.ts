@@ -816,7 +816,7 @@ export const translations = {
   "ledger.filterOpen": { zh: "等钱中", en: "Awaiting money" },
   "ledger.showing": { zh: "共 {count} 条", en: "{count} shown" },
   "ledger.selectAll": { zh: "全选", en: "Select all" },
-  "ledger.selectedCount": { zh: "选中 {count} 条", en: "{count} selected" },
+  "ledger.selectedCount": { zh: "已选 {count} 条 —— 标为：", en: "{count} selected — mark as:" },
   "ledger.paidOn": { zh: "{date} 回款", en: "paid {date}" },
   "ledger.stale": { zh: "已超过 {days} 天没回", en: "no money for over {days} days" },
 
@@ -894,7 +894,6 @@ export const translations = {
   "ledger.thisWeekLabel": { zh: "这一周（{from} – {to}）", en: "This week ({from} – {to})" },
   "ledger.thisWeekCount": { zh: "回了 {count} 个，这就是要结的数", en: "{count} came back — that is what is owed" },
 
-  "ledger.stageEmpty": { zh: "这里暂时没有人。", en: "Nobody here right now." },
 
   "ledger.stepEntered": { zh: "已录入 UP →", en: "In UP →" },
   "ledger.stepSubmitted": { zh: "已报 OA →", en: "Submitted →" },
@@ -905,26 +904,28 @@ export const translations = {
   "ledger.more": { zh: "更多", en: "More" },
 
   "ledger.seeByDate": { zh: "按日期看", en: "By date" },
-  "ledger.backToStages": { zh: "回到三步", en: "Back to the steps" },
-  "ledger.stageToUp": { zh: "① 放进 UP", en: "1. Into Unified Practice" },
-  "ledger.stageToUpHint": {
-    zh: "这些人还没排班 —— 去 UP 上一个个排，排完在这里标一下",
-    en: "Not scheduled yet — book each one in UP, then mark them here",
-  },
-  "ledger.stageToOa": { zh: "② 报到 Office Ally", en: "2. Claim to Office Ally" },
-  "ledger.stageToOaHint": {
-    zh: "已经在 UP 上了，等每周统一报一次 —— 报完点右边，一次全标",
-    en: "In UP already, waiting for the weekly upload — one button marks them all",
-  },
-  "ledger.stageToPay": { zh: "③ 回钱", en: "3. Waiting on payment" },
-  "ledger.stageToPayHint": {
-    zh: "已经报出去了 —— 收到 EOB 就粘贴进来，自动对上是哪几个人哪几天",
-    en: "Claimed and waiting — paste the EOB in and it matches the names and dates for you",
-  },
-  "ledger.bulkEntered": { zh: "这 {count} 个都放好了", en: "All {count} scheduled" },
-  "ledger.bulkSubmitted": { zh: "这 {count} 个都报了", en: "All {count} claimed" },
   "ledger.movedManyToast": { zh: "{count} 条 → {step}", en: "{count} moved → {step}" },
   "ledger.reconcileShort": { zh: "收到 EOB 了", en: "EOB arrived" },
+  "ledger.summaryLine": {
+    zh: "{patients} 位患者 · {visits} 次 service · 本周回了 {week} 个",
+    en: "{patients} patients · {visits} visits · {week} paid this week",
+  },
+  "ledger.searchPlaceholder": {
+    zh: "搜患者姓名，或者日期（比如 2026-09-15）",
+    en: "Search a patient, or a date (e.g. 2026-09-15)",
+  },
+  "ledger.noMatches": { zh: "没有匹配「{query}」的记录", en: "Nothing matches “{query}”" },
+  "ledger.backToList": { zh: "回到列表", en: "Back to the list" },
+  "ledger.colPatient": { zh: "患者", en: "Patient" },
+  "ledger.colVisitDate": { zh: "就诊日期", en: "Visit date" },
+  "ledger.colStatus": { zh: "状态", en: "Status" },
+  "ledger.colPaidDate": { zh: "回款日期", en: "Paid on" },
+  "ledger.colLastTouched": { zh: "最近操作", en: "Last change" },
+  "ledger.patientSummary": {
+    zh: "一共 {total} 次 service · 回了 {paid} 次钱 · {open} 次还在等",
+    en: "{total} visits · {paid} paid · {open} still waiting",
+  },
+  "ledger.patientSpan": { zh: "{from} 到 {to}", en: "{from} to {to}" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

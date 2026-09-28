@@ -1,22 +1,26 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, ChevronRight, Scale, Trash2, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Plus, Scale, Search, Trash2, X } from "lucide-react";
 import { useSyncedStorage } from "../hooks/useSyncedStorage";
 import { useLanguage } from "../components/LanguageProvider";
 import { useToast } from "../components/ToastProvider";
 import { todayKey, formatDisplayDate, shiftDateKey } from "../lib/date";
 import {
-  CHASE_AFTER_DAYS,
   VISIT_STATUSES,
   groupByPaidDate,
+  groupByPatient,
   groupByVisitDate,
+  lastTouchedAt,
   isOpen,
-  isStale,
   matchRemittance,
+  matchesQuery,
   newVisitId,
   parseNameList,
+  visitHistory,
+  withStatus,
 } from "../lib/visitLedger";
-import type { Visit, VisitStatus } from "../lib/visitLedger";
+import type { PatientRecord, Visit, VisitStatus } from "../lib/visitLedger";
 import type { TranslationKey } from "../lib/translations";
+
 
 const STORAGE_KEY = "lh-visit-ledger";
 
@@ -29,76 +33,81 @@ const STATUS_LABEL: Record<VisitStatus, TranslationKey> = {
 };
 
 /**
- * The page is the job, not the data model.
- *
- * The week has exactly three jobs in it — put them into Unified Practice, send the claims to
- * Office Ally, chase the money — so the page is those three jobs and nothing else. A pile is
- * named for the work still owed on it, and each pile's own button does that work for everyone
- * in it at once, because that is how two of the three actually happen: one upload, one batch.
- * Paid visits leave the piles entirely; they are the figure at the top, which is the number
- * the other clinic gets paid on.
+ * The old sheet's four colours, kept. A column of statuses has to be readable at a glance —
+ * that was the one thing the spreadsheet did well, and losing it would be a step backwards.
  */
-const STAGES = [
-  {
-    key: "toUp",
-    statuses: ["new"] as VisitStatus[],
-    title: "ledger.stageToUp",
-    hint: "ledger.stageToUpHint",
-    // Scheduling is one patient at a time in UP, but a day's worth often goes in together.
-    bulk: { to: "entered" as VisitStatus, label: "ledger.bulkEntered" as TranslationKey },
-  },
-  {
-    key: "toOa",
-    statuses: ["entered"] as VisitStatus[],
-    title: "ledger.stageToOa",
-    hint: "ledger.stageToOaHint",
-    // The week's claims go to Office Ally in a single upload. One click, not one per person.
-    bulk: { to: "submitted" as VisitStatus, label: "ledger.bulkSubmitted" as TranslationKey },
-  },
-  {
-    key: "toPay",
-    statuses: ["submitted", "denied"] as VisitStatus[],
-    title: "ledger.stageToPay",
-    hint: "ledger.stageToPayHint",
-    // Money comes back per patient on an EOB, so this pile empties by matching, not marking.
-    bulk: null,
-  },
-] as const;
-
-/** What the single button on a row should do, given where that row is now. */
-const NEXT_STEP: Partial<Record<VisitStatus, { to: VisitStatus; label: TranslationKey }>> = {
-  new: { to: "entered", label: "ledger.stepEntered" },
-  entered: { to: "submitted", label: "ledger.stepSubmitted" },
-  submitted: { to: "paid", label: "ledger.stepPaid" },
-  denied: { to: "submitted", label: "ledger.stepResubmitted" },
+const STATUS_TONE: Record<VisitStatus, string> = {
+  new: "border-(--color-hairline) bg-(--color-surface) text-(--color-ink-muted)",
+  entered: "border-sky-300 bg-sky-50 text-sky-800",
+  submitted: "border-amber-300 bg-amber-50 text-amber-800",
+  paid: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  denied: "border-rose-300 bg-rose-50 text-rose-800",
 };
 
+function timestamp(at: number, lang: "zh" | "en"): string {
+  return new Date(at).toLocaleString(lang === "zh" ? "zh-CN" : "en-US", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * The page is the record, not the procedure.
+ *
+ * Two earlier versions organised this around the week's steps — first five status filters and
+ * three view tabs, then three piles, one per weekly job. Both answered "what do I do next" and
+ * neither answered "what happened to this patient", which is the question a front desk is
+ * actually asked. The spreadsheet this replaced was one flat list of every visit, and being
+ * flat was its virtue: you could look down it.
+ *
+ * So the main view is that list, with the batch operations reachable by selecting rows rather
+ * than by the page being shaped like the workflow. A status is a cell you change, not a stage
+ * you graduate from. What the sheet could not do — say *when* each change was made, because a
+ * cell colour overwrites the colour before it — is on the patient's own page.
+ */
 export default function VisitLedger() {
   const { t, lang } = useLanguage();
   const { showToast } = useToast();
   const today = todayKey();
 
   const [visits, setVisits] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [detailName, setDetailName] = useState<string | null>(null);
   const [quickName, setQuickName] = useState("");
   // The date sticks between adds: a batch is one day's bookings typed straight through.
   const [quickDate, setQuickDate] = useState(today);
   const [batchOpen, setBatchOpen] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [byDate, setByDate] = useState<null | "paid" | "visit">(null);
-  const [expanded, setExpanded] = useState<string | null>("toUp");
 
+  const rows = useMemo(
+    () =>
+      visits
+        .filter((v) => matchesQuery(v, query))
+        .sort((a, b) => b.visitDate.localeCompare(a.visitDate) || a.name.localeCompare(b.name)),
+    [visits, query],
+  );
 
-  /** The one number the week turns on: how many visits the other clinic gets paid for. */
+  const patients = useMemo(() => groupByPatient(visits), [visits]);
+  const detail = detailName ? patients.find((p) => p.name === detailName) ?? null : null;
+
   const thisWeek = useMemo(() => {
     const from = shiftDateKey(today, -6);
     return visits.filter(
       (v) => v.status === "paid" && v.paidDate && v.paidDate >= from && v.paidDate <= today,
-    );
+    ).length;
   }, [visits, today]);
+
+  const selectedSet = new Set(selected);
+  const allShownSelected = rows.length > 0 && rows.every((v) => selectedSet.has(v.id));
 
   function quickAdd() {
     const name = quickName.trim();
     if (!name) return;
+    const at = Date.now();
     setVisits((prev) => [
       ...prev,
       {
@@ -106,143 +115,197 @@ export default function VisitLedger() {
         name,
         visitDate: quickDate,
         status: "new",
-        createdAt: Date.now(),
+        createdAt: at,
+        history: [{ status: "new", at }],
       },
     ]);
     setQuickName("");
   }
 
-  function move(ids: string[], status: VisitStatus, paidDate?: string): Visit[] {
-    const before = visits.filter((v) => ids.includes(v.id));
+  /** Every status change goes through here, so nothing can move without leaving a trail. */
+  function setStatus(ids: string[], status: VisitStatus, paidDate?: string): Visit[] {
+    const idSet = new Set(ids);
+    const before = visits.filter((v) => idSet.has(v.id));
     setVisits((prev) =>
       prev.map((v) =>
-        ids.includes(v.id)
-          ? { ...v, status, paidDate: status === "paid" ? (paidDate ?? today) : undefined }
+        idSet.has(v.id)
+          ? withStatus(v, status, status === "paid" ? (paidDate ?? today) : undefined)
           : v,
       ),
     );
     return before;
   }
 
-  /** Every step is one click, so every step is one click back. */
-  function moveWithUndo(visit: Visit, status: VisitStatus) {
-    const [before] = move([visit.id], status);
-    showToast(t("ledger.movedToast", { name: visit.name, step: t(STATUS_LABEL[status]) }), {
+  function setStatusWithUndo(ids: string[], status: VisitStatus) {
+    const before = setStatus(ids, status);
+    if (before.length === 0) return;
+    const message =
+      before.length === 1
+        ? t("ledger.movedToast", { name: before[0].name, step: t(STATUS_LABEL[status]) })
+        : t("ledger.movedManyToast", {
+            count: String(before.length),
+            step: t(STATUS_LABEL[status]),
+          });
+    showToast(message, {
       label: t("common.undo"),
-      onClick: () => setVisits((prev) => prev.map((v) => (v.id === before.id ? before : v))),
+      onClick: () =>
+        setVisits((prev) => {
+          const byId = new Map(before.map((v) => [v.id, v]));
+          return prev.map((v) => byId.get(v.id) ?? v);
+        }),
     });
   }
 
-  /** Two of the three weekly jobs happen to everyone at once, so they undo that way too. */
-  function moveManyWithUndo(group: readonly Visit[], status: VisitStatus) {
-    if (group.length === 0) return;
-    const before = move(group.map((v) => v.id), status);
-    showToast(
-      t("ledger.movedManyToast", { count: String(group.length), step: t(STATUS_LABEL[status]) }),
-      {
-        label: t("common.undo"),
-        onClick: () =>
-          setVisits((prev) => {
-            const byId = new Map(before.map((v) => [v.id, v]));
-            return prev.map((v) => byId.get(v.id) ?? v);
-          }),
-      },
+  function setPaidDate(visit: Visit, paidDate: string) {
+    setVisits((prev) =>
+      prev.map((v) => (v.id === visit.id ? { ...v, paidDate: paidDate || undefined } : v)),
     );
   }
 
-  function remove(visit: Visit) {
-    setVisits((prev) => prev.filter((v) => v.id !== visit.id));
-    showToast(t("ledger.deletedToast", { count: "1" }), {
+  function remove(ids: string[]) {
+    const idSet = new Set(ids);
+    const removed = visits.filter((v) => idSet.has(v.id));
+    setVisits((prev) => prev.filter((v) => !idSet.has(v.id)));
+    setSelected([]);
+    showToast(t("ledger.deletedToast", { count: String(removed.length) }), {
       label: t("common.undo"),
-      onClick: () => setVisits((prev) => [...prev, visit]),
+      onClick: () => setVisits((prev) => [...prev, ...removed]),
     });
   }
 
-  const stages = STAGES.map((stage) => ({
-    ...stage,
-    visits: visits
-      .filter((v) => stage.statuses.includes(v.status))
-      .sort((a, b) => b.visitDate.localeCompare(a.visitDate) || a.name.localeCompare(b.name)),
-  }));
+  function toggle(id: string) {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-      <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
-        {t("ledger.title")}
-      </h1>
-
-      {/* The week's figure, stated outright rather than hidden behind a view. */}
-      {visits.length > 0 && (
-        <div className="mt-3 mb-5 rounded-(--radius-lg) border border-(--color-primary)/25 bg-(--color-primary)/[0.05] px-4 py-3">
-          <p className="text-[13px] text-(--color-ink-muted)">
-            {t("ledger.thisWeekLabel", { from: shiftDateKey(today, -6), to: today })}
-          </p>
-          <p className="mt-0.5 text-[22px] font-bold tabular-nums text-(--color-ink)">
-            {t("ledger.thisWeekCount", { count: String(thisWeek.length) })}
-          </p>
-          {thisWeek.length > 0 && (
-            <p className="mt-0.5 text-[12px] text-(--color-ink-faint)">
-              {thisWeek.map((v) => v.name).join(" · ")}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Step one, always and only: write down who came. */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          quickAdd();
-        }}
-        className="mb-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
-      >
-        <input
-          type="date"
-          value={quickDate}
-          onChange={(e) => setQuickDate(e.target.value)}
-          aria-label={t("ledger.visitDate")}
-          className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
-        />
-        <input
-          value={quickName}
-          onChange={(e) => setQuickName(e.target.value)}
-          placeholder={t("ledger.quickAddPlaceholder")}
-          className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
-        />
-        <button
-          type="submit"
-          disabled={!quickName.trim()}
-          className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
-        >
-          {t("ledger.quickAdd")}
-        </button>
-      </form>
-
-      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1">
-        <button
-          onClick={() => setBatchOpen(true)}
-          className="text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
-        >
-          {t("ledger.addMany")}
-        </button>
-        {/* Reconciling lives on pile ③, which is the pile it empties. */}
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
+          {t("ledger.title")}
+        </h1>
         {visits.length > 0 && (
-          <button
-            onClick={() => setByDate(byDate ? null : "paid")}
-            className="ml-auto flex items-center gap-1 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
-          >
-            <CalendarDays size={12} />
-            {t(byDate ? "ledger.backToStages" : "ledger.seeByDate")}
-          </button>
+          <p className="text-[13px] text-(--color-ink-muted)">
+            {t("ledger.summaryLine", {
+              patients: String(patients.length),
+              visits: String(visits.length),
+              week: String(thisWeek),
+            })}
+          </p>
         )}
       </div>
 
+      {/* Search first: the list is long by design, and finding a patient is the common errand. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        {/* Its own row on a phone: sharing one with three buttons squeezed it to 94px. */}
+        <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
+          <Search
+            size={14}
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-(--color-ink-faint)"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("ledger.searchPlaceholder")}
+            className="w-full rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) py-2 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+          />
+        </div>
+        <button
+          onClick={() => setBatchOpen(true)}
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
+        >
+          <Plus size={13} />
+          {t("ledger.addMany")}
+        </button>
+        <button
+          onClick={() => setReconciling(true)}
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-primary)/40 px-3 py-2 text-[13px] font-medium text-(--color-primary)"
+        >
+          <Scale size={13} />
+          {t("ledger.reconcileShort")}
+        </button>
+        <button
+          onClick={() => setByDate(byDate ? null : "paid")}
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
+        >
+          <CalendarDays size={13} />
+          {t(byDate ? "ledger.backToList" : "ledger.seeByDate")}
+        </button>
+      </div>
+
+      {!byDate && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            quickAdd();
+          }}
+          className="mt-2 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-2"
+        >
+          <input
+            type="date"
+            value={quickDate}
+            onChange={(e) => setQuickDate(e.target.value)}
+            aria-label={t("ledger.visitDate")}
+            className="shrink-0 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+          />
+          <input
+            value={quickName}
+            onChange={(e) => setQuickName(e.target.value)}
+            placeholder={t("ledger.quickAddPlaceholder")}
+            className="min-w-0 flex-1 rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1.5 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
+          />
+          <button
+            type="submit"
+            disabled={!quickName.trim()}
+            className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
+          >
+            {t("ledger.quickAdd")}
+          </button>
+        </form>
+      )}
+
+      {/* The weekly batch lives here: select rows, say what happened to them. */}
+      {selected.length > 0 && !byDate && (
+        <div className="sticky top-2 z-10 mt-3 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-primary)/40 bg-(--color-primary)/[0.07] px-3 py-2 backdrop-blur">
+          <span className="text-[13px] font-medium text-(--color-ink)">
+            {t("ledger.selectedCount", { count: String(selected.length) })}
+          </span>
+          {VISIT_STATUSES.map((status) => (
+            <button
+              key={status}
+              onClick={() => {
+                setStatusWithUndo(selected, status);
+                setSelected([]);
+              }}
+              className={[
+                "rounded-full border px-2.5 py-1 text-[12px] font-medium",
+                STATUS_TONE[status],
+              ].join(" ")}
+            >
+              {t(STATUS_LABEL[status])}
+            </button>
+          ))}
+          <button
+            onClick={() => remove(selected)}
+            className="ml-auto flex items-center gap-1 text-[12px] text-rose-700"
+          >
+            <Trash2 size={12} />
+            {t("common.delete")}
+          </button>
+          <button
+            onClick={() => setSelected([])}
+            className="text-[12px] text-(--color-ink-muted)"
+          >
+            {t("common.cancel")}
+          </button>
+        </div>
+      )}
+
       {visits.length === 0 ? (
-        <div className="rounded-(--radius-lg) border border-dashed border-(--color-hairline) px-6 py-10 text-center">
+        <div className="mt-4 rounded-(--radius-lg) border border-dashed border-(--color-hairline) px-6 py-10 text-center">
           <p className="text-[14px] text-(--color-ink-muted)">{t("ledger.emptyBody")}</p>
         </div>
       ) : byDate ? (
-        <>
+        <div className="mt-4">
           <div className="mb-3 flex gap-1.5">
             {(["paid", "visit"] as const).map((mode) => (
               <button
@@ -264,102 +327,140 @@ export default function VisitLedger() {
             mode={byDate}
             lang={lang}
           />
-        </>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {stages.map((stage) => {
-            const open = expanded === stage.key;
-            return (
-              <section
-                key={stage.key}
-                className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas)"
-              >
-                <div className="flex items-center gap-2 px-4 py-3">
-                  <button
-                    onClick={() => setExpanded(open ? null : stage.key)}
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  >
-                    <ChevronRight
-                      size={15}
-                      className={[
-                        "shrink-0 text-(--color-ink-faint) transition-transform",
-                        open ? "rotate-90" : "",
-                      ].join(" ")}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-bold text-(--color-ink)">
-                        {t(stage.title)}
-                        <span className="ml-1.5 text-[14px] font-medium text-(--color-ink-muted) tabular-nums">
-                          {stage.visits.length}
-                        </span>
-                      </span>
-                      <span className="block text-[12px] text-(--color-ink-faint)">{t(stage.hint)}</span>
-                    </span>
-                  </button>
-                  {/* The whole pile at once — that is what the weekly job actually is. */}
-                  {stage.bulk && stage.visits.length > 0 && (
-                    <button
-                      onClick={() => moveManyWithUndo(stage.visits, stage.bulk.to)}
-                      className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary)"
-                    >
-                      {t(stage.bulk.label, { count: String(stage.visits.length) })}
-                    </button>
-                  )}
-                  {stage.key === "toPay" && stage.visits.length > 0 && (
-                    <button
-                      onClick={() => setReconciling(true)}
-                      className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-primary)/40 px-2.5 py-1.5 text-[12px] font-medium text-(--color-primary)"
-                    >
-                      <Scale size={12} />
-                      {t("ledger.reconcileShort")}
-                    </button>
-                  )}
-                </div>
-
-                {open && stage.visits.length > 0 && (
-                  <ul className="flex flex-col divide-y divide-(--color-hairline) border-t border-(--color-hairline)">
-                    {stage.visits.map((visit) => (
-                      <Row
-                        key={visit.id}
-                        visit={visit}
-                        today={today}
-                        onAdvance={() => {
-                          const next = NEXT_STEP[visit.status];
-                          if (next) moveWithUndo(visit, next.to);
-                        }}
-                        onDeny={() => moveWithUndo(visit, "denied")}
-                        onRemove={() => remove(visit)}
-                      />
-                    ))}
-                  </ul>
-                )}
-                {open && stage.visits.length === 0 && (
-                  <p className="border-t border-(--color-hairline) px-4 py-4 text-center text-[13px] text-(--color-ink-faint)">
-                    {t("ledger.stageEmpty")}
-                  </p>
-                )}
-              </section>
-            );
-          })}
         </div>
+      ) : rows.length === 0 ? (
+        <p className="mt-4 rounded-(--radius-lg) border border-dashed border-(--color-hairline) py-10 text-center text-[14px] text-(--color-ink-faint)">
+          {t("ledger.noMatches", { query })}
+        </p>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-(--radius-lg) border border-(--color-hairline)">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-(--color-hairline) bg-(--color-surface)">
+                <th className="w-9 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={allShownSelected}
+                    onChange={() => setSelected(allShownSelected ? [] : rows.map((v) => v.id))}
+                    aria-label={t("ledger.selectAll")}
+                    className="align-middle"
+                  />
+                </th>
+                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                  {t("ledger.colPatient")}
+                </th>
+                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                  {t("ledger.colVisitDate")}
+                </th>
+                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                  {t("ledger.colStatus")}
+                </th>
+                <th className="px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                  {t("ledger.colPaidDate")}
+                </th>
+                <th className="hidden px-3 py-2 text-[12px] font-medium text-(--color-ink-muted) sm:table-cell">
+                  {t("ledger.colLastTouched")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((visit) => (
+                <tr
+                  key={visit.id}
+                  className={[
+                    "border-b border-(--color-hairline) last:border-0",
+                    selectedSet.has(visit.id) ? "bg-(--color-primary)/[0.06]" : "",
+                  ].join(" ")}
+                >
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedSet.has(visit.id)}
+                      onChange={() => toggle(visit.id)}
+                      aria-label={visit.name}
+                      className="align-middle"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => setDetailName(visit.name)}
+                      className="max-w-[16ch] truncate text-[14px] font-medium text-(--color-ink) underline-offset-2 hover:text-(--color-primary) hover:underline sm:max-w-none"
+                    >
+                      {visit.name}
+                    </button>
+                  </td>
+                  <td className="px-3 py-2 text-[13px] whitespace-nowrap text-(--color-ink-muted) tabular-nums">
+                    {visit.visitDate}
+                  </td>
+                  <td className="px-3 py-2">
+                    {/* A status is a cell you change, not a stage you graduate from. */}
+                    <select
+                      value={visit.status}
+                      onChange={(e) => setStatusWithUndo([visit.id], e.target.value as VisitStatus)}
+                      aria-label={t("ledger.colStatus")}
+                      className={[
+                        "cursor-pointer rounded-full border px-2 py-1 text-[12px] font-medium outline-none",
+                        STATUS_TONE[visit.status],
+                      ].join(" ")}
+                    >
+                      {VISIT_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {t(STATUS_LABEL[status])}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    {visit.status === "paid" ? (
+                      <input
+                        type="date"
+                        value={visit.paidDate ?? ""}
+                        onChange={(e) => setPaidDate(visit, e.target.value)}
+                        aria-label={t("ledger.colPaidDate")}
+                        className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-1.5 py-1 text-[12px] text-(--color-ink) outline-none focus:border-(--color-primary)"
+                      />
+                    ) : (
+                      <span className="text-[13px] text-(--color-ink-faint)">—</span>
+                    )}
+                  </td>
+                  <td className="hidden px-3 py-2 text-[12px] whitespace-nowrap text-(--color-ink-faint) tabular-nums sm:table-cell">
+                    {timestamp(lastTouchedAt(visit), lang)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {detail && (
+        <PatientPanel
+          record={detail}
+          lang={lang}
+          onClose={() => setDetailName(null)}
+          onSetStatus={(id, status) => setStatusWithUndo([id], status)}
+          onRemove={(id) => remove([id])}
+        />
       )}
 
       {batchOpen && (
         <BatchPanel
           today={today}
           onClose={() => setBatchOpen(false)}
-          onAdd={(rows, status, paidDate) => {
+          onAdd={(newRows, status, paidDate) => {
+            const at = Date.now();
             setVisits((prev) => [
               ...prev,
-              ...rows.map((r) => ({
+              ...newRows.map((r) => ({
                 ...r,
                 id: newVisitId() + Math.random().toString(36).slice(2, 5),
                 status,
                 paidDate: status === "paid" ? paidDate : undefined,
+                history: [{ status, at }],
               })),
             ]);
             setBatchOpen(false);
-            showToast(t("ledger.addedToast", { count: String(rows.length) }));
+            showToast(t("ledger.addedToast", { count: String(newRows.length) }));
           }}
         />
       )}
@@ -370,7 +471,7 @@ export default function VisitLedger() {
           today={today}
           onClose={() => setReconciling(false)}
           onSettle={(ids, paidDate) => {
-            move(ids, "paid", paidDate);
+            setStatus(ids, "paid", paidDate);
             showToast(t("ledger.settledToast", { count: String(ids.length), date: paidDate }));
           }}
         />
@@ -379,79 +480,108 @@ export default function VisitLedger() {
   );
 }
 
-function Row({
-  visit,
-  today,
-  onAdvance,
-  onDeny,
+/**
+ * One patient's whole record — the thing a spreadsheet of coloured cells could never show,
+ * because a colour is overwritten by the next colour. Every visit keeps its trail.
+ */
+function PatientPanel({
+  record,
+  lang,
+  onClose,
+  onSetStatus,
   onRemove,
 }: {
-  visit: Visit;
-  today: string;
-  onAdvance: () => void;
-  onDeny: () => void;
-  onRemove: () => void;
+  record: PatientRecord;
+  lang: "zh" | "en";
+  onClose: () => void;
+  onSetStatus: (id: string, status: VisitStatus) => void;
+  onRemove: (id: string) => void;
 }) {
   const { t } = useLanguage();
-  const [menu, setMenu] = useState(false);
-  const next = NEXT_STEP[visit.status];
-
   return (
-    <li className="px-4 py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14px] text-(--color-ink)">{visit.name}</span>
-          <span className="block text-[12px] text-(--color-ink-faint)">
-            {visit.visitDate}
-            {visit.paidDate ? ` · ${t("ledger.paidOn", { date: visit.paidDate })}` : ""}
-            {visit.status === "denied" ? ` · ${t("ledger.statusDenied")}` : ""}
-            {isStale(visit, today) ? ` · ${t("ledger.stale", { days: String(CHASE_AFTER_DAYS) })}` : ""}
-          </span>
-        </span>
-
-        {next && (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
+      <div className="w-full max-w-xl rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-lg">
+        <div className="flex items-start gap-3 border-b border-(--color-hairline) px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-[18px] font-bold text-(--color-ink)">{record.name}</h2>
+            <p className="mt-0.5 text-[13px] text-(--color-ink-muted)">
+              {t("ledger.patientSummary", {
+                total: String(record.total),
+                paid: String(record.paid),
+                open: String(record.open),
+              })}
+            </p>
+            <p className="mt-0.5 text-[12px] text-(--color-ink-faint)">
+              {t("ledger.patientSpan", {
+                from: formatDisplayDate(record.firstVisit, lang),
+                to: formatDisplayDate(record.lastVisit, lang),
+              })}
+            </p>
+          </div>
           <button
-            onClick={onAdvance}
-            className="shrink-0 rounded-(--radius-sm) border border-(--color-primary)/40 px-2.5 py-1 text-[12px] font-medium text-(--color-primary) hover:bg-(--color-primary)/10"
+            onClick={onClose}
+            aria-label={t("common.cancel")}
+            className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
-            {t(next.label)}
-          </button>
-        )}
-        <button
-          onClick={() => setMenu((v) => !v)}
-          aria-label={t("ledger.more")}
-          className="shrink-0 rounded-(--radius-sm) px-1.5 py-1 text-[13px] text-(--color-ink-faint) hover:text-(--color-ink)"
-        >
-          ⋯
-        </button>
-      </div>
-
-      {menu && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {visit.status === "submitted" && (
-            <button
-              onClick={() => {
-                onDeny();
-                setMenu(false);
-              }}
-              className="rounded-(--radius-sm) border border-(--color-hairline) px-2 py-1 text-[12px] text-(--color-ink-secondary) hover:border-red-300 hover:text-red-600"
-            >
-              {t("ledger.markDenied")}
-            </button>
-          )}
-          <button
-            onClick={() => {
-              onRemove();
-              setMenu(false);
-            }}
-            className="flex items-center gap-1 rounded-(--radius-sm) border border-(--color-hairline) px-2 py-1 text-[12px] text-(--color-ink-secondary) hover:border-red-300 hover:text-red-600"
-          >
-            <Trash2 size={12} />
-            {t("common.delete")}
+            <X size={16} />
           </button>
         </div>
-      )}
-    </li>
+
+        <ul className="flex flex-col divide-y divide-(--color-hairline)">
+          {record.visits.map((visit) => (
+            <li key={visit.id} className="px-5 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[14px] font-medium text-(--color-ink) tabular-nums">
+                  {formatDisplayDate(visit.visitDate, lang)}
+                </span>
+                <select
+                  value={visit.status}
+                  onChange={(e) => onSetStatus(visit.id, e.target.value as VisitStatus)}
+                  aria-label={t("ledger.colStatus")}
+                  className={[
+                    "cursor-pointer rounded-full border px-2 py-0.5 text-[12px] font-medium outline-none",
+                    STATUS_TONE[visit.status],
+                  ].join(" ")}
+                >
+                  {VISIT_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {t(STATUS_LABEL[status])}
+                    </option>
+                  ))}
+                </select>
+                {visit.paidDate && (
+                  <span className="text-[12px] text-emerald-700 tabular-nums">
+                    {t("ledger.paidOn", { date: formatDisplayDate(visit.paidDate, lang) })}
+                  </span>
+                )}
+                <button
+                  onClick={() => onRemove(visit.id)}
+                  aria-label={t("common.delete")}
+                  className="ml-auto shrink-0 text-(--color-ink-faint) hover:text-rose-600"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+
+              {/* When each thing was done. The sheet had nowhere to put this. */}
+              <ol className="mt-1.5 flex flex-col gap-0.5 border-l-2 border-(--color-hairline) pl-3">
+                {visitHistory(visit).map((event, i) => (
+                  <li
+                    key={`${event.status}-${event.at}-${i}`}
+                    className="flex flex-wrap items-baseline gap-x-2 text-[12px]"
+                  >
+                    <span className="text-(--color-ink-muted)">{t(STATUS_LABEL[event.status])}</span>
+                    <span className="text-(--color-ink-faint) tabular-nums">
+                      {timestamp(event.at, lang)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 

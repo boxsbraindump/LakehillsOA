@@ -142,24 +142,38 @@ paid / denied. Denied is not terminal — it goes back to submitted once resubmi
   the payment date is asked for, never derived from the visit date — the status says money
   arrived, not when, and inventing a date would corrupt the payment-date view. When
 
-**The page is the job, not the model.** The first build exposed all five statuses as filter
-chips, three view tabs and two separate add buttons — nine controls on an empty ledger — and the
-owner could not tell what to do first. A second pass cut it to three piles named for where a
-visit sat; the owner then described the week and the names were still wrong. The week is three
-*actions* — put them into Unified Practice, send the claims to Office Ally, chase the money — so
-the piles are now ① 放进 UP / ② 报到 Office Ally / ③ 回钱, each named for the work still owed on it.
+**The page is the record, not the procedure.** Three builds got this wrong in the same way.
+The first exposed all five statuses as filter chips, three view tabs and two add buttons — nine
+controls on an empty ledger. The second cut that to three piles named for where a visit sat. The
+third renamed the piles after the week's three jobs (into UP / to Office Ally / chase the money).
+All three answered *what do I do next*, and the owner wanted the page to answer *what happened to
+this patient* — which is the question a front desk is actually asked, and the one the spreadsheet
+answered by being a flat list you could look down.
 
-**Two of the three are batch operations, and that is the whole point.** Scheduling happens one
-patient at a time in UP, but the week's claims go to Office Ally in a single upload — so every
-pile that can be emptied at once carries a header button that empties it, with one undo covering
-the batch. Marking a weekly OA submission used to be one click per person. Pile ③ is emptied by
-pasting the EOB instead, because money comes back per patient; the reconcile entry point lives on
-that pile rather than in the toolbar, where it was offered a second time.
+So the main view is that list: **one row per visit**, every patient, sorted newest first, with
+columns for patient, visit date, status, paid date and when the status last changed. Status is a
+coloured cell you change from a dropdown, not a stage you graduate from — the old sheet's colours
+are kept, because reading a column of them at a glance was the one thing it did well.
 
-Paid visits are in no pile at all — they are the figure at the top, which is the number the other
-clinic gets paid on, with the two date groupings behind 按日期看 for anything older than the week.
-Every step is one click and one click back via undo. **Resist adding a filter or a tab here**:
-the pile a row is in is the filter.
+- **The batch operations survive as row selection, not as page structure.** Tick the rows that
+  went to Office Ally this week, then say what happened to them; one undo covers the batch. This
+  keeps the weekly upload to one click without the page being shaped like the workflow.
+- **Search is one box over both names and dates** (`matchesQuery`), so "09-15" finds a day and
+  "li" finds Wen Li without the user first saying which they mean.
+- **Every visit now carries a trail** (`history: StatusEvent[]`, read through `visitHistory`).
+  This is the thing coloured cells could never do: a colour is overwritten by the next colour, so
+  the sheet could say a visit was paid but never *when it was marked*. Records written before the
+  trail existed have none, and `visitHistory` back-fills only what is actually known — creation,
+  and the payment date if paid. It does not invent the steps in between.
+- **Clicking a name opens that patient's whole record**: how many visits, how many paid, how many
+  still waiting, each visit's status and paid date, and under each one the dated trail of every
+  change. Names are folded case- and spacing-insensitively, but the spelling shown is the one
+  first entered — correcting a patient's name is the user's call, not something to do silently.
+- Paid visits stay in the list like everything else; the two date groupings behind 按日期看 remain
+  for "what did this cheque settle" and "which day never came back".
+
+**Resist re-introducing a workflow shell here.** Three attempts at one were all rejected, each
+time because the page has to be the record first.
 
 **Access, as of 2026-09-28.** Both users are already on `ALLOWED_EMAILS`, so this runs today in
 any workspace they create. Letting the other clinic's staff in still needs two things that do not
