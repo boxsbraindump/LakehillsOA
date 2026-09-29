@@ -311,6 +311,16 @@ button. The row now leaves the checkbox cell empty and spans the remaining six, 
 exactly under the patient name, and the actions sit beside the dates behind a thin rule rather
 than being flung apart. Aligning to a real column beats guessing an indent.
 
+**All three views share the page container, so their widths were already identical** — but
+checking that exposed two things the width had been hiding. The day log put each day’s counts
+behind `ml-auto`, which across a 1036px list left **578px** between a date and its own chips;
+they sit beside it now. And a calendar day cell was 148×96, sorry, 148×62 — a 2.4:1 strip that
+also never had room for the day number, its dots and a name. It is 148×96 now.
+
+**`ml-auto` is the recurring bug in this file.** It is right on a narrow bar and absurd on anything
+full-width, and it has now had to be removed three times: the expanded row, the day log, and the
+batch bar before them. Check what the container is actually as wide as before reaching for it.
+
 **A wide table is not automatically better, and the page width follows the table.** This took
 three tries and the lesson is worth keeping. At 1600px six short columns stretched apart, with
 700px between a name and its date. Pinning the columns and letting a trailing column soak up the

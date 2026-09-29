@@ -612,7 +612,7 @@ export default function VisitLedger() {
                         {day.date === today && `${t("ledger.todayLabel")} · `}
                         {formatDisplayDate(day.date, lang)}
                       </span>
-                      <span className="ml-auto flex flex-wrap items-center justify-end gap-1">
+                      <span className="flex flex-wrap items-center gap-1">
                         {VISIT_STATUSES.filter(
                           (status) => status !== "new" && day.counts[status] > 0,
                         ).map((status) => (
@@ -1235,7 +1235,7 @@ function MonthCalendar({
               onClick={() => onPick(day)}
               disabled={visits.length === 0}
               className={[
-                "min-h-[62px] border-r border-b border-(--color-hairline) p-1 text-left align-top last:border-r-0 disabled:cursor-default",
+                "min-h-[96px] border-r border-b border-(--color-hairline) p-1.5 text-left align-top last:border-r-0 disabled:cursor-default",
                 inMonth ? "" : "opacity-40",
                 isPicked ? "bg-(--color-primary)/10" : "",
               ].join(" ")}
