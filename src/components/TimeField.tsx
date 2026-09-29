@@ -65,7 +65,7 @@ export function TimeField({
       inputMode="numeric"
       size={5}
       className={[
-        "w-[5ch] rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-center font-mono outline-none hover:border-(--color-hairline) focus:border-(--color-primary)",
+        "w-14 rounded-(--radius-xs) border border-transparent bg-transparent px-1 py-0.5 text-center font-mono outline-none hover:border-(--color-hairline) focus:border-(--color-primary)",
         className,
       ].join(" ")}
     />
