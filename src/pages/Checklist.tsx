@@ -1099,7 +1099,7 @@ export default function Checklist() {
                     aria-label={t("common.save")}
                     className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-primary) hover:bg-(--color-canvas-soft)"
                   >
-                    <Check size={15} />
+                    <Check size={16} />
                   </button>
                   <button
                     type="button"
@@ -1107,7 +1107,7 @@ export default function Checklist() {
                     aria-label={t("common.cancel")}
                     className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
                   >
-                    <X size={15} />
+                    <X size={16} />
                   </button>
                 </form>
               ) : (
@@ -1129,7 +1129,7 @@ export default function Checklist() {
                       aria-label={t("customCategory.dragHandle")}
                       title={t("customCategory.dragHandle")}
                     >
-                      <GripVertical size={15} aria-hidden />
+                      <GripVertical size={16} aria-hidden />
                     </span>
                     <h2 className="min-w-0 text-[18px] font-bold text-(--color-ink)">
                       {section.title}
@@ -1283,7 +1283,7 @@ export default function Checklist() {
                         title={t("followUp.moveTitle")}
                         className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
                       >
-                        <ArrowUpToLine size={13} />
+                        <ArrowUpToLine size={14} />
                       </button>
 
                       <button
@@ -1291,7 +1291,7 @@ export default function Checklist() {
                         aria-label={t("common.edit")}
                         className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
                       >
-                        <Pencil size={13} />
+                        <Pencil size={14} />
                       </button>
 
                       <button
@@ -1299,7 +1299,7 @@ export default function Checklist() {
                         aria-label={t("common.delete")}
                         className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
 
                       <button

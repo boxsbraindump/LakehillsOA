@@ -133,8 +133,9 @@
     rgba(18, 85, 78, 0.09) 0 12px 28px -8px,
     rgba(16, 32, 30, 0.06) 0 24px 48px -16px;
 
-  --tracking-display: -0.018em;
-  --tracking-heading: -0.012em;
+  /* Retuned for Inter, which is narrower than Outfit and needs less pulling in. */
+  --tracking-display: -0.011em;
+  --tracking-heading: -0.006em;
 }
 
 html,
@@ -472,4 +473,19 @@ body {
   from {
     background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
   }
+}
+
+/*
+ * One stroke weight for every icon.
+ *
+ * The app had seven — 2, 2.1, 2.2, 2.25, 2.3, 2.4 and 2.5 — scattered through ten files, all
+ * within a tenth of a pixel of each other. Nobody picks 2.25 over 2.2 on purpose; they
+ * accumulate, and the result is icons that never quite look like a set. Lucide's default 2 is
+ * also heavy beside Inter at 12-14px.
+ *
+ * Set here rather than on each icon: a CSS rule beats the stroke-width presentation attribute
+ * lucide renders, so this cannot drift again without someone editing this file.
+ */
+svg.lucide {
+  stroke-width: 1.75;
 }

@@ -46,7 +46,7 @@ export default function SyncStatusBadge() {
       ].join(" ")}
       title={config.text}
     >
-      <Icon size={13} className={config.spin ? "animate-spin" : ""} />
+      <Icon size={14} className={config.spin ? "animate-spin" : ""} />
       <span className="truncate">{config.text}</span>
     </div>
   );

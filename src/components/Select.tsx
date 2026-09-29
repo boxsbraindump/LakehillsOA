@@ -75,7 +75,7 @@ export function Select({
         ].join(" ")}
       >
         <span className="truncate">{current ? current.label : placeholder}</span>
-        <ChevronDown size={11} className="shrink-0 opacity-50" />
+        <ChevronDown size={12} className="shrink-0 opacity-50" />
       </button>
 
       <Popover open={open} anchorRef={triggerRef} onClose={() => setOpen(false)} align={align}>
@@ -120,7 +120,7 @@ export function Select({
                   ].join(" ")}
                 >
                   <Check
-                    size={13}
+                    size={14}
                     className={[
                       "shrink-0 text-(--color-primary)",
                       selected ? "" : "invisible",

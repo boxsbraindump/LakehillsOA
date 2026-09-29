@@ -270,6 +270,18 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**Scale discipline, which is most of what “professional” actually means.** Three scales had no
+discipline at all, and it is the same disease every time: values a hair apart that nobody chose
+on purpose. Icon stroke had **seven** weights across ten files — 2, 2.1, 2.2, 2.25, 2.3, 2.4,
+2.5 — so the icons never quite looked like a set; there is now one, set in CSS on `svg.lucide`
+at 1.75, which beats the presentation attribute lucide renders and so cannot drift again without
+editing that file. Icon size had **nine** values, most a pixel apart; it is now 12 / 14 / 16 / 20.
+Font size had orphans sitting one pixel from a neighbour (10, 17, 19) which were snapped to the
+step beside them. Tracking was retuned, since it had been set for Outfit and Inter is narrower.
+
+The three remaining `strokeWidth` props are hand-drawn checkmark paths inside checkboxes, not part
+of the icon set — deliberately left alone.
+
 **Making it read as clinical software, not a product page.** Five things were doing the
 opposite, and they were all in the chrome rather than the layout. The working surface carried
 *two* stacked vertical gradients (one on `body`, another on `<main>`) plus a decorative 28px grid

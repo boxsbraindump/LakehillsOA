@@ -151,7 +151,7 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
           : "text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)",
       ].join(" ")}
     >
-      {isListening ? <Square size={13} fill="currentColor" /> : <Mic size={14} />}
+      {isListening ? <Square size={14} fill="currentColor" /> : <Mic size={14} />}
     </button>
   );
 }

@@ -513,7 +513,7 @@ export default function Sidebar() {
       {isEditingWorkspaceName ? (
         <form onSubmit={handleWorkspaceRenameSubmit} className="flex items-center gap-1 px-2 py-1.5">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
-            <Sparkles size={15} strokeWidth={2.25} />
+            <Sparkles size={16} />
           </span>
           <input
             autoFocus
@@ -545,7 +545,7 @@ export default function Sidebar() {
             className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-[15px] font-semibold text-(--color-ink)"
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.28)]">
-              <Sparkles size={15} strokeWidth={2.25} />
+              <Sparkles size={16} />
             </span>
             <span className="truncate">{workspace?.name ?? "Lake Hills OA"}</span>
           </NavLink>
@@ -556,7 +556,7 @@ export default function Sidebar() {
               aria-label={t("workspace.rename")}
               className="mr-1 shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition hover:text-(--color-secondary) md:opacity-0 md:group-hover/workspace:opacity-100"
             >
-              <Pencil size={13} />
+              <Pencil size={14} />
             </button>
           )}
         </div>
@@ -588,7 +588,7 @@ export default function Sidebar() {
             }
             className={navLinkClass}
           >
-            <Icon size={16} strokeWidth={2} className="shrink-0" />
+            <Icon size={16} className="shrink-0" />
             <span className="truncate">{t(key)}</span>
           </NavLink>
         ))}
@@ -602,7 +602,7 @@ export default function Sidebar() {
       {visibleCustomCategories.length >= 8 && (
         <div className="relative mb-1 hidden md:block">
           <Search
-            size={13}
+            size={14}
             className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-(--color-ink-faint)"
           />
           <input
@@ -675,7 +675,7 @@ export default function Sidebar() {
                 title={category.title}
                 className="flex min-w-0 flex-1 items-center gap-2.5 px-2 py-2 text-[14px] whitespace-nowrap text-inherit"
               >
-                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                <Icon size={16} className="shrink-0" />
                 <span className="truncate">{category.title}</span>
               </NavLink>
               <div
@@ -702,7 +702,7 @@ export default function Sidebar() {
                       : "text-(--color-ink-faint) hover:text-(--color-secondary)",
                   ].join(" ")}
                 >
-                  <Pencil size={13} />
+                  <Pencil size={14} />
                 </button>
                 <button
                   type="button"
@@ -716,7 +716,7 @@ export default function Sidebar() {
                       : "text-(--color-ink-faint) hover:text-red-500",
                   ].join(" ")}
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={14} />
                 </button>
               </div>
               </div>
@@ -826,7 +826,7 @@ export default function Sidebar() {
             onClick={() => setIsAddingCategory(true)}
             className="flex items-center gap-2.5 rounded-(--radius-control) px-2 py-2 text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)"
           >
-            <Plus size={16} strokeWidth={2} className="shrink-0" />
+            <Plus size={16} className="shrink-0" />
             <span className="truncate">{t("sidebar.addCategory")}</span>
           </button>
         )}
@@ -835,7 +835,7 @@ export default function Sidebar() {
       <nav className="no-scrollbar mt-2 flex shrink-0 gap-0.5 overflow-x-auto border-(--color-sidebar-border) pt-2 md:mt-2 md:flex-col md:overflow-visible md:border-t">
         {UTILITY_NAV_ITEMS.map(({ to, key, icon: Icon }) => (
           <NavLink key={to} to={to} className={navLinkClass}>
-            <Icon size={16} strokeWidth={2} className="shrink-0" />
+            <Icon size={16} className="shrink-0" />
             <span className="truncate">{t(key)}</span>
           </NavLink>
         ))}

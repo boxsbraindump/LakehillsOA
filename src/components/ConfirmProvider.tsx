@@ -77,7 +77,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           >
             <div className="flex gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) bg-red-50 text-red-600">
-                <AlertTriangle size={18} />
+                <AlertTriangle size={20} />
               </span>
               <div className="min-w-0">
                 <h2 id="confirm-title" className="text-[16px] font-semibold text-(--color-ink)">

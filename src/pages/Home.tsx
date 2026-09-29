@@ -111,7 +111,7 @@ export default function Home() {
 
         <form onSubmit={handleSubmit} className="relative">
           <div className="relative flex items-center rounded-full border border-(--color-hairline) bg-white/88 shadow-(--shadow-level-1) transition-[box-shadow,border-color,transform] duration-200 focus-within:border-(--color-primary)/30 focus-within:shadow-(--shadow-level-2)">
-            <Search size={18} className="ml-5 shrink-0 text-(--color-primary)" />
+            <Search size={20} className="ml-5 shrink-0 text-(--color-primary)" />
             <input
               autoFocus
               value={query}

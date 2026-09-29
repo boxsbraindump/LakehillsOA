@@ -418,7 +418,7 @@ export default function VisitLedger() {
 
       {preview && (
         <p className="mt-3 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-warn)/40 px-3 py-2 text-[12px] tone tone-warn">
-          <Eye size={13} className="shrink-0" />
+          <Eye size={14} className="shrink-0" />
           {t("ledger.previewBanner")}
           <button
             onClick={() => setPreview(null)}
@@ -448,7 +448,7 @@ export default function VisitLedger() {
                 : "border-(--color-hairline) text-(--color-ink-muted) hover:text-(--color-primary)",
             ].join(" ")}
           >
-            <Icon size={13} />
+            <Icon size={14} />
             {t(label)}
           </button>
         ))}
@@ -477,14 +477,14 @@ export default function VisitLedger() {
           onClick={() => setBatchOpen(true)}
           className="flex shrink-0 items-center gap-1 rounded-(--radius-control) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
         >
-          <Plus size={13} />
+          <Plus size={14} />
           {t("ledger.addPatients")}
         </button>
         <button
           onClick={() => setReconciling(true)}
           className="flex shrink-0 items-center gap-1 rounded-(--radius-control) border border-(--color-primary)/40 px-3 py-2 text-[13px] font-medium text-(--color-primary)"
         >
-          <Scale size={13} />
+          <Scale size={14} />
           {t("ledger.reconcileShort")}
         </button>
 
@@ -556,7 +556,7 @@ export default function VisitLedger() {
               onClick={() => setPreview(buildSampleLedger())}
               className="flex items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
             >
-              <Eye size={13} />
+              <Eye size={14} />
               {t("ledger.previewLoad")}
             </button>
           </div>
@@ -817,7 +817,7 @@ export default function VisitLedger() {
                     className="flex items-center gap-1 hover:text-(--color-primary)"
                   >
                     {t("ledger.colService")}
-                    <Tag size={11} />
+                    <Tag size={12} />
                   </button>
                 </th>
                 <th className="sticky top-0 z-10 w-40 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
@@ -1022,7 +1022,7 @@ export default function VisitLedger() {
                 aria-label={t("ledger.prevPage")}
                 className="rounded-(--radius-control) p-1 hover:text-(--color-primary) disabled:opacity-30"
               >
-                <ChevronLeft size={15} />
+                <ChevronLeft size={16} />
               </button>
               <span className="font-mono">
                 {safePage} / {pageCount}
@@ -1033,7 +1033,7 @@ export default function VisitLedger() {
                 aria-label={t("ledger.nextPage")}
                 className="rounded-(--radius-control) p-1 hover:text-(--color-primary) disabled:opacity-30"
               >
-                <ChevronRight size={15} />
+                <ChevronRight size={16} />
               </button>
             </span>
           )}
@@ -1153,7 +1153,7 @@ function SortHeader({
         ].join(" ")}
       >
         {label}
-        <Arrow size={11} className={active ? "" : "opacity-0 group-hover:opacity-40"} />
+        <Arrow size={12} className={active ? "" : "opacity-0 group-hover:opacity-40"} />
       </button>
     </th>
   );
@@ -1248,7 +1248,7 @@ function MonthCalendar({
                 </span>
               )}
               {visits.length > 0 && (
-                <span className="mt-0.5 block truncate text-[10px] text-(--color-ink-faint)">
+                <span className="mt-0.5 block truncate text-[11px] text-(--color-ink-faint)">
                   {visits.length === 1 ? visits[0].name : t("ledger.dayCount", { count: String(visits.length) })}
                 </span>
               )}
@@ -1299,7 +1299,7 @@ function DayView({
                   group.outstanding > 0 ? "font-medium text-(--color-warn)" : "text-(--color-ink-muted)",
                 ].join(" ")}
               >
-                {group.outstanding > 0 && <AlertTriangle size={13} />}
+                {group.outstanding > 0 && <AlertTriangle size={14} />}
                 {t("ledger.dayBreakdown", {
                   total: String(group.total),
                   paid: String(group.paid),
@@ -1366,7 +1366,7 @@ function TagManager({
       <div className="w-full max-w-sm rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-3)">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-[17px] font-bold text-(--color-ink)">{t("ledger.tagsTitle")}</h2>
+            <h2 className="text-[16px] font-bold text-(--color-ink)">{t("ledger.tagsTitle")}</h2>
             <p className="mt-0.5 text-[12px] text-(--color-ink-muted)">{t("ledger.tagsHelp")}</p>
           </div>
           <button
@@ -1374,7 +1374,7 @@ function TagManager({
             aria-label={t("common.cancel")}
             className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -1481,7 +1481,7 @@ function BatchPanel({
             aria-label={t("common.cancel")}
             className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -1653,7 +1653,7 @@ function ReconcilePanel({
             aria-label={t("common.cancel")}
             className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -1687,7 +1687,7 @@ function ReconcilePanel({
                       </span>
                       {datesOnRemittance && (
                         <span className="mt-0.5 flex items-center gap-1 text-[11px] text-(--color-warn)">
-                          <AlertTriangle size={11} className="shrink-0" />
+                          <AlertTriangle size={12} className="shrink-0" />
                           {t("ledger.dateMismatch", { dates: datesOnRemittance.join(" · ") })}
                         </span>
                       )}

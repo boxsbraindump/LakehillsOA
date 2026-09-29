@@ -105,7 +105,7 @@ export function DatePicker({
               aria-label={t("ledger.prevMonth")}
               className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={16} />
             </button>
             <span className="text-[13px] font-medium text-(--color-ink) tabular-nums">{month}</span>
             <button
@@ -114,7 +114,7 @@ export function DatePicker({
               aria-label={t("ledger.nextMonth")}
               className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
             >
-              <ChevronRight size={15} />
+              <ChevronRight size={16} />
             </button>
           </div>
 
@@ -122,7 +122,7 @@ export function DatePicker({
             {WEEKDAYS.map((key) => (
               <span
                 key={key}
-                className="py-1 text-center text-[10px] font-medium text-(--color-ink-faint)"
+                className="py-1 text-center text-[11px] font-medium text-(--color-ink-faint)"
               >
                 {t(key)}
               </span>

@@ -24,7 +24,7 @@ import {
 function BrandMark() {
   return (
     <span className="flex h-8 w-8 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.2)]">
-      <Sparkles size={16} strokeWidth={2.3} />
+      <Sparkles size={16} />
     </span>
   );
 }
@@ -61,19 +61,19 @@ function WorkspacePreview() {
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 rounded-(--radius-sm) bg-(--color-primary) px-2.5 py-2 text-[11px] font-semibold text-white">
-              <Search size={13} />
+              <Search size={14} />
               {t("publicHome.previewSearch")}
             </div>
             <div className="flex items-center gap-2 px-2.5 py-2 text-[11px] text-(--color-ink-muted)">
-              <CheckSquare2 size={13} />
+              <CheckSquare2 size={14} />
               {t("publicHome.previewChecklist")}
             </div>
             <div className="flex items-center gap-2 px-2.5 py-2 text-[11px] text-(--color-ink-muted)">
-              <FileQuestion size={13} />
+              <FileQuestion size={14} />
               {t("publicHome.previewCase")}
             </div>
             <div className="flex items-center gap-2 px-2.5 py-2 text-[11px] text-(--color-ink-muted)">
-              <WalletCards size={13} />
+              <WalletCards size={14} />
               {t("publicHome.previewPayment")}
             </div>
           </div>
@@ -88,7 +88,7 @@ function WorkspacePreview() {
               {t("publicHome.previewTitle")}
             </h2>
             <div className="mt-4 flex items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-white px-3 py-2.5 shadow-(--shadow-level-1)">
-              <Search size={15} className="text-(--color-primary)" />
+              <Search size={16} className="text-(--color-primary)" />
               <span className="text-[12px] text-(--color-ink-faint)">
                 {t("publicHome.previewPlaceholder")}
               </span>
@@ -98,7 +98,7 @@ function WorkspacePreview() {
               <div className="rounded-(--radius-md) border border-(--color-hairline) bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[13px] font-bold text-(--color-ink)">Aetna</p>
-                  <span className="rounded-full bg-(--color-canvas-tint) px-2 py-1 text-[10px] font-semibold text-(--color-secondary)">
+                  <span className="rounded-full bg-(--color-canvas-tint) px-2 py-1 text-[11px] font-semibold text-(--color-secondary)">
                     {t("publicHome.previewCase")}
                   </span>
                 </div>
@@ -108,7 +108,7 @@ function WorkspacePreview() {
               </div>
               <div className="rounded-(--radius-md) border border-(--color-hairline) bg-white p-4">
                 <div className="flex items-center gap-2">
-                  <ExternalLink size={13} className="text-(--color-primary)" />
+                  <ExternalLink size={14} className="text-(--color-primary)" />
                   <p className="text-[13px] font-bold text-(--color-ink)">Availity</p>
                 </div>
                 <p className="mt-2 text-[11px] leading-relaxed text-(--color-ink-muted)">
@@ -116,7 +116,7 @@ function WorkspacePreview() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 flex items-center justify-between gap-3 text-[10px] font-medium text-(--color-ink-faint)">
+            <div className="mt-4 flex items-center justify-between gap-3 text-[11px] font-medium text-(--color-ink-faint)">
               <span className="flex items-center gap-1.5">
                 <span className="landing-sync-pulse h-1.5 w-1.5 rounded-full bg-(--color-primary)" />
                 {t("publicHome.previewSynced")}
@@ -219,7 +219,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
                 className="hidden items-center gap-1.5 rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-(--color-primary-active) sm:flex"
               >
                 {t("publicHome.openWorkspace")}
-                <ArrowRight size={13} />
+                <ArrowRight size={14} />
               </Link>
             ) : (
               <button
@@ -228,7 +228,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
                 className="hidden items-center gap-1.5 rounded-(--radius-control) bg-(--color-primary) px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-(--color-primary-active) sm:flex"
               >
                 {t("publicHome.signIn")}
-                <ArrowRight size={13} />
+                <ArrowRight size={14} />
               </button>
             )}
           </div>
@@ -252,7 +252,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
             </h1>
             <p
               data-hero-reveal
-              className="mt-6 max-w-xl text-[17px] leading-relaxed text-(--color-ink-muted) sm:text-[19px]"
+              className="mt-6 max-w-xl text-[16px] leading-relaxed text-(--color-ink-muted) sm:text-[18px]"
             >
               {t("publicHome.heroCopy")}
             </p>
@@ -314,7 +314,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
                 ["publicHome.featureFlexibleTitle", "publicHome.featureFlexibleBody"],
               ].map(([title, body]) => (
                 <div key={title} className="bg-(--color-canvas) p-5 sm:p-6">
-                  <Check size={16} className="text-(--color-primary)" strokeWidth={2.4} />
+                  <Check size={16} className="text-(--color-primary)" />
                   <h3 className="mt-4 text-[15px] font-bold text-(--color-ink)">
                     {t(title as Parameters<typeof t>[0])}
                   </h3>
@@ -350,7 +350,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
               className="rounded-(--radius-lg) border border-(--color-hairline) bg-white p-6 shadow-(--shadow-level-2)"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-(--radius-md) bg-(--color-canvas-tint) text-(--color-primary)">
-                <Check size={19} strokeWidth={2.5} />
+                <Check size={20} />
               </div>
               <h3 className="mt-5 text-[18px] font-bold text-(--color-ink)">
                 {t("publicHome.readyTitle")}

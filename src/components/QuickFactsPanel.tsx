@@ -113,7 +113,7 @@ export default function QuickFactsPanel() {
         title={t("callBoard.open")}
         className="fixed right-4 bottom-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-(--color-primary) text-white shadow-[0_10px_24px_rgba(40,175,165,0.32)] transition-transform hover:bg-(--color-primary-active) active:scale-95"
       >
-        <Phone size={18} strokeWidth={2.1} />
+        <Phone size={20} />
       </button>
 
       {isOpen && (
@@ -153,7 +153,7 @@ export default function QuickFactsPanel() {
             <div className="border-b border-(--color-hairline) px-5 py-3">
               <div className="relative">
                 <Search
-                  size={15}
+                  size={16}
                   className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-(--color-ink-faint)"
                 />
                 <input
@@ -178,7 +178,7 @@ export default function QuickFactsPanel() {
                           onClick={() => addCard(doc.id)}
                           className="rounded-(--radius-control) flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-(--color-canvas-soft)"
                         >
-                          <Plus size={13} className="shrink-0 text-(--color-primary)" />
+                          <Plus size={14} className="shrink-0 text-(--color-primary)" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[13px] font-medium text-(--color-ink)">
                               {doc.title}

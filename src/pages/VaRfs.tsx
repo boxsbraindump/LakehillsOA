@@ -236,7 +236,7 @@ export default function VaRfs() {
             onClick={generate}
             className="flex items-center gap-1.5 rounded-(--radius-control) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
           >
-            {busy ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+            {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
             {t("vaRfs.generate")}
           </button>
           <button
@@ -257,7 +257,7 @@ export default function VaRfs() {
           onClick={() => setShowDefaults((prev) => !prev)}
           className="flex w-full items-center gap-1.5 text-left"
         >
-          {showDefaults ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+          {showDefaults ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           <span className="text-[16px] font-bold text-(--color-ink)">{t("vaRfs.clinicSection")}</span>
         </button>
         <p className="mt-1 ml-[22px] text-[12px] text-(--color-ink-muted)">

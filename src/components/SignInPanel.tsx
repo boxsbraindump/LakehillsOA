@@ -49,7 +49,7 @@ function LoginErrorBox({ code }: { code: string }) {
   return (
     <div className="mt-4 rounded-(--radius-md) border border-red-200 bg-red-50/80 p-3.5 text-[13px] text-red-700">
       <div className="flex items-start gap-2">
-        <AlertCircle size={15} className="mt-0.5 shrink-0" />
+        <AlertCircle size={16} className="mt-0.5 shrink-0" />
         <div className="min-w-0">
           <p className="font-semibold">{t(content.title)}</p>
           <p className="mt-1 leading-relaxed">{t(content.body)}</p>
@@ -78,7 +78,7 @@ export default function SignInPanel({ isChecking = false, onSignedIn }: SignInPa
     <div className="rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) p-5 shadow-(--shadow-level-2) sm:p-6">
       <div className="mb-4 flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.24)]">
-          <Sparkles size={17} strokeWidth={2.25} />
+          <Sparkles size={16} />
         </span>
         <div>
           <p className="text-[16px] font-bold text-(--color-ink)">Lake Hills OA</p>

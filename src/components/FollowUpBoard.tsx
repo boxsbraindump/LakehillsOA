@@ -128,7 +128,7 @@ export default function FollowUpBoard() {
           onClick={() => setIsAdding(true)}
           className="flex shrink-0 items-center gap-1 rounded-(--radius-control) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
         >
-          <Plus size={13} />
+          <Plus size={14} />
           {t("followUp.add")}
         </button>
       </div>
@@ -163,7 +163,7 @@ export default function FollowUpBoard() {
             aria-label={t("common.cancel")}
             className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </form>
       )}
@@ -230,7 +230,7 @@ export default function FollowUpBoard() {
                       item.note ? "text-(--color-primary)" : "text-(--color-ink-faint)",
                     ].join(" ")}
                   >
-                    <MessageSquare size={13} />
+                    <MessageSquare size={14} />
                   </button>
                   <button
                     type="button"
@@ -238,7 +238,7 @@ export default function FollowUpBoard() {
                     aria-label={t("common.edit")}
                     className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                   >
-                    <Pencil size={13} />
+                    <Pencil size={14} />
                   </button>
                   <button
                     type="button"
@@ -246,7 +246,7 @@ export default function FollowUpBoard() {
                     aria-label={t("common.delete")}
                     className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -274,7 +274,7 @@ export default function FollowUpBoard() {
               onClick={() => setShowDone((prev) => !prev)}
               className="flex items-center gap-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink)"
             >
-              {showDone ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+              {showDone ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               {t("followUp.doneCount", { count: String(done.length) })}
             </button>
             {showDone && (

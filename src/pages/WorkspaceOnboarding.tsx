@@ -39,7 +39,7 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-(--radius-md) bg-(--color-primary) text-white shadow-[0_6px_18px_rgba(40,175,165,0.2)]">
-              <Sparkles size={16} strokeWidth={2.3} />
+              <Sparkles size={16} />
             </span>
             <div className="min-w-0">
               <p className="truncate text-[15px] font-bold text-(--color-ink)">
@@ -96,7 +96,7 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
                 >
                   <div className="flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-canvas-tint) text-(--color-primary)">
-                      <Icon size={19} strokeWidth={2.2} />
+                      <Icon size={20} />
                     </span>
                     <div>
                       <h2 className="text-[16px] font-bold text-(--color-ink)">

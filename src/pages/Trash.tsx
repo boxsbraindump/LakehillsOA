@@ -283,7 +283,7 @@ export default function Trash() {
                 onClick={() => handleRestore(entry)}
                 className="flex shrink-0 items-center gap-1 rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
               >
-                <RotateCcw size={13} />
+                <RotateCcw size={14} />
                 {t("trash.restore")}
               </button>
               <button

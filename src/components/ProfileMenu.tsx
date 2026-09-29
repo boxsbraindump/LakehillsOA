@@ -89,7 +89,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
             }}
             className="rounded-(--radius-control) flex w-full items-center gap-2.5 px-3 py-2 text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
           >
-            <Settings size={15} strokeWidth={2} className="shrink-0" />
+            <Settings size={16} className="shrink-0" />
             {t("profileMenu.settings")}
           </button>
           {syncEnabled && (
@@ -116,7 +116,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                     >
                       <span className="min-w-0 flex-1 truncate">{item.name}</span>
                       {workspace?.id === item.id && (
-                        <Check size={14} strokeWidth={2.2} className="shrink-0 text-(--color-primary)" />
+                        <Check size={14} className="shrink-0 text-(--color-primary)" />
                       )}
                     </button>
                     {canDeleteWorkspace && (
@@ -127,7 +127,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-control) text-(--color-ink-faint) opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
                         aria-label={t("profileMenu.deleteWorkspace")}
                       >
-                        <Trash2 size={14} strokeWidth={2.1} />
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </div>
@@ -139,7 +139,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                 onClick={() => void handleCreateWorkspace()}
                 className="rounded-(--radius-control) flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft) disabled:pointer-events-none disabled:opacity-55"
               >
-                <Plus size={15} strokeWidth={2} className="shrink-0" />
+                <Plus size={16} className="shrink-0" />
                 {t("profileMenu.newWorkspace")}
               </button>
               {workspaceError && (
@@ -155,7 +155,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
             }}
             className="rounded-(--radius-control) flex w-full items-center gap-2.5 px-3 py-2 text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
           >
-            <LogOut size={15} strokeWidth={2} className="shrink-0" />
+            <LogOut size={16} className="shrink-0" />
             {t("profileMenu.logout")}
           </button>
         </div>

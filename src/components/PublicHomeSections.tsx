@@ -35,7 +35,7 @@ export function CapabilityStrip() {
               index % 2 === 0 ? "pr-4" : "border-l pl-4"
             } lg:border-l lg:px-6 lg:first:border-l-0 lg:first:pl-0`}
           >
-            <Icon size={18} className="shrink-0 text-(--color-primary)" strokeWidth={2} />
+            <Icon size={20} className="shrink-0 text-(--color-primary)" />
             <span className="text-[13px] font-semibold leading-snug text-(--color-ink-secondary)">
               {t(key)}
             </span>
@@ -89,7 +89,7 @@ export function WorkflowSection() {
           {workflows.map(({ icon: Icon, title, body, detail }) => (
             <article key={title} data-reveal-item className="group bg-white p-6 sm:p-7">
               <div className="flex h-10 w-10 items-center justify-center rounded-(--radius-md) bg-(--color-canvas-tint) text-(--color-primary) transition-transform duration-300 group-hover:-translate-y-1">
-                <Icon size={19} strokeWidth={2.1} />
+                <Icon size={20} />
               </div>
               <h3 className="mt-6 text-[18px] font-bold text-(--color-ink)">{t(title)}</h3>
               <p className="mt-3 text-[14px] leading-relaxed text-(--color-ink-muted)">{t(body)}</p>
@@ -125,9 +125,8 @@ export function TeamKnowledgeSection() {
             ].map(([Icon, key]) => (
               <div key={key as string} className="flex items-start gap-3">
                 <Icon
-                  size={17}
+                  size={16}
                   className="mt-0.5 shrink-0 text-(--color-primary)"
-                  strokeWidth={2.1}
                 />
                 <p className="text-[14px] leading-relaxed text-(--color-ink-secondary)">
                   {t(key as Parameters<typeof t>[0])}
@@ -151,7 +150,7 @@ export function TeamKnowledgeSection() {
                   {t("publicHome.knowledgeExampleMeta")}
                 </p>
               </div>
-              <span className="rounded-full bg-(--color-canvas-tint) px-2.5 py-1 text-[10px] font-semibold text-(--color-secondary)">
+              <span className="rounded-full bg-(--color-canvas-tint) px-2.5 py-1 text-[11px] font-semibold text-(--color-secondary)">
                 Premera
               </span>
             </div>
