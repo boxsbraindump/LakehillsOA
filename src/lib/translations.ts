@@ -880,7 +880,7 @@ export const translations = {
   "ledger.settle": { zh: "把 {count} 条标为已回钱", en: "Mark {count} paid" },
   "ledger.settledToast": { zh: "{count} 条已标为 {date} 回款", en: "{count} marked paid on {date}" },
 
-  "ledger.covers": { zh: "结的是 {from} 到 {to} 的就诊", en: "covers visits from {from} to {to}" },
+  "ledger.covers": { zh: "涵盖 {from} 到 {to} 的就诊", en: "covers visits from {from} to {to}" },
   "ledger.dateMismatch": {
     zh: "单子上写的就诊日期是 {dates}，和台账对不上 —— 可能配错人了",
     en: "the remittance says {dates}, which is not this visit — check it is the right one",
@@ -976,6 +976,8 @@ export const translations = {
   "ledger.previewHint": { zh: "示例数据只在这个页面上，不会存进工作区，刷新就没了。", en: "Sample rows stay on this page — nothing is saved to the workspace, and a reload clears them." },
   "ledger.previewBanner": { zh: "这是示例数据，没有存进工作区，刷新就没了。随便点、随便改。", en: "Sample data — not saved to the workspace, cleared on reload. Click around freely." },
   "ledger.previewExit": { zh: "退出预览", en: "Exit preview" },
+  "ledger.submittedCount": { zh: "报了 {count} 个", en: "{count} claimed" },
+  "ledger.noSubmissions": { zh: "这段时间没有报出去的记录。", en: "Nothing was claimed in this period." },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -746,14 +746,14 @@ export default function VisitLedger() {
                 </p>
                 <DayView
                   groups={dayGroups.filter((g) => g.date === pickedDay)}
-                  mode={lens === "visit" ? "visit" : "paid"}
+                  mode={lens}
                   lang={lang}
                 />
               </>
             ) : (
               <DayView
                 groups={dayGroups}
-                mode={lens === "visit" ? "visit" : "paid"}
+                mode={lens}
                 lang={lang}
               />
             )}
@@ -1284,14 +1284,20 @@ function DayView({
   lang,
 }: {
   groups: ReturnType<typeof groupByVisitDate>;
-  mode: "paid" | "visit";
+  mode: DateLens;
   lang: "zh" | "en";
 }) {
   const { t } = useLanguage();
   if (groups.length === 0) {
     return (
       <p className="rounded-(--radius-lg) border border-dashed border-(--color-hairline) py-10 text-center text-[14px] text-(--color-ink-faint)">
-        {t(mode === "paid" ? "ledger.noPayments" : "ledger.noVisits")}
+        {t(
+          mode === "paid"
+            ? "ledger.noPayments"
+            : mode === "submitted"
+              ? "ledger.noSubmissions"
+              : "ledger.noVisits",
+        )}
       </p>
     );
   }
@@ -1310,6 +1316,10 @@ function DayView({
               <span className="text-[14px] font-bold tabular-nums text-(--color-primary)">
                 {t("ledger.paidCount", { count: String(group.paid) })}
               </span>
+            ) : mode === "submitted" ? (
+              <span className="text-[14px] font-bold tabular-nums text-(--color-primary)">
+                {t("ledger.submittedCount", { count: String(group.total) })}
+              </span>
             ) : (
               <span
                 className={[
@@ -1326,7 +1336,7 @@ function DayView({
               </span>
             )}
           </div>
-          {mode === "paid" && group.visits.length > 0 && (
+          {mode !== "visit" && group.visits.length > 0 && (
             <p className="mt-0.5 text-[12px] text-(--color-ink-muted)">
               {t("ledger.covers", {
                 from: [...group.visits].sort((a, b) => a.visitDate.localeCompare(b.visitDate))[0].visitDate,
@@ -1335,9 +1345,9 @@ function DayView({
             </p>
           )}
           <p className="mt-1 text-[12px] text-(--color-ink-faint)">
-            {mode === "paid"
-              ? group.visits.map((v) => `${v.name}（${v.visitDate}）`).join(" · ")
-              : group.visits.map((v) => v.name).join(" · ")}
+            {mode === "visit"
+              ? group.visits.map((v) => v.name).join(" · ")
+              : group.visits.map((v) => `${v.name}（${v.visitDate}）`).join(" · ")}
           </p>
         </li>
       ))}

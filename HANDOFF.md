@@ -332,6 +332,12 @@ Note when testing this page: it reveals on scroll through GSAP, and a programmat
 `scrollIntoView` outruns the animation, leaving items at `opacity: 0` and the screenshot blank.
 That is not a bug. Scroll it the way a person would and check the opacities settle near 1.
 
+**DayView knows all three lenses now.** It had been written for two, so when the calendar gained
+按报 OA 日期 the list underneath was handed `mode="paid"` — and a Friday on which seven claims
+went out read **“回了 0 个”**, contradicting the lens selected directly above it. Worse than a
+missing label: a wrong one. Each lens now has its own count and its own empty copy, and the
+per-name visit date shows under any lens whose grouping date is not the visit date.
+
 **A tinted page needs its content on white.** Flattening the background had a consequence that
 took a second pass to see: every panel was transparent, so the table was *literally* the page
 colour and nothing read as the subject of the screen. The tint is the backdrop, not the paper.
