@@ -131,6 +131,9 @@ function tagOptions(tags: ServiceTag[], none: string) {
   ];
 }
 
+/** A page you can actually look down. The clinic asked for 25–50; the rest are there for choice. */
+const PAGE_SIZES = [25, 50, 100];
+
 type SortKey = "name" | "visitDate" | "lastStep";
 
 /**
@@ -170,6 +173,8 @@ export default function VisitLedger() {
     key: "visitDate",
     dir: "desc",
   });
+  const [pageSize, setPageSize] = useState(50);
+  const [page, setPage] = useState(1);
   /**
    * Rows whose status just moved.
    *
@@ -223,12 +228,22 @@ export default function VisitLedger() {
 
   /** Clicking the active column turns it over; a new column starts the way that column reads. */
   function sortBy(key: SortKey) {
+    setPage(1);
     setSort((prev) =>
       prev.key === key
         ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
         : { key, dir: key === "name" ? "asc" : "desc" },
     );
   }
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  // Clamped on read rather than corrected in an effect: deleting the last row of the last page
+  // would otherwise render an empty table for a frame before the effect caught up.
+  const safePage = Math.min(page, pageCount);
+  const pageRows = useMemo(
+    () => rows.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [rows, safePage, pageSize],
+  );
 
   const patients = useMemo(() => groupByPatient(visits), [visits]);
   const log = useMemo(() => activityLog(visits), [visits]);
@@ -262,7 +277,9 @@ export default function VisitLedger() {
   }, [visits, today]);
 
   const selectedSet = new Set(selected);
-  const allShownSelected = rows.length > 0 && rows.every((v) => selectedSet.has(v.id));
+  // "All" is the page you are looking at — selecting rows you cannot see would be a trap,
+  // especially with a delete button on the same bar.
+  const allShownSelected = pageRows.length > 0 && pageRows.every((v) => selectedSet.has(v.id));
 
 
   /** Every status change goes through here, so nothing can move without leaving a trail. */
@@ -412,7 +429,10 @@ export default function VisitLedger() {
           />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder={t("ledger.searchPlaceholder")}
             className="w-full rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) py-2 pr-3 pl-9 text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-faint) focus:border-(--color-primary)"
           />
@@ -702,7 +722,7 @@ export default function VisitLedger() {
 
         <div
           className={[
-            "mt-2 max-h-[calc(100dvh-13rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline)",
+            "mt-2 max-h-[calc(100dvh-16rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline)",
             // The floating batch bar sits over the foot of the table while it is up.
             selected.length > 0 ? "pb-16" : "",
           ].join(" ")}
@@ -717,7 +737,9 @@ export default function VisitLedger() {
                   <input
                     type="checkbox"
                     checked={allShownSelected}
-                    onChange={() => setSelected(allShownSelected ? [] : rows.map((v) => v.id))}
+                    onChange={() =>
+                      setSelected(allShownSelected ? [] : pageRows.map((v) => v.id))
+                    }
                     aria-label={t("ledger.selectAll")}
                     className="align-middle"
                   />
@@ -756,7 +778,7 @@ export default function VisitLedger() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((visit) => {
+              {pageRows.map((visit) => {
                 const open = expandedId === visit.id;
                 const steps = operationDates(visit);
                 return (
@@ -925,6 +947,55 @@ export default function VisitLedger() {
               })}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 px-1 text-[12px] text-(--color-ink-muted)">
+          <span>
+            {t("ledger.showingRange", {
+              from: String((safePage - 1) * pageSize + 1),
+              to: String(Math.min(safePage * pageSize, rows.length)),
+              total: String(rows.length),
+            })}
+          </span>
+
+          {pageCount > 1 && (
+            <span className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(safePage - 1)}
+                disabled={safePage <= 1}
+                aria-label={t("ledger.prevPage")}
+                className="rounded-(--radius-xs) p-1 hover:text-(--color-primary) disabled:opacity-30"
+              >
+                <ChevronLeft size={15} />
+              </button>
+              <span className="font-mono">
+                {safePage} / {pageCount}
+              </span>
+              <button
+                onClick={() => setPage(safePage + 1)}
+                disabled={safePage >= pageCount}
+                aria-label={t("ledger.nextPage")}
+                className="rounded-(--radius-xs) p-1 hover:text-(--color-primary) disabled:opacity-30"
+              >
+                <ChevronRight size={15} />
+              </button>
+            </span>
+          )}
+
+          <span className="ml-auto flex items-center gap-1.5">
+            {t("ledger.perPage")}
+            <Select
+              value={String(pageSize)}
+              options={PAGE_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
+              onChange={(next) => {
+                setPageSize(Number(next));
+                setPage(1);
+              }}
+              ariaLabel={t("ledger.perPage")}
+              align="end"
+              className="border-(--color-hairline) text-(--color-ink-muted)"
+            />
+          </span>
         </div>
         </>
       )}

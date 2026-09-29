@@ -270,6 +270,14 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**Paged at 50 rows, switchable to 25 or 100.** Anything that changes what the list contains —
+searching, sorting, changing the page size — returns to page one, or you land on a page that no
+longer exists. The page is clamped on read rather than corrected in an effect, so deleting the
+last row of the last page cannot render an empty table for a frame. **Select-all takes the
+current page, never the whole result set**: the same bar carries a delete button, and selecting
+rows you cannot see is a trap. The table body keeps its own scroll, so the height budget has to
+leave room for the pager beneath it — at 13rem the pager sat six pixels below the fold.
+
 **The patient modal is gone; the table holds what it held.** Searching a name already filters
 to that patient, folding spellings exactly the way the modal grouped them — `matchesQuery` and
 `groupByPatient` both normalise through `compactForSearch`, so `wen` finds `Wen Li`, `wen  li` and

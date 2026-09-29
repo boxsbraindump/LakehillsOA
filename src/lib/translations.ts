@@ -968,6 +968,10 @@ export const translations = {
   "ledger.thisMonthToday": { zh: "今天", en: "Today" },
   "ledger.addPatients": { zh: "加患者", en: "Add patients" },
   "ledger.moreOnThisVisit": { zh: "展开这次就诊", en: "More on this visit" },
+  "ledger.showingRange": { zh: "第 {from}–{to} 条，共 {total} 条", en: "{from}–{to} of {total}" },
+  "ledger.prevPage": { zh: "上一页", en: "Previous page" },
+  "ledger.nextPage": { zh: "下一页", en: "Next page" },
+  "ledger.perPage": { zh: "每页", en: "Per page" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
