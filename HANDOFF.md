@@ -321,6 +321,17 @@ also never had room for the day number, its dots and a name. It is 148×96 now.
 full-width, and it has now had to be removed three times: the expanded row, the day log, and the
 batch bar before them. Check what the container is actually as wide as before reaching for it.
 
+**The public page lost its three-card row and its gradients too.** Three equal cards side by
+side is the most generic feature layout there is, and it forces three unrelated things into one
+shape. These are three *kinds of work*, so they are a list now: what it is, what it does, who it
+suits, on an uneven 4/5/3 split that stacks on a phone. The panel gradient went flat, and so did
+the onboarding screen’s full-page gradient — that one is an app screen, and it should look like
+the app it is introducing rather than like the marketing page.
+
+Note when testing this page: it reveals on scroll through GSAP, and a programmatic
+`scrollIntoView` outruns the animation, leaving items at `opacity: 0` and the screenshot blank.
+That is not a bug. Scroll it the way a person would and check the opacities settle near 1.
+
 **Two page widths, named, and nothing is centred.** There were eight widths across the app —
 768, 1100, 1152 and several one-offs — so moving between Checklist, the ledger and Settings
 shifted the content box by up to 380px, which is the loudest “this is three websites” signal there

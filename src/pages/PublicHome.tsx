@@ -79,7 +79,7 @@ function WorkspacePreview() {
           </div>
         </aside>
 
-        <div className="bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(244,248,247,0.92))] p-5 sm:p-7">
+        <div className="bg-(--color-canvas-soft) p-5 sm:p-7">
           <div className="mx-auto max-w-2xl">
             <p className="text-[11px] font-semibold uppercase text-(--color-primary)">
               {t("publicHome.previewLabel")}

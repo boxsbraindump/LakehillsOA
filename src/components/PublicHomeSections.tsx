@@ -85,15 +85,29 @@ export function WorkflowSection() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-px overflow-hidden rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-hairline) lg:grid-cols-3">
+        {/*
+          Three equal cards side by side is the most generic layout there is, and it forces
+          three unrelated things into the same shape. These are three *kinds of work*, so they
+          read better as a list: what it is on the left, what it does in the middle, who it
+          suits on the right, on an uneven 4/5/3 split that stacks on a phone.
+        */}
+        <div className="mt-10 overflow-hidden rounded-(--radius-lg) border border-(--color-hairline) bg-white">
           {workflows.map(({ icon: Icon, title, body, detail }) => (
-            <article key={title} data-reveal-item className="group bg-white p-6 sm:p-7">
-              <div className="flex h-10 w-10 items-center justify-center rounded-(--radius-md) bg-(--color-canvas-tint) text-(--color-primary) transition-transform duration-300 group-hover:-translate-y-1">
-                <Icon size={20} />
+            <article
+              key={title}
+              data-reveal-item
+              className="group grid gap-x-8 gap-y-4 border-b border-(--color-hairline) p-6 last:border-b-0 sm:p-7 lg:grid-cols-12 lg:items-start"
+            >
+              <div className="flex items-start gap-3 lg:col-span-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-canvas-tint) text-(--color-primary) transition-transform duration-300 group-hover:-translate-y-1">
+                  <Icon size={20} />
+                </span>
+                <h3 className="mt-1.5 text-[18px] font-bold text-(--color-ink)">{t(title)}</h3>
               </div>
-              <h3 className="mt-6 text-[18px] font-bold text-(--color-ink)">{t(title)}</h3>
-              <p className="mt-3 text-[14px] leading-relaxed text-(--color-ink-muted)">{t(body)}</p>
-              <div className="mt-6 border-t border-(--color-hairline) pt-4 text-[12px] font-medium leading-relaxed text-(--color-ink-secondary)">
+              <p className="text-[14px] leading-relaxed text-(--color-ink-muted) lg:col-span-5">
+                {t(body)}
+              </p>
+              <div className="border-t border-(--color-hairline) pt-4 text-[12px] font-medium leading-relaxed text-(--color-ink-secondary) lg:col-span-3 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
                 {t(detail)}
               </div>
             </article>

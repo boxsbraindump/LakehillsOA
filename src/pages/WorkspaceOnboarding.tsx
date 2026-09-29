@@ -34,7 +34,7 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
   }
 
   return (
-    <div className="min-h-svh bg-[linear-gradient(180deg,rgba(255,255,255,0.86)_0%,rgba(244,248,247,0.96)_58%,rgba(247,250,249,1)_100%)]">
+    <div className="min-h-svh bg-(--color-canvas-soft)">
       <header className="border-b border-(--color-hairline) bg-white/86 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
           <div className="flex min-w-0 items-center gap-2.5">
