@@ -967,6 +967,7 @@ export const translations = {
   "ledger.deleteMany": { zh: "选中的 {count} 条记录都会被删掉。", en: "All {count} selected records will be removed." },
   "ledger.thisMonthToday": { zh: "今天", en: "Today" },
   "ledger.addPatients": { zh: "加患者", en: "Add patients" },
+  "ledger.moreOnThisVisit": { zh: "展开这次就诊", en: "More on this visit" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -270,6 +270,15 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**The patient modal is gone; the table holds what it held.** Searching a name already filters
+to that patient, folding spellings exactly the way the modal grouped them — `matchesQuery` and
+`groupByPatient` both normalise through `compactForSearch`, so `wen` finds `Wen Li`, `wen  li` and
+`WEN LI` alike. That left the modal three jobs, and all three moved into the table: the totals
+appear as a strip above it whenever a search narrows to exactly one person; the other two step
+dates and the change log open in the row itself, behind a disclosure at its end. Clicking a
+patient name now searches for them rather than opening anything. Net 100 lines lighter, one
+fewer modal, and no context switch away from the row being worked on.
+
 **One way to add people, not two.** There used to be an inline name field under the search bar
 as well as a batch dialog. Two fields stacked under each other, one of which searched and one of
 which added, is a trap — and the batch dialog was always able to take a single name, since it

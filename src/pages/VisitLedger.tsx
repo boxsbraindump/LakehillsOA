@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -51,7 +51,6 @@ import {
 import type {
   DateLens,
   ParsedVisitRow,
-  PatientRecord,
   Visit,
   VisitStatus,
 } from "../lib/visitLedger";
@@ -178,7 +177,16 @@ export default function VisitLedger() {
    * the only evidence was a toast. A brief tint on each row says what was actually touched.
    */
   const [justChanged, setJustChanged] = useState<string[]>([]);
-  const [detailName, setDetailName] = useState<string | null>(null);
+  /**
+   * One row's other two dates and its change log, opened in place.
+   *
+   * These used to live in a modal reached by clicking a patient's name. Searching a name
+   * already filters the table to that patient — folding spellings exactly the way the modal
+   * grouped them — so the modal's only remaining job was the two dates the ledger does not
+   * show and the change log. One row at a time: this is a reference, not a comparison.
+   */
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [trailOpen, setTrailOpen] = useState(false);
 
 
   const [batchOpen, setBatchOpen] = useState(false);
@@ -239,7 +247,12 @@ export default function VisitLedger() {
       }))
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [visits, lens]);
-  const detail = detailName ? patients.find((p) => p.name === detailName) ?? null : null;
+  /** Shown only when the search has narrowed to exactly one person, which is why you searched. */
+  const focused = useMemo(() => {
+    if (!query.trim() || rows.length === 0) return null;
+    const grouped = groupByPatient(rows);
+    return grouped.length === 1 ? grouped[0] : null;
+  }, [rows, query]);
 
   const thisWeek = useMemo(() => {
     const from = shiftDateKey(today, -6);
@@ -661,9 +674,35 @@ export default function VisitLedger() {
           {t("ledger.noMatches", { query })}
         </p>
       ) : (
+        <>
+        {focused && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
+            <span className="text-[13px] font-bold text-(--color-ink)">{focused.name}</span>
+            <span className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-(--color-ink-muted)">
+              {t("ledger.totalVisits", { count: String(focused.total) })}
+            </span>
+            {focused.paid > 0 && (
+              <span className={["rounded-full border px-2 py-0.5", STATUS_TONE.paid].join(" ")}>
+                {t("ledger.paidCountChip", { count: String(focused.paid) })}
+              </span>
+            )}
+            {focused.open > 0 && (
+              <span className={["rounded-full border px-2 py-0.5", STATUS_TONE.submitted].join(" ")}>
+                {t("ledger.waitingChip", { count: String(focused.open) })}
+              </span>
+            )}
+            <span className="text-(--color-ink-faint)">
+              {t("ledger.patientSpan", {
+                from: formatDisplayDate(focused.firstVisit, lang),
+                to: formatDisplayDate(focused.lastVisit, lang),
+              })}
+            </span>
+          </p>
+        )}
+
         <div
           className={[
-            "mt-3 max-h-[calc(100dvh-13rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline)",
+            "mt-2 max-h-[calc(100dvh-13rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline)",
             // The floating batch bar sits over the foot of the table while it is up.
             selected.length > 0 ? "pb-16" : "",
           ].join(" ")}
@@ -713,12 +752,16 @@ export default function VisitLedger() {
                   dir={sort.dir}
                   onClick={() => sortBy("lastStep")}
                 />
+                <th className="sticky top-0 z-10 w-8 bg-(--color-canvas-soft) px-1 py-2" />
               </tr>
             </thead>
             <tbody>
-              {rows.map((visit) => (
+              {rows.map((visit) => {
+                const open = expandedId === visit.id;
+                const steps = operationDates(visit);
+                return (
+                <Fragment key={visit.id}>
                 <tr
-                  key={visit.id}
                   className={[
                     "border-b border-(--color-hairline) last:border-0",
                     selectedSet.has(visit.id) ? "bg-(--color-primary)/[0.06]" : "",
@@ -736,7 +779,7 @@ export default function VisitLedger() {
                   </td>
                   <td className="px-3 py-1">
                     <button
-                      onClick={() => setDetailName(visit.name)}
+                      onClick={() => setQuery(visit.name)}
                       className="max-w-[16ch] truncate text-[14px] font-medium text-(--color-ink) underline-offset-2 hover:text-(--color-primary) hover:underline sm:max-w-none"
                     >
                       {visit.name}
@@ -801,35 +844,94 @@ export default function VisitLedger() {
                       );
                     })()}
                   </td>
+                  <td className="px-1 py-1">
+                    <button
+                      onClick={() => {
+                        setExpandedId(open ? null : visit.id);
+                        setTrailOpen(false);
+                      }}
+                      aria-label={t("ledger.moreOnThisVisit")}
+                      aria-expanded={open}
+                      className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                    >
+                      <ChevronRight
+                        size={14}
+                        className={["transition-transform", open ? "rotate-90" : ""].join(" ")}
+                      />
+                    </button>
+                  </td>
                 </tr>
-              ))}
+
+                {open && (
+                  <tr className="border-b border-(--color-hairline) bg-(--color-canvas-soft)">
+                    <td colSpan={7} className="px-3 py-2">
+                      {/* The two steps the ledger column cannot show, plus who touched it when. */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        {(
+                          [
+                            ["enteredDate", "ledger.colEnteredDate", steps.entered],
+                            ["submittedDate", "ledger.colSubmittedDate", steps.submitted],
+                            ["paidDate", "ledger.colPaidDate", steps.paid],
+                          ] as const
+                        ).map(([field, label, value]) => (
+                          <span key={field} className="flex items-center gap-1 text-[12px]">
+                            <span className="text-(--color-ink-faint)">{t(label)}</span>
+                            {value ? (
+                              <DatePicker
+                                value={value}
+                                onChange={(date) => setStepDate(visit, field, date)}
+                                ariaLabel={t(label)}
+                                className="font-mono text-[12px] text-(--color-ink-muted)"
+                              />
+                            ) : (
+                              <span className="px-1.5 text-(--color-ink-faint)">—</span>
+                            )}
+                          </span>
+                        ))}
+                        <button
+                          onClick={() => setTrailOpen(!trailOpen)}
+                          className="text-[11px] text-(--color-ink-faint) hover:text-(--color-primary)"
+                        >
+                          {t(trailOpen ? "ledger.hideTrail" : "ledger.showTrail")}
+                        </button>
+                        <button
+                          onClick={() => void remove([visit.id])}
+                          className="ml-auto flex items-center gap-1 text-[11px] text-(--color-ink-faint) hover:text-(--color-danger)"
+                        >
+                          <Trash2 size={12} />
+                          {t("common.delete")}
+                        </button>
+                      </div>
+
+                      {trailOpen && (
+                        <ol className="mt-1.5 flex flex-col gap-0.5 border-l-2 border-(--color-hairline) pl-3">
+                          {visitHistory(visit).map((event, i) => (
+                            <li
+                              key={`${event.status}-${event.at}-${i}`}
+                              className="flex flex-wrap items-baseline gap-x-2 text-[11px]"
+                            >
+                              <span className="text-(--color-ink-muted)">
+                                {t(STATUS_LABEL[event.status])}
+                              </span>
+                              <span className="font-mono text-(--color-ink-faint)">
+                                {timestamp(event.at, lang)}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
+        </>
       )}
 
-      {detail && (
-        <PatientPanel
-          record={detail}
-          tags={serviceTags}
-          lang={lang}
-          onClose={() => setDetailName(null)}
-          onSetStatus={(id, status) => setStatusWithUndo([id], status)}
-          onSetVisitDate={(id, date) => {
-            const visit = visits.find((v) => v.id === id);
-            if (visit) setVisitDate(visit, date);
-          }}
-          onSetServiceTag={(id, tagId) => {
-            const visit = visits.find((v) => v.id === id);
-            if (visit) setServiceTag(visit, tagId);
-          }}
-          onSetStepDate={(id, field, date) => {
-            const visit = visits.find((v) => v.id === id);
-            if (visit) setStepDate(visit, field, date);
-          }}
-          onRemove={(id) => remove([id])}
-        />
-      )}
 
       {managingTags && (
         <TagManager
@@ -889,12 +991,6 @@ export default function VisitLedger() {
   );
 }
 
-/** The three steps, as three labelled dates — no graphics. */
-const VISIT_STEPS = [
-  { field: "enteredDate", label: "ledger.colEnteredDate" },
-  { field: "submittedDate", label: "ledger.colSubmittedDate" },
-  { field: "paidDate", label: "ledger.colPaidDate" },
-] as const;
 
 /**
  * One visit inside a patient's record.
@@ -937,203 +1033,7 @@ function SortHeader({
   );
 }
 
-function VisitCard({
-  visit,
-  tags,
-  lang,
-  onSetStatus,
-  onSetVisitDate,
-  onSetStepDate,
-  onSetServiceTag,
-  onRemove,
-}: {
-  visit: Visit;
-  tags: ServiceTag[];
-  lang: "zh" | "en";
-  onSetStatus: (id: string, status: VisitStatus) => void;
-  onSetVisitDate: (id: string, visitDate: string) => void;
-  onSetStepDate: (
-    id: string,
-    field: "enteredDate" | "submittedDate" | "paidDate",
-    date: string,
-  ) => void;
-  onSetServiceTag: (id: string, tagId: string) => void;
-  onRemove: (id: string) => void;
-}) {
-  const { t } = useLanguage();
-  const [showTrail, setShowTrail] = useState(false);
-  const dates = operationDates(visit);
-  const done = [dates.entered, dates.submitted, dates.paid];
-  const tag = tagById(tags, visit.serviceTag);
 
-  return (
-    <li className="px-5 py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <DatePicker
-          value={visit.visitDate}
-          onChange={(date) => onSetVisitDate(visit.id, date)}
-          ariaLabel={t("ledger.colVisitDate")}
-          className="font-mono text-[13px] text-(--color-ink)"
-        />
-        <Select
-          value={visit.serviceTag ?? ""}
-          options={tagOptions(tags, t("ledger.noService"))}
-          onChange={(next) => onSetServiceTag(visit.id, next)}
-          ariaLabel={t("ledger.colService")}
-          className={
-            tag
-              ? TAG_COLORS[tag.color % TAG_COLORS.length]
-              : "border-(--color-hairline) text-(--color-ink-faint)"
-          }
-        />
-        <span className="ml-auto">
-          <Select
-            value={visit.status}
-            options={statusOptions(t)}
-            onChange={(next) => onSetStatus(visit.id, next as VisitStatus)}
-            ariaLabel={t("ledger.colStatus")}
-            align="end"
-            className={["font-medium", STATUS_TONE[visit.status]].join(" ")}
-          />
-        </span>
-        <button
-          onClick={() => onRemove(visit.id)}
-          aria-label={t("common.delete")}
-          className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
-        >
-          <Trash2 size={13} />
-        </button>
-      </div>
-
-      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-        {VISIT_STEPS.map(({ field, label }, i) => (
-          <span key={field} className="flex items-center gap-1 text-[12px]">
-            <span className="text-(--color-ink-faint)">{t(label)}</span>
-            {done[i] ? (
-              <DatePicker
-                value={done[i]}
-                onChange={(next) => onSetStepDate(visit.id, field, next)}
-                ariaLabel={t(label)}
-                className="font-mono text-[12px] text-(--color-ink-muted)"
-              />
-            ) : (
-              <span className="px-1.5 text-(--color-ink-faint)">—</span>
-            )}
-          </span>
-        ))}
-        <button
-          onClick={() => setShowTrail(!showTrail)}
-          className="ml-auto text-[11px] text-(--color-ink-faint) hover:text-(--color-primary)"
-        >
-          {t(showTrail ? "ledger.hideTrail" : "ledger.showTrail")}
-        </button>
-      </div>
-
-      {showTrail && (
-        <ol className="mt-1 flex flex-col gap-0.5 border-l-2 border-(--color-hairline) pl-3">
-          {visitHistory(visit).map((event, i) => (
-            <li
-              key={`${event.status}-${event.at}-${i}`}
-              className="flex flex-wrap items-baseline gap-x-2 text-[11px]"
-            >
-              <span className="text-(--color-ink-muted)">{t(STATUS_LABEL[event.status])}</span>
-              <span className="font-mono text-(--color-ink-faint)">{timestamp(event.at, lang)}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </li>
-  );
-}
-
-/**
- * One patient's whole record — the thing a spreadsheet of coloured cells could never show,
- * because a colour is overwritten by the next colour. Every visit keeps its trail.
- */
-function PatientPanel({
-  record,
-  tags,
-  lang,
-  onClose,
-  onSetStatus,
-  onSetVisitDate,
-  onSetStepDate,
-  onSetServiceTag,
-  onRemove,
-}: {
-  record: PatientRecord;
-  tags: ServiceTag[];
-  lang: "zh" | "en";
-  onClose: () => void;
-  onSetStatus: (id: string, status: VisitStatus) => void;
-  onSetVisitDate: (id: string, visitDate: string) => void;
-  onSetStepDate: (
-    id: string,
-    field: "enteredDate" | "submittedDate" | "paidDate",
-    date: string,
-  ) => void;
-  onSetServiceTag: (id: string, tagId: string) => void;
-  onRemove: (id: string) => void;
-}) {
-  const { t } = useLanguage();
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 sm:p-8">
-      <div className="w-full max-w-xl rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-lg">
-        <div className="sticky top-0 flex items-start gap-3 rounded-t-(--radius-lg) border-b border-(--color-hairline) bg-(--color-canvas) px-5 py-4">
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[18px] font-bold text-(--color-ink)">{record.name}</h2>
-            <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
-              <span className="rounded-full border border-(--color-hairline) bg-(--color-canvas-soft) px-2 py-0.5 text-(--color-ink-muted)">
-                {t("ledger.totalVisits", { count: String(record.total) })}
-              </span>
-              {record.paid > 0 && (
-                <span className={["rounded-full border px-2 py-0.5", STATUS_TONE.paid].join(" ")}>
-                  {t("ledger.paidCountChip", { count: String(record.paid) })}
-                </span>
-              )}
-              {record.open > 0 && (
-                <span
-                  className={["rounded-full border px-2 py-0.5", STATUS_TONE.submitted].join(" ")}
-                >
-                  {t("ledger.waitingChip", { count: String(record.open) })}
-                </span>
-              )}
-            </p>
-            <p className="mt-1 text-[12px] text-(--color-ink-faint)">
-              {t("ledger.patientSpan", {
-                from: formatDisplayDate(record.firstVisit, lang),
-                to: formatDisplayDate(record.lastVisit, lang),
-              })}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label={t("common.cancel")}
-            className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <ul className="flex flex-col divide-y divide-(--color-hairline)">
-          {record.visits.map((visit) => (
-            <VisitCard
-              key={visit.id}
-              visit={visit}
-              tags={tags}
-              lang={lang}
-              onSetStatus={onSetStatus}
-              onSetVisitDate={onSetVisitDate}
-              onSetStepDate={onSetStepDate}
-              onSetServiceTag={onSetServiceTag}
-              onRemove={onRemove}
-            />
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
 
 /**
  * A month of visits.
