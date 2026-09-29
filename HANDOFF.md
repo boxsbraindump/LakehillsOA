@@ -332,6 +332,13 @@ Note when testing this page: it reveals on scroll through GSAP, and a programmat
 `scrollIntoView` outruns the animation, leaving items at `opacity: 0` and the screenshot blank.
 That is not a bug. Scroll it the way a person would and check the opacities settle near 1.
 
+**A tinted page needs its content on white.** Flattening the background had a consequence that
+took a second pass to see: every panel was transparent, so the table was *literally* the page
+colour and nothing read as the subject of the screen. The tint is the backdrop, not the paper.
+The table, the calendar and the day log now sit on `--color-canvas` with a level-1 shadow, and
+the day log got its container back — it had been dropped when the page was white and a box was
+redundant, which stopped being true the moment the page was tinted.
+
 **Two page widths, named, and nothing is centred.** There were eight widths across the app —
 768, 1100, 1152 and several one-offs — so moving between Checklist, the ledger and Settings
 shifted the content box by up to 380px, which is the loudest “this is three websites” signal there

@@ -581,8 +581,8 @@ export default function VisitLedger() {
         </div>
       ) : view === "log" ? (
         <div className="mt-4">
-        <div className="mt-4">
-          <p className="border-b border-(--color-hairline) px-1 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
+        <div className="mt-4 overflow-hidden rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-1)">
+          <p className="border-b border-(--color-hairline) bg-(--color-canvas-soft) px-4 py-2 text-[12px] font-semibold text-(--color-ink-muted)">
             {t("ledger.logTitle")}
           </p>
           {log.length === 0 ? (
@@ -600,7 +600,7 @@ export default function VisitLedger() {
                   >
                     <button
                       onClick={() => setOpenDay(open ? null : day.date)}
-                      className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-1 py-2 text-left"
+                      className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2 text-left"
                     >
                       <span
                         className={[
@@ -792,7 +792,7 @@ export default function VisitLedger() {
 
         <div
           className={[
-            "mt-2 max-h-[calc(100dvh-16rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline)",
+            "mt-2 max-h-[calc(100dvh-16rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-1)",
             // The floating batch bar sits over the foot of the table while it is up.
             selected.length > 0 ? "pb-16" : "",
           ].join(" ")}
@@ -1213,7 +1213,7 @@ function MonthCalendar({
   ];
 
   return (
-    <div className="overflow-hidden rounded-(--radius-lg) border border-(--color-hairline)">
+    <div className="overflow-hidden rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-1)">
       <div className="grid grid-cols-7 border-b border-(--color-hairline) bg-(--color-canvas-soft)">
         {weekdays.map((key) => (
           <div
