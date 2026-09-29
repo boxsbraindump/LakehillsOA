@@ -16,17 +16,20 @@ import type { StatusEvent, Visit, VisitStatus } from "./visitLedger";
  */
 
 const PEOPLE = [
-  "Cici He",
-  "Jonathan Zhu",
-  "Dulce Arriaga",
-  "Amara Okonkwo",
-  "Tomas Vrabel",
-  "Priya Raghavan",
-  "Wen Li",
-  "Marcus Ellery",
-  "Noor Haddad",
-  "Rosalind Achebe",
+  "CICI HE",
+  "JONATHAN ZHU",
+  "DULCE ARRIAGA",
+  "AMARA OKONKWO",
+  "TOMAS VRABEL",
+  "PRIYA RAGHAVAN",
+  "WEN LI",
+  "MARCUS ELLERY",
+  "NOOR HADDAD",
+  "ROSALIND ACHEBE",
 ];
+
+/** A clinic day runs from mid-morning; appointments land on the half hour. */
+const SLOTS = ["09:30", "10:00", "11:00", "13:30", "14:30", "15:00", "16:15", "17:00"];
 
 const AREAS = ["tag-seed-neck", "tag-seed-head", "tag-seed-back", "tag-seed-leg"];
 
@@ -72,6 +75,7 @@ export function buildSampleLedger({ weeks = 12, today = todayKey() }: SampleOpti
         id: `sample-${seq}`,
         name,
         visitDate: upDay,
+        visitTime: SLOTS[seq % SLOTS.length],
         status,
         createdAt: at(upDay),
         serviceTag: AREAS[seq % AREAS.length],
