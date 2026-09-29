@@ -171,6 +171,14 @@ const FIELD_RANK: Record<"enteredDate" | "submittedDate" | "paidDate", number> =
   paidDate: 3,
 };
 
+/**
+ * Which stored date a status owns, for callers that need to set it without moving the visit.
+ * Re-stating a status a visit already has is a date correction, not a new step.
+ */
+export function dateFieldFor(status: VisitStatus) {
+  return DATE_FIELD[status];
+}
+
 /** Money is owed to the other clinic per visit reimbursed, so only paid visits count. */
 export function isPayable(visit: Visit): boolean {
   return visit.status === "paid";

@@ -44,6 +44,7 @@ import {
   matchRemittance,
   matchesQuery,
   currentStep,
+  dateFieldFor,
   operationDates,
   newVisitId,
   parseVisitRows,
@@ -307,9 +308,29 @@ export default function VisitLedger() {
   /** Every status change goes through here, so nothing can move without leaving a trail. */
   function setStatus(ids: string[], status: VisitStatus, onDate?: string): Visit[] {
     const idSet = new Set(ids);
-    const before = visits.filter((v) => idSet.has(v.id));
+    const field = dateFieldFor(status);
+
+    /*
+     * Picking the status a visit already has is not a step, it is a correction.
+     *
+     * It used to append another history entry regardless, so choosing 已录入 UP twice on one
+     * row made the day read "已录入 UP 2" — inflating the single number this page exists to
+     * show. Now an unchanged status only moves that step's date, and leaves the trail alone.
+     */
+    const before = visits.filter((v) => {
+      if (!idSet.has(v.id)) return false;
+      if (v.status !== status) return true;
+      return Boolean(field && onDate && v[field] !== onDate);
+    });
+    if (before.length === 0) return [];
+
+    const changing = new Set(before.map((v) => v.id));
     setVisits((prev) =>
-      prev.map((v) => (idSet.has(v.id) ? withStatus(v, status, onDate ?? today) : v)),
+      prev.map((v) => {
+        if (!changing.has(v.id)) return v;
+        if (v.status === status) return field ? { ...v, [field]: onDate } : v;
+        return withStatus(v, status, onDate ?? today);
+      }),
     );
     return before;
   }

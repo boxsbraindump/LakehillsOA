@@ -948,7 +948,10 @@ export const translations = {
   "ledger.onDate": { zh: "日期", en: "on" },
   "ledger.colEnteredDate": { zh: "录入 UP", en: "Into UP" },
   "ledger.colSubmittedDate": { zh: "报 OA", en: "To OA" },
-  "ledger.addedApart": { zh: "另外录进来 {count} 条（他们那边的预约，不算我们的操作）", en: "{count} bookings also came in (theirs, not work you did)" },
+  "ledger.addedApart": {
+    zh: "另外新增 {count} 条记录（不计入上面）",
+    en: "{count} records also added (not counted above)",
+  },
   "ledger.viewBySubmitted": { zh: "按报 OA 日期", en: "By the day claimed" },
   "ledger.logTitle": { zh: "每天干了什么", en: "What was done, day by day" },
   "ledger.logEmpty": { zh: "还没有操作记录。", en: "Nothing done yet." },

@@ -332,6 +332,19 @@ Note when testing this page: it reveals on scroll through GSAP, and a programmat
 `scrollIntoView` outruns the animation, leaving items at `opacity: 0` and the screenshot blank.
 That is not a bug. Scroll it the way a person would and check the opacities settle near 1.
 
+**Two more of the same kind in the day log.** Re-picking the status a visit already had
+appended another history entry, so choosing 已录入 UP twice on one row made the day read
+“已录入 UP 2” — inflating the single number this page exists to show. An unchanged status is now
+a date correction: it moves that step’s date and leaves the trail alone, which also keeps bulk
+date fixes working (select the week, set the real Friday, re-apply 已报 OA). And the log used to
+label new records “他们那边的预约，不算我们的操作” — but a `new` event only means a visit
+appeared, and typing two names in by hand produced exactly that line. It says “另外新增 N 条记录
+（不计入上面）” now: what happened, not who did it.
+
+**The pattern worth remembering:** three bugs in a row were labels asserting more than the data
+knows — the OA lens saying “回了 0 个”, the log attributing entries to the other clinic, and a
+no-op counted as work. When adding a label, check what the record actually stores.
+
 **DayView knows all three lenses now.** It had been written for two, so when the calendar gained
 按报 OA 日期 the list underneath was handed `mode="paid"` — and a Friday on which seven claims
 went out read **“回了 0 个”**, contradicting the lens selected directly above it. Worse than a
