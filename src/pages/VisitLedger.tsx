@@ -955,7 +955,8 @@ export default function VisitLedger() {
 
                 {open && (
                   <tr className="border-b border-(--color-hairline) bg-(--color-canvas-soft)">
-                    <td colSpan={7} className="px-3 py-2">
+                    <td />
+                    <td colSpan={6} className="px-3 py-2">
                       {/* The two steps the ledger column cannot show, plus who touched it when. */}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                         {(
@@ -979,6 +980,7 @@ export default function VisitLedger() {
                             )}
                           </span>
                         ))}
+                        <span className="h-3 w-px bg-(--color-hairline)" aria-hidden="true" />
                         <button
                           onClick={() => setTrailOpen(!trailOpen)}
                           className="text-[11px] text-(--color-ink-faint) hover:text-(--color-primary)"
@@ -987,7 +989,7 @@ export default function VisitLedger() {
                         </button>
                         <button
                           onClick={() => void remove([visit.id])}
-                          className="ml-auto flex items-center gap-1 text-[11px] text-(--color-ink-faint) hover:text-(--color-danger)"
+                          className="flex items-center gap-1 text-[11px] text-(--color-ink-faint) hover:text-(--color-danger)"
                         >
                           <Trash2 size={12} />
                           {t("common.delete")}

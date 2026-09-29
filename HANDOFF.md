@@ -304,6 +304,13 @@ pills, so a screen held about a hundred blocks of colour and none of them stood 
 keeps its fill because that is the thing the old spreadsheet used colour for, and the body area
 is now an outline chip with a small coloured dot.
 
+**The expanded row aligns to a column, and its actions stay with its data.** It used to span
+the full table from the left edge, lining up with nothing, while `ml-auto` threw 删除 to the far
+right — across a 1400px table that is a lake of empty space between the dates and the one
+button. The row now leaves the checkbox cell empty and spans the remaining six, so it starts
+exactly under the patient name, and the actions sit beside the dates behind a thin rule rather
+than being flung apart. Aligning to a real column beats guessing an indent.
+
 **A wide table is not automatically better.** Widening the page to 1600px made it worse, not
 better: six short columns stretched apart with 700px of air between the name and the date. The
 columns are pinned and a trailing column absorbs the slack, so the data sits together on the
