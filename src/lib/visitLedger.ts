@@ -419,10 +419,25 @@ export function daysBetween(fromISO: string, toISO: string): number {
   return Math.round((to - from) / 86_400_000);
 }
 
+/**
+ * Claimed long enough ago that nobody should still be waiting quietly.
+ *
+ * Counted from the day it went to Office Ally, not the day the patient came. A claim sent last
+ * week for a visit three months ago is not overdue — the clock starts when the money was asked
+ * for. Where the submission date is unknown the visit date is the only thing left to count from.
+ *
+ * Only open claims qualify: paid is done, and anything not yet sent is not owed.
+ */
 export function isStale(visit: Visit, todayISO: string): boolean {
-  if (isPayable(visit)) return false;
-  if (visit.status === "new" || visit.status === "entered") return false;
-  return daysBetween(visit.visitDate, todayISO) >= CHASE_AFTER_DAYS;
+  if (!isOpen(visit)) return false;
+  const since = operationDates(visit).submitted ?? visit.visitDate;
+  return daysBetween(since, todayISO) >= CHASE_AFTER_DAYS;
+}
+
+/** How long a claim has been outstanding, for saying so out loud. */
+export function daysWaiting(visit: Visit, todayISO: string): number {
+  const since = operationDates(visit).submitted ?? visit.visitDate;
+  return daysBetween(since, todayISO);
 }
 
 /** One name per line, for pasting a day's bookings straight out of the spreadsheet. */

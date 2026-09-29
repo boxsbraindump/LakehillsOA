@@ -20,6 +20,10 @@ function compact(dateKey: string): string {
  *
  * Keyboard: arrows move by a day or a week, PageUp/PageDown by a month, Enter commits, Escape
  * closes. The highlighted day is the one that would be committed.
+ *
+ * `markedDays` puts a dot under the days the caller says have something on them, so a month can
+ * be read at a glance — which days were written up and which were left blank — without opening
+ * each one in turn.
  */
 export function DatePicker({
   value,
@@ -28,6 +32,9 @@ export function DatePicker({
   className = "",
   align = "start",
   placeholder = "—",
+  markedDays,
+  markedLabel,
+  bordered = false,
 }: {
   value?: string;
   onChange: (value: string) => void;
@@ -35,6 +42,12 @@ export function DatePicker({
   className?: string;
   align?: "start" | "end";
   placeholder?: string;
+  /** Days to dot. Held as a set so a year of them costs one lookup per cell. */
+  markedDays?: ReadonlySet<string>;
+  /** Read out after the date for marked days, so the dot is not sight-only. */
+  markedLabel?: string;
+  /** Draw the trigger as a form field. Inline table cells stay borderless. */
+  bordered?: boolean;
 }) {
   const { t, lang } = useLanguage();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -64,7 +77,10 @@ export function DatePicker({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
         className={[
-          "cursor-pointer rounded-(--radius-control) border border-transparent px-1.5 py-0.5 text-left tabular-nums outline-none hover:border-(--color-hairline) focus-visible:ring-2 focus-visible:ring-(--color-primary)/40",
+          "cursor-pointer rounded-(--radius-control) border px-1.5 py-0.5 text-left tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-(--color-primary)/40",
+          bordered
+            ? "border-(--color-hairline) bg-(--color-canvas) hover:border-(--color-primary)/40"
+            : "border-transparent hover:border-(--color-hairline)",
           value ? "" : "text-(--color-ink-faint)",
           className,
         ].join(" ")}
@@ -131,14 +147,16 @@ export function DatePicker({
               const inMonth = day.startsWith(month);
               const isSelected = day === value;
               const isCursor = day === cursor;
+              const marked = markedDays?.has(day) ?? false;
               return (
                 <button
                   key={day}
                   type="button"
                   onClick={() => commit(day)}
                   aria-current={isSelected ? "date" : undefined}
+                  aria-label={marked && markedLabel ? `${day} ${markedLabel}` : undefined}
                   className={[
-                    "m-0.5 rounded-(--radius-control) py-1 text-center text-[12px] tabular-nums",
+                    "relative m-0.5 rounded-(--radius-control) py-1 pb-2 text-center text-[12px] tabular-nums",
                     inMonth ? "text-(--color-ink)" : "text-(--color-ink-faint)",
                     isSelected
                       ? "bg-(--color-primary) font-bold text-(--color-on-primary)"
@@ -149,6 +167,16 @@ export function DatePicker({
                   ].join(" ")}
                 >
                   {Number(day.slice(8))}
+                  {marked && (
+                    <span
+                      aria-hidden
+                      className={[
+                        "absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full",
+                        isSelected ? "bg-(--color-on-primary)" : "bg-(--color-primary)",
+                        inMonth ? "" : "opacity-40",
+                      ].join(" ")}
+                    />
+                  )}
                 </button>
               );
             })}

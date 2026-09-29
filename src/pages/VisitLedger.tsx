@@ -48,6 +48,9 @@ import {
   compareNames,
   currentStep,
   dateFieldFor,
+  daysWaiting,
+  isStale,
+  CHASE_AFTER_DAYS,
   operationDates,
   newVisitId,
   parseVisitRows,
@@ -151,21 +154,33 @@ type SortKey = "name" | "visitDate" | "lastStep";
  * Every key falls back to the other two, so a column of identical dates still comes out in a
  * stable, sensible order rather than whatever the previous sort happened to leave behind.
  */
-function compareBy(a: Visit, b: Visit, key: SortKey): number {
+/** Returns the final order, sign included, because blanks must ignore the direction. */
+function compareBy(a: Visit, b: Visit, key: SortKey, sign: number): number {
+  const tieBreak = () => a.visitDate.localeCompare(b.visitDate) || compareNames(a.name, b.name);
+
   if (key === "name") {
-    return compareNames(a.name, b.name) || b.visitDate.localeCompare(a.visitDate);
+    return sign * (compareNames(a.name, b.name) || b.visitDate.localeCompare(a.visitDate));
   }
   if (key === "visitDate") {
-    return a.visitDate.localeCompare(b.visitDate) || compareNames(a.name, b.name);
+    return sign * (a.visitDate.localeCompare(b.visitDate) || tieBreak());
   }
-  // A visit nobody has touched yet sorts with the oldest, not above everything.
-  const left = currentStep(a).date ?? "";
-  const right = currentStep(b).date ?? "";
-  return (
-    left.localeCompare(right) ||
-    a.visitDate.localeCompare(b.visitDate) ||
-    compareNames(a.name, b.name)
-  );
+
+  /*
+   * A visit nobody has touched yet has no position on this axis at all.
+   *
+   * Treating its missing date as "" sorted it below every real date, which ascending turns into
+   * the top of the table: asking for the longest-untouched claims first handed you a screenful of
+   * rows that have never been claimed. The overdue notice sorts this way and says it brings those
+   * claims to the top, so it has to be true. Untouched rows now sit at the end whichever way the
+   * column is turned, which is also the right answer for the column header on its own.
+   */
+  const left = currentStep(a).date;
+  const right = currentStep(b).date;
+  if (!left || !right) {
+    if (!left && !right) return sign * tieBreak();
+    return left ? -1 : 1;
+  }
+  return sign * (left.localeCompare(right) || tieBreak());
 }
 
 export default function VisitLedger() {
@@ -265,7 +280,7 @@ export default function VisitLedger() {
   const rows = useMemo(() => {
     const filtered = visits.filter((v) => matchesQuery(v, query));
     const sign = sort.dir === "asc" ? 1 : -1;
-    return filtered.sort((a, b) => sign * compareBy(a, b, sort.key));
+    return filtered.sort((a, b) => compareBy(a, b, sort.key, sign));
   }, [visits, query, sort]);
 
   /** Clicking the active column turns it over; a new column starts the way that column reads. */
@@ -282,6 +297,14 @@ export default function VisitLedger() {
   // Clamped on read rather than corrected in an effect: deleting the last row of the last page
   // would otherwise render an empty table for a frame before the effect caught up.
   const safePage = Math.min(page, pageCount);
+  /*
+   * Claims that went out and never came back.
+   *
+   * Counted over the listed rows rather than the whole ledger, so the number always describes the
+   * table underneath it — with a patient searched for, it is that patient's.
+   */
+  const staleRows = useMemo(() => rows.filter((visit) => isStale(visit, today)), [rows, today]);
+
   const pageRows = useMemo(
     () => rows.slice((safePage - 1) * pageSize, safePage * pageSize),
     [rows, safePage, pageSize],
@@ -837,6 +860,28 @@ export default function VisitLedger() {
           </p>
         )}
 
+        {/* Money leaves quietly. A claim submitted in July that nobody chased is indistinguishable
+            from a paid one at a glance, so the ledger says it out loud — once, above the table,
+            rather than as a second worklist to keep. Sorting is the whole action: oldest first
+            brings every one of them onto the first page. */}
+        {staleRows.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-(--radius-lg) border border-(--color-warn)/30 bg-(--color-warn)/8 px-3 py-2">
+            <AlertTriangle size={14} className="text-(--color-warn)" />
+            <span className="text-[13px] text-(--color-ink)">
+              {t("ledger.staleBanner", {
+                count: String(staleRows.length),
+                days: String(CHASE_AFTER_DAYS),
+              })}
+            </span>
+            <button
+              onClick={() => setSort({ key: "lastStep", dir: "asc" })}
+              className="rounded-(--radius-control) px-1.5 py-0.5 text-[12px] font-medium text-(--color-warn) underline-offset-2 hover:underline"
+            >
+              {t("ledger.staleSort")}
+            </button>
+          </div>
+        )}
+
         <div
           className={[
             "mt-2 max-h-[calc(100dvh-16rem)] overflow-auto rounded-(--radius-lg) border border-(--color-hairline) bg-(--color-canvas) shadow-(--shadow-level-1)",
@@ -979,20 +1024,36 @@ export default function VisitLedger() {
                       whichever step the status owns — the week's work is not always ticked off
                       on the day it happened. The other two dates stay on the patient's page. */}
                   <td className="px-3 py-1">
-                    {(() => {
-                      const step = currentStep(visit);
-                      if (!step.field || !step.date) {
-                        return <span className="text-[13px] text-(--color-ink-faint)">—</span>;
-                      }
-                      return (
-                        <DatePicker
-                          value={step.date}
-                          onChange={(date) => setStepDate(visit, step.field!, date)}
-                          ariaLabel={t("ledger.colLastStep")}
-                          className="-ml-[7px] font-mono text-[12px] text-(--color-ink-muted)"
-                        />
-                      );
-                    })()}
+                    <span className="flex items-center gap-1">
+                      {(() => {
+                        const step = currentStep(visit);
+                        if (!step.field || !step.date) {
+                          return <span className="text-[13px] text-(--color-ink-faint)">—</span>;
+                        }
+                        return (
+                          <DatePicker
+                            value={step.date}
+                            onChange={(date) => setStepDate(visit, step.field!, date)}
+                            ariaLabel={t("ledger.colLastStep")}
+                            className="-ml-[7px] font-mono text-[12px] text-(--color-ink-muted)"
+                          />
+                        );
+                      })()}
+                      {/* Sits next to the date it is counted from, so the mark and its reason
+                          are one glance apart. The number, not just a symbol: 31 days late and
+                          120 days late are not the same problem. */}
+                      {isStale(visit, today) && (
+                        <span
+                          title={t("ledger.staleRow", {
+                            days: String(daysWaiting(visit, today)),
+                          })}
+                          className="flex shrink-0 items-center gap-0.5 rounded-(--radius-control) bg-(--color-warn)/12 px-1 py-px text-[11px] font-medium text-(--color-warn) tabular-nums"
+                        >
+                          <AlertTriangle size={10} />
+                          {t("ledger.staleDays", { days: String(daysWaiting(visit, today)) })}
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td className="px-1 py-1">
                     <button

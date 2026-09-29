@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ArrowUpToLine,
@@ -28,6 +28,7 @@ import VoiceInputButton from "../components/VoiceInputButton";
 import { slugify } from "../lib/slugify";
 import { todayKey, shiftDateKey, formatDisplayDate } from "../lib/date";
 import { matchesSearch } from "../lib/searchIndex";
+import { DatePicker } from "../components/DatePicker";
 import type { ChecklistItem, ChecklistSectionMeta, FollowUpItem } from "../lib/types";
 import FollowUpBoard, { FOLLOW_UPS_KEY } from "../components/FollowUpBoard";
 
@@ -136,6 +137,31 @@ export default function Checklist() {
   }));
 
   const allItemIdSet = new Set(allSections.flatMap((section) => section.items.map((item) => item.id)));
+  /*
+   * The days with something written on them, for the calendar's dots.
+   *
+   * Every key that can hold a day's work is a candidate, but a key alone is not content: clearing
+   * a day leaves an empty record behind, and an item can be deleted out from under a day that
+   * still lists its id. So each candidate goes through the same two resolvers the page renders
+   * from, and a day counts only if one of them still returns something. A dot therefore means
+   * "opening this day shows something", which is the only thing it can honestly mean.
+   */
+  const markedDays = useMemo(() => {
+    const marked = new Set<string>();
+    const candidates = new Set([
+      ...Object.keys(state),
+      ...Object.keys(dayItemIds),
+      ...Object.keys(daySectionIds),
+    ]);
+    for (const date of candidates) {
+      const itemIds = getDayItemIds(date);
+      if (itemIds.length > 0 || getDaySectionIds(date, itemIds).length > 0) marked.add(date);
+    }
+    return marked;
+    // The resolvers close over exactly these; they are the whole input.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, dayItemIds, daySectionIds, customSections, customItems]);
+
   const dayState = state[selectedDate] ?? {};
   const selectedDayItemIds = getDayItemIds(selectedDate);
   const selectedDayItemIdSet = new Set(selectedDayItemIds);
@@ -931,11 +957,14 @@ export default function Checklist() {
           >
             <ChevronLeft size={16} />
           </button>
-          <input
-            type="date"
+          <DatePicker
             value={selectedDate}
-            onChange={(e) => e.target.value && selectDate(e.target.value)}
-            className="rounded-(--radius-xs) border border-(--color-hairline) bg-(--color-canvas) px-2 py-1.5 text-[13px] text-(--color-ink) outline-none focus:shadow-(--shadow-level-1)"
+            onChange={(date) => date && selectDate(date)}
+            ariaLabel={t("checklist.pickDay")}
+            markedDays={markedDays}
+            markedLabel={t("checklist.dayHasNotes")}
+            bordered
+            className="px-2 py-1.5 text-[13px] text-(--color-ink)"
           />
           <button
             onClick={() => selectDate(shiftDateKey(selectedDate, 1))}

@@ -551,6 +551,33 @@ number on the page meaningless.
 **Resist re-introducing a workflow shell here.** Three attempts at one were all rejected, each
 time because the page has to be the record first.
 
+**Claims that went quiet now say so** (`isStale`, `daysWaiting`, `CHASE_AFTER_DAYS = 30`). A row
+still open `CHASE_AFTER_DAYS` after it went to Office Ally carries an amber `45天` beside the date
+in 上次操作, and a line above the table counts them. Two things about it are easy to get wrong:
+
+- **The clock starts at the claim, not the visit.** It was written against `visitDate`, which
+  would have flagged every old visit claimed last week and missed every recent visit claimed in
+  June. It reads `operationDates(visit).submitted`, so a record with no stored date is judged by
+  its trail (and `visitHistory` synthesises one from `createdAt`) — the `?? visit.visitDate`
+  fallback is a guard that in practice never fires.
+- **`denied` counts as waiting.** A denial nobody resubmitted is exactly how the money is lost,
+  so `isOpen` covers `submitted` and `denied` alike; `paid` and anything not yet sent never
+  qualify.
+
+The notice sorts rather than filters — this page has no filter state and should not grow one. The
+button therefore says **按最久没动排序**, not "bring them to the top": sorting lifts the overdue
+claims but does not gather them, because paid rows from the same weeks sit between them. Naming
+it for the filter it isn't was the third label-lie on this page (see the bug patterns below).
+
+Fixing that sort exposed a real bug: `compareBy` read a missing last-operation date as `""`,
+which ascending put **above** every dated row, so "oldest first" opened on a screenful of visits
+nobody has ever touched. Rows with no last operation now sort to the end in **both** directions,
+which is why `compareBy` takes the sign and returns the final order itself.
+
+**Export still does not exist.** Nothing on this page downloads or prints, and the boss is paid
+weekly off the 回款 count — which is read off the screen today. That is item ④ of the five-item
+review and the next one to build.
+
 **Access, as of 2026-09-28.** Both users are already on `ALLOWED_EMAILS`, so this runs today in
 any workspace they create. Letting the other clinic's staff in still needs two things that do not
 exist yet: a member-management endpoint (workspace creation only enrols its creator), and a login
@@ -593,6 +620,24 @@ edit to the default.
 Open questions the owner has not answered, currently handled by defaults rather than guesses:
 box 3 in their sample held a patient address rather than a VA facility, so it is a per-request
 field with a saved default; CPT codes are editable with the usual pair saved as the default.
+
+### Front desk checklist (`src/pages/Checklist.tsx`)
+The day picker was the last `<input type="date">` in the app — the OS control, its glyph and its
+formatting, in a toolbar where everything else was drawn by hand. It is now the shared
+`DatePicker`, with `bordered` so it still reads as a field next to 复制前一天.
+
+`DatePicker` grew `markedDays`, and the checklist passes the days that have anything on them, so
+a month shows at a glance which days were written up and which were left blank. **A dot means
+"opening this day shows something", and nothing else.** The set is not built from the storage
+keys: clearing a day leaves an empty record behind and an item can be deleted out from under a
+day that still lists its id, so every candidate date goes back through `getDayItemIds` /
+`getDaySectionIds` — the same two resolvers the page renders from. The dot is absolutely
+positioned so a marked cell is exactly as tall as an unmarked one, and turns `--color-on-primary`
+on the selected day so it stays visible on the teal fill.
+
+`bordered` is a variant rather than a class you pass in, deliberately: two `border-color`
+utilities in one class list are resolved by stylesheet order, not by which was written last, so
+overriding `border-transparent` from the call site would have been a coin flip.
 
 ### Follow-up board (`src/components/FollowUpBoard.tsx`)
 
@@ -696,6 +741,14 @@ Worth checking first when something "won't save" or "disappeared":
   per storage key — several components mount the same key and each reconciles on mount.
 - **Silent no-ops.** Several handlers `return` on invalid input with no message, which reads
   as "the button is broken". Say why instead.
+- **Labels that describe the intention instead of the behaviour.** Four so far on the ledger: a
+  calendar lens reading "回了 0 个" for days it was not counting, the day log calling hand-typed
+  entries "他们那边的预约", re-picking the same status counting as work, and a sort button
+  promising to "bring them to the top" when sorting only lifts them. Read the string back
+  against what the code does, not against what the feature is for.
+- **Missing values sorted as `""`.** An absent date is not an early date. `""` sorts below every
+  real value, which one direction turns into the top of the table. Missing values belong at the
+  end whichever way the column is turned, which means the comparator has to know the direction.
 
 ## Current backlog — the 新版本调整 folder
 

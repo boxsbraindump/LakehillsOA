@@ -236,6 +236,8 @@ export const translations = {
   "checklist.match.note": { zh: "备注", en: "Note" },
   "checklist.match.section": { zh: "分支", en: "Section" },
   "checklist.match.date": { zh: "日期", en: "Date" },
+  "checklist.pickDay": { zh: "选择日期", en: "Pick a day" },
+  "checklist.dayHasNotes": { zh: "这天有写内容", en: "has notes" },
   "checklist.prevDay": { zh: "前一天", en: "Previous day" },
   "checklist.nextDay": { zh: "后一天", en: "Next day" },
   "checklist.today": { zh: "今天", en: "Today" },
@@ -920,6 +922,19 @@ export const translations = {
   "ledger.colPaidDate": { zh: "回款日期", en: "Paid on" },
   "ledger.colLastTouched": { zh: "最近操作", en: "Last change" },
   "ledger.patientSpan": { zh: "{from} 到 {to}", en: "{from} to {to}" },
+  "ledger.staleBanner": {
+    zh: "有 {count} 条报出去超过 {days} 天还没回钱",
+    en: "{count} claims sent over {days} days ago with nothing back",
+  },
+  // Named for what the click does. Sorting by longest-untouched lifts the overdue claims but
+  // does not gather them: paid rows from the same weeks sit between them, so a button promising
+  // to "bring them to the top" would be describing a filter this page does not have.
+  "ledger.staleSort": { zh: "按最久没动排序", en: "Sort by longest untouched" },
+  "ledger.staleRow": {
+    zh: "报出去 {days} 天了，还没回钱",
+    en: "Sent {days} days ago, still unpaid",
+  },
+  "ledger.staleDays": { zh: "{days}天", en: "{days}d" },
   "ledger.prevMonth": { zh: "上个月", en: "Previous month" },
   "ledger.nextMonth": { zh: "下个月", en: "Next month" },
   "ledger.thisMonth": { zh: "本月", en: "This month" },
