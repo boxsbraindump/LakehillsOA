@@ -64,7 +64,7 @@ export function DatePicker({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
         className={[
-          "cursor-pointer rounded-(--radius-xs) border border-transparent px-1.5 py-0.5 text-left tabular-nums outline-none hover:border-(--color-hairline) focus-visible:ring-2 focus-visible:ring-(--color-primary)/40",
+          "cursor-pointer rounded-(--radius-control) border border-transparent px-1.5 py-0.5 text-left tabular-nums outline-none hover:border-(--color-hairline) focus-visible:ring-2 focus-visible:ring-(--color-primary)/40",
           value ? "" : "text-(--color-ink-faint)",
           className,
         ].join(" ")}
@@ -103,7 +103,7 @@ export function DatePicker({
               type="button"
               onClick={() => setCursor(shiftMonthKey(month, -1) + cursor.slice(7))}
               aria-label={t("ledger.prevMonth")}
-              className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+              className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
             >
               <ChevronLeft size={15} />
             </button>
@@ -112,7 +112,7 @@ export function DatePicker({
               type="button"
               onClick={() => setCursor(shiftMonthKey(month, 1) + cursor.slice(7))}
               aria-label={t("ledger.nextMonth")}
-              className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+              className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
             >
               <ChevronRight size={15} />
             </button>
@@ -138,7 +138,7 @@ export function DatePicker({
                   onClick={() => commit(day)}
                   aria-current={isSelected ? "date" : undefined}
                   className={[
-                    "m-0.5 rounded-(--radius-xs) py-1 text-center text-[12px] tabular-nums",
+                    "m-0.5 rounded-(--radius-control) py-1 text-center text-[12px] tabular-nums",
                     inMonth ? "text-(--color-ink)" : "text-(--color-ink-faint)",
                     isSelected
                       ? "bg-(--color-primary) font-bold text-(--color-on-primary)"
@@ -158,7 +158,7 @@ export function DatePicker({
             <button
               type="button"
               onClick={() => commit(today)}
-              className="rounded-(--radius-xs) px-2 py-1 text-[12px] font-medium text-(--color-primary)"
+              className="rounded-(--radius-control) px-2 py-1 text-[12px] font-medium text-(--color-primary)"
             >
               {t("ledger.thisMonthToday")}
             </button>

@@ -101,7 +101,7 @@ export default function FollowUpBoard() {
       <button
         type="button"
         onClick={() => setIsAdding(true)}
-        className="mb-6 flex w-full items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) py-3 text-[13px] font-medium text-(--color-ink-faint) transition-colors hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+        className="mb-6 flex w-full items-center justify-center gap-1.5 rounded-(--radius-control) border border-dashed border-(--color-hairline) py-3 text-[13px] font-medium text-(--color-ink-faint) transition-colors hover:border-(--color-primary)/40 hover:text-(--color-primary)"
       >
         <Plus size={14} />
         {t("followUp.emptyAdd")}
@@ -126,7 +126,7 @@ export default function FollowUpBoard() {
         <button
           type="button"
           onClick={() => setIsAdding(true)}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-control) border border-(--color-hairline) bg-(--color-canvas) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
         >
           <Plus size={13} />
           {t("followUp.add")}
@@ -150,7 +150,7 @@ export default function FollowUpBoard() {
           />
           <button
             type="submit"
-            className="shrink-0 rounded-(--radius-md) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary)"
+            className="shrink-0 rounded-(--radius-control) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary)"
           >
             {t("common.save")}
           </button>
@@ -161,7 +161,7 @@ export default function FollowUpBoard() {
               setDraft("");
             }}
             aria-label={t("common.cancel")}
-            className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
+            className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
             <X size={15} />
           </button>
@@ -180,7 +180,7 @@ export default function FollowUpBoard() {
                   aria-checked={false}
                   aria-label={t("followUp.markDone", { label: item.label })}
                   onClick={() => toggleDone(item)}
-                  className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border border-(--color-ink-faint) transition-colors hover:border-(--color-primary)"
+                  className="rounded-(--radius-control) mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border border-(--color-ink-faint) transition-colors hover:border-(--color-primary)"
                 />
 
                 {editingId === item.id ? (
@@ -226,7 +226,7 @@ export default function FollowUpBoard() {
                     onClick={() => setOpenNoteId((prev) => (prev === item.id ? null : item.id))}
                     aria-label={t("followUp.noteAria")}
                     className={[
-                      "rounded-(--radius-sm) p-1 hover:text-(--color-primary)",
+                      "rounded-(--radius-control) p-1 hover:text-(--color-primary)",
                       item.note ? "text-(--color-primary)" : "text-(--color-ink-faint)",
                     ].join(" ")}
                   >
@@ -236,7 +236,7 @@ export default function FollowUpBoard() {
                     type="button"
                     onClick={() => startEditing(item)}
                     aria-label={t("common.edit")}
-                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                    className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                   >
                     <Pencil size={13} />
                   </button>
@@ -244,7 +244,7 @@ export default function FollowUpBoard() {
                     type="button"
                     onClick={() => removeItem(item)}
                     aria-label={t("common.delete")}
-                    className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                    className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -297,7 +297,7 @@ export default function FollowUpBoard() {
                     aria-checked
                     aria-label={t("followUp.markNotDone", { label: item.label })}
                     onClick={() => toggleDone(item)}
-                    className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-(--color-primary) bg-(--color-primary)"
+                    className="rounded-(--radius-control) mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-(--color-primary) bg-(--color-primary)"
                   >
                     <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                       <path

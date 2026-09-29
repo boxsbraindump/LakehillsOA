@@ -87,7 +87,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
               setOpen(false);
               navigate("/settings");
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+            className="rounded-(--radius-control) flex w-full items-center gap-2.5 px-3 py-2 text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
           >
             <Settings size={15} strokeWidth={2} className="shrink-0" />
             {t("profileMenu.settings")}
@@ -112,7 +112,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                         switchWorkspace(item.id);
                         navigate("/");
                       }}
-                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-(--radius-sm) px-1.5 py-2 text-left text-[14px] text-(--color-ink-secondary)"
+                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-(--radius-control) px-1.5 py-2 text-left text-[14px] text-(--color-ink-secondary)"
                     >
                       <span className="min-w-0 flex-1 truncate">{item.name}</span>
                       {workspace?.id === item.id && (
@@ -124,7 +124,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                         type="button"
                         disabled={deletingWorkspaceId === item.id}
                         onClick={() => void handleDeleteWorkspace(item)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-sm) text-(--color-ink-faint) opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-control) text-(--color-ink-faint) opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
                         aria-label={t("profileMenu.deleteWorkspace")}
                       >
                         <Trash2 size={14} strokeWidth={2.1} />
@@ -137,7 +137,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                 type="button"
                 disabled={isCreatingWorkspace}
                 onClick={() => void handleCreateWorkspace()}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft) disabled:pointer-events-none disabled:opacity-55"
+                className="rounded-(--radius-control) flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft) disabled:pointer-events-none disabled:opacity-55"
               >
                 <Plus size={15} strokeWidth={2} className="shrink-0" />
                 {t("profileMenu.newWorkspace")}
@@ -153,7 +153,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
               setOpen(false);
               logout();
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+            className="rounded-(--radius-control) flex w-full items-center gap-2.5 px-3 py-2 text-[14px] text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
           >
             <LogOut size={15} strokeWidth={2} className="shrink-0" />
             {t("profileMenu.logout")}
@@ -164,7 +164,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
       <button
         onClick={() => setOpen((v) => !v)}
         className={[
-          "flex w-full items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors",
+          "flex w-full items-center gap-2.5 rounded-(--radius-control) px-2 py-2 text-left transition-colors",
           open ? "bg-(--color-canvas-soft)" : "hover:bg-(--color-canvas-soft)",
         ].join(" ")}
       >

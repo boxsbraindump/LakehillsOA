@@ -420,7 +420,7 @@ export default function VisitLedger() {
           {t("ledger.previewBanner")}
           <button
             onClick={() => setPreview(null)}
-            className="ml-auto rounded-(--radius-xs) border border-(--color-warn)/50 px-2 py-0.5 font-medium"
+            className="ml-auto rounded-(--radius-control) border border-(--color-warn)/50 px-2 py-0.5 font-medium"
           >
             {t("ledger.previewExit")}
           </button>
@@ -440,7 +440,7 @@ export default function VisitLedger() {
             key={key}
             onClick={() => setView(key)}
             className={[
-              "flex items-center gap-1.5 rounded-(--radius-sm) border px-3 py-1.5 text-[13px]",
+              "flex items-center gap-1.5 rounded-(--radius-control) border px-3 py-1.5 text-[13px]",
               view === key
                 ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
                 : "border-(--color-hairline) text-(--color-ink-muted) hover:text-(--color-primary)",
@@ -473,14 +473,14 @@ export default function VisitLedger() {
         </div>
         <button
           onClick={() => setBatchOpen(true)}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-control) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
         >
           <Plus size={13} />
           {t("ledger.addPatients")}
         </button>
         <button
           onClick={() => setReconciling(true)}
-          className="flex shrink-0 items-center gap-1 rounded-(--radius-sm) border border-(--color-primary)/40 px-3 py-2 text-[13px] font-medium text-(--color-primary)"
+          className="flex shrink-0 items-center gap-1 rounded-(--radius-control) border border-(--color-primary)/40 px-3 py-2 text-[13px] font-medium text-(--color-primary)"
         >
           <Scale size={13} />
           {t("ledger.reconcileShort")}
@@ -545,14 +545,14 @@ export default function VisitLedger() {
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => setBatchOpen(true)}
-              className="rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
+              className="rounded-(--radius-control) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
             >
               {t("ledger.addPatients")}
             </button>
             {/* Nothing here is worth looking at until there are rows in it. */}
             <button
               onClick={() => setPreview(buildSampleLedger())}
-              className="flex items-center gap-1.5 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
+              className="flex items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
             >
               <Eye size={13} />
               {t("ledger.previewLoad")}
@@ -647,7 +647,7 @@ export default function VisitLedger() {
           {log.length > logLimit && (
             <button
               onClick={() => setLogLimit(logLimit + 14)}
-              className="w-full border-t border-(--color-hairline) py-2 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
+              className="rounded-(--radius-control) w-full border-t border-(--color-hairline) py-2 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
             >
               {t("ledger.logMore", { count: String(log.length - logLimit) })}
             </button>
@@ -684,7 +684,7 @@ export default function VisitLedger() {
               <button
                 onClick={() => setMonth(shiftMonthKey(month, -1))}
                 aria-label={t("ledger.prevMonth")}
-                className="rounded-(--radius-xs) p-1.5 text-(--color-ink-muted) hover:text-(--color-primary)"
+                className="rounded-(--radius-control) p-1.5 text-(--color-ink-muted) hover:text-(--color-primary)"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -694,7 +694,7 @@ export default function VisitLedger() {
               <button
                 onClick={() => setMonth(shiftMonthKey(month, 1))}
                 aria-label={t("ledger.nextMonth")}
-                className="rounded-(--radius-xs) p-1.5 text-(--color-ink-muted) hover:text-(--color-primary)"
+                className="rounded-(--radius-control) p-1.5 text-(--color-ink-muted) hover:text-(--color-primary)"
               >
                 <ChevronRight size={16} />
               </button>
@@ -703,7 +703,7 @@ export default function VisitLedger() {
                   setMonth(monthKeyOf(today));
                   setPickedDay(null);
                 }}
-                className="rounded-(--radius-sm) border border-(--color-hairline) px-2 py-1 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
+                className="rounded-(--radius-control) border border-(--color-hairline) px-2 py-1 text-[12px] text-(--color-ink-muted) hover:text-(--color-primary)"
               >
                 {t("ledger.thisMonth")}
               </button>
@@ -922,7 +922,7 @@ export default function VisitLedger() {
                       }}
                       aria-label={t("ledger.moreOnThisVisit")}
                       aria-expanded={open}
-                      className="rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                      className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                     >
                       <ChevronRight
                         size={14}
@@ -1015,7 +1015,7 @@ export default function VisitLedger() {
                 onClick={() => setPage(safePage - 1)}
                 disabled={safePage <= 1}
                 aria-label={t("ledger.prevPage")}
-                className="rounded-(--radius-xs) p-1 hover:text-(--color-primary) disabled:opacity-30"
+                className="rounded-(--radius-control) p-1 hover:text-(--color-primary) disabled:opacity-30"
               >
                 <ChevronLeft size={15} />
               </button>
@@ -1026,7 +1026,7 @@ export default function VisitLedger() {
                 onClick={() => setPage(safePage + 1)}
                 disabled={safePage >= pageCount}
                 aria-label={t("ledger.nextPage")}
-                className="rounded-(--radius-xs) p-1 hover:text-(--color-primary) disabled:opacity-30"
+                className="rounded-(--radius-control) p-1 hover:text-(--color-primary) disabled:opacity-30"
               >
                 <ChevronRight size={15} />
               </button>
@@ -1365,7 +1365,7 @@ function TagManager({
           <button
             onClick={onClose}
             aria-label={t("common.cancel")}
-            className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
+            className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
             <X size={18} />
           </button>
@@ -1389,7 +1389,7 @@ function TagManager({
               <button
                 onClick={() => remove(tag.id)}
                 aria-label={t("common.delete")}
-                className="shrink-0 rounded-(--radius-xs) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
+                className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
               >
                 <Trash2 size={14} />
               </button>
@@ -1413,7 +1413,7 @@ function TagManager({
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="shrink-0 rounded-(--radius-sm) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
+            className="shrink-0 rounded-(--radius-control) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) disabled:opacity-40"
           >
             {t("ledger.tagAdd")}
           </button>
@@ -1472,7 +1472,7 @@ function BatchPanel({
           <button
             onClick={onClose}
             aria-label={t("common.cancel")}
-            className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
+            className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
             <X size={18} />
           </button>
@@ -1594,14 +1594,14 @@ function BatchPanel({
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="rounded-(--radius-sm) px-3 py-2 text-[14px] text-(--color-ink-muted) hover:text-(--color-ink)"
+              className="rounded-(--radius-control) px-3 py-2 text-[14px] text-(--color-ink-muted) hover:text-(--color-ink)"
             >
               {t("common.cancel")}
             </button>
             <button
               disabled={preview.length === 0}
               onClick={() => onAdd(preview, status, paidDate)}
-              className="rounded-(--radius-sm) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
+              className="rounded-(--radius-control) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
             >
               {t("ledger.addConfirm")}
             </button>
@@ -1644,7 +1644,7 @@ function ReconcilePanel({
           <button
             onClick={onClose}
             aria-label={t("common.cancel")}
-            className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
+            className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink)"
           >
             <X size={18} />
           </button>
@@ -1720,7 +1720,7 @@ function ReconcilePanel({
                               )
                             }
                             className={[
-                              "rounded-(--radius-sm) border px-2 py-1 text-[12px] transition-colors",
+                              "rounded-(--radius-control) border px-2 py-1 text-[12px] transition-colors",
                               chosen.includes(visit.id)
                                 ? "tone tone-paid font-medium"
                                 : "border-(--color-warn)/40 text-(--color-warn) hover:border-(--color-primary)",
@@ -1755,7 +1755,7 @@ function ReconcilePanel({
               <div className="flex gap-2">
                 <button
                   onClick={onClose}
-                  className="rounded-(--radius-sm) px-3 py-2 text-[14px] text-(--color-ink-muted) hover:text-(--color-ink)"
+                  className="rounded-(--radius-control) px-3 py-2 text-[14px] text-(--color-ink-muted) hover:text-(--color-ink)"
                 >
                   {t("common.cancel")}
                 </button>
@@ -1765,7 +1765,7 @@ function ReconcilePanel({
                     onSettle([...result.matched.map((m) => m.visit.id), ...chosen], paidDate);
                     onClose();
                   }}
-                  className="rounded-(--radius-sm) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
+                  className="rounded-(--radius-control) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
                 >
                   {t("ledger.settle", { count: String(total) })}
                 </button>

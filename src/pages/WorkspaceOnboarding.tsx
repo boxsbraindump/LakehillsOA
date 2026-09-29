@@ -77,7 +77,7 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
               <button
                 type="button"
                 onClick={createWorkspace}
-                className="rounded-(--radius-md) bg-(--color-primary) px-5 py-3 text-[14px] font-semibold text-white shadow-[0_12px_28px_rgba(40,175,165,0.22)] transition-transform duration-150 hover:bg-(--color-primary-active) active:scale-[0.98]"
+                className="rounded-(--radius-control) bg-(--color-primary) px-5 py-3 text-[14px] font-semibold text-white shadow-[0_12px_28px_rgba(40,175,165,0.22)] transition-transform duration-150 hover:bg-(--color-primary-active) active:scale-[0.98]"
               >
                 {t("workspaceOnboarding.createWorkspace")}
               </button>

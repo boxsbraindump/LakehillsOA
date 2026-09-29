@@ -94,7 +94,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 ref={cancelButtonRef}
                 type="button"
                 onClick={() => close(false)}
-                className="rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) transition-colors hover:bg-(--color-canvas-tint)"
+                className="rounded-(--radius-control) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) transition-colors hover:bg-(--color-canvas-tint)"
               >
                 {t("common.cancel")}
               </button>
@@ -102,7 +102,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => close(true)}
                 className={[
-                  "rounded-(--radius-md) px-3 py-1.5 text-[13px] font-medium text-white transition-[background-color,transform] active:scale-[0.98]",
+                  "rounded-(--radius-control) px-3 py-1.5 text-[13px] font-medium text-white transition-[background-color,transform] active:scale-[0.98]",
                   pending.tone === "danger"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-(--color-primary) hover:bg-(--color-primary-active)",

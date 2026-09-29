@@ -225,7 +225,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
               <button
                 type="button"
                 onClick={openSignIn}
-                className="hidden items-center gap-1.5 rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-(--color-primary-active) sm:flex"
+                className="hidden items-center gap-1.5 rounded-(--radius-control) bg-(--color-primary) px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-(--color-primary-active) sm:flex"
               >
                 {t("publicHome.signIn")}
                 <ArrowRight size={13} />
@@ -269,7 +269,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
                 <button
                   type="button"
                   onClick={openSignIn}
-                  className="inline-flex items-center gap-2 rounded-(--radius-md) bg-(--color-primary) px-4 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(40,175,165,0.2)] transition-colors hover:bg-(--color-primary-active)"
+                  className="inline-flex items-center gap-2 rounded-(--radius-control) bg-(--color-primary) px-4 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(40,175,165,0.2)] transition-colors hover:bg-(--color-primary-active)"
                 >
                   {t("publicHome.signIn")}
                   <ArrowRight size={16} />
@@ -278,7 +278,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
               <button
                 type="button"
                 onClick={() => scrollToSection("features")}
-                className="inline-flex items-center rounded-(--radius-md) border border-(--color-hairline) bg-white px-4 py-3 text-[14px] font-semibold text-(--color-ink-secondary) transition-colors hover:bg-(--color-canvas-tint)"
+                className="inline-flex items-center rounded-(--radius-control) border border-(--color-hairline) bg-white px-4 py-3 text-[14px] font-semibold text-(--color-ink-secondary) transition-colors hover:bg-(--color-canvas-tint)"
               >
                 {t("publicHome.learnMore")}
               </button>

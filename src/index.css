@@ -82,6 +82,19 @@
   --tone-area-6: #4d7f9e;
 
   /* Radius */
+  /*
+   * One corner for every button.
+   *
+   * The app had five different radii on its buttons — 4px, 5px, 8px, 12px and none — which is
+   * what "the corners look inconsistent" actually was. The root of it is right below: xs and sm
+   * are a single pixel apart, so nobody could choose between them deliberately and both got
+   * used for the same thing. Buttons now name this instead of picking a size, and it matches
+   * --radius-md so a button and the input beside it share an edge.
+   *
+   * Pills (rounded-full) are exempt: a status chip is meant to be a pill.
+   */
+  --radius-control: 8px;
+
   --radius-xs: 4px;
   --radius-sm: 5px;
   --radius-md: 8px;

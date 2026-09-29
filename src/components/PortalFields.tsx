@@ -71,7 +71,7 @@ export default function PortalFields({
                     type="button"
                     onClick={() => removePortal(i)}
                     aria-label={t("common.delete")}
-                    className="-mt-1 -mr-1 shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
+                    className="-mt-1 -mr-1 shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
                   >
                     <X size={14} />
                   </button>

@@ -270,6 +270,19 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**Every button names `--radius-control`, it does not pick a size.** The app had five different
+radii on its buttons — 4px, 5px, 8px, 12px and none — which is what “the corners look
+inconsistent” was. The cause is in the scale: `--radius-xs` (4px) and `--radius-sm` (5px) are one
+pixel apart, so nobody could choose between them deliberately and both got used for the same
+thing. `--radius-control` is 8px, matching `--radius-md` so a button and the input beside it share
+an edge. Pills stay pills, and genuinely square things stay square: calendar day cells are grid
+cells, and dropdown options are list rows.
+
+**Matching a JSX tag needs a brace-aware scan, not a regex.** The codemod that did this first ran
+on `/<button[sS]*?>/` and silently skipped one pager button, because `disabled={page >= count}`
+ends the tag early. Only a `>` outside braces and quotes closes it. The audit script in the session
+scratchpad does it properly and reports any button that drifts off the token.
+
 **A preview that never touches storage.** An empty ledger cannot be judged — paging, sorting,
 the day log and the calendar all look like a blank page until there are rows — so the empty
 state offers sample data: twelve weeks of the clinic’s own rhythm, eighty rows, ten patients,

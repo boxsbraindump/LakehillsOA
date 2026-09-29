@@ -27,7 +27,7 @@ export default function EmptyState({
       <button
         type="button"
         onClick={onAction}
-        className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) transition-transform duration-150 hover:bg-(--color-primary-active) active:scale-[0.97]"
+        className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-(--radius-control) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) transition-transform duration-150 hover:bg-(--color-primary-active) active:scale-[0.97]"
       >
         <Plus size={14} />
         {actionLabel}

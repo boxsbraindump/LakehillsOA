@@ -435,7 +435,7 @@ export default function CustomCategory() {
           aria-label={pinLabel}
           title={pinLabel}
           className={[
-            "rounded-(--radius-sm) p-1 hover:text-(--color-primary)",
+            "rounded-(--radius-control) p-1 hover:text-(--color-primary)",
             entry.pinned ? "text-(--color-primary)" : "text-(--color-ink-faint)",
           ].join(" ")}
         >
@@ -444,14 +444,14 @@ export default function CustomCategory() {
         <button
           onClick={() => setEditingId(entry.id)}
           aria-label={t("common.edit")}
-          className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+          className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
         >
           <Pencil size={14} />
         </button>
         <button
           onClick={() => handleDelete(entry)}
           aria-label={t("common.delete")}
-          className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+          className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
         >
           <Trash2 size={14} />
         </button>
@@ -513,7 +513,7 @@ export default function CustomCategory() {
           <button
             type="button"
             onClick={() => setQuery("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-sm) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-control) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
           >
             {t("common.cancel")}
           </button>
@@ -531,7 +531,7 @@ export default function CustomCategory() {
             />
             <button
               onClick={resetSelectedDay}
-              className="rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+              className="rounded-(--radius-control) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
             >
               {t("checklist.resetDay")}
             </button>
@@ -623,7 +623,7 @@ export default function CustomCategory() {
                 <button
                   onClick={() => setOpenNoteId(openNoteId === entry.id ? null : entry.id)}
                   className={[
-                    "shrink-0 rounded-(--radius-sm) p-1",
+                    "shrink-0 rounded-(--radius-control) p-1",
                     dayState[entry.id]?.note
                       ? "text-(--color-primary)"
                       : "text-(--color-ink-faint) hover:text-(--color-ink-muted)",
@@ -779,7 +779,7 @@ export default function CustomCategory() {
             <button
               onClick={() => setIsAdding(true)}
               className={[
-                "flex items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]",
+                "flex items-center justify-center gap-1.5 rounded-(--radius-control) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]",
                 template === "payments" ? "min-h-[120px]" : "min-h-[100px]",
               ].join(" ")}
             >

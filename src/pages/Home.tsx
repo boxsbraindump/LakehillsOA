@@ -125,7 +125,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="mr-3 shrink-0 rounded-(--radius-md) px-2.5 py-1 text-[13px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+                className="mr-3 shrink-0 rounded-(--radius-control) px-2.5 py-1 text-[13px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
               >
                 {t("common.cancel")}
               </button>

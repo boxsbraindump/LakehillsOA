@@ -849,7 +849,7 @@ export default function Checklist() {
         </h1>
         <button
           onClick={resetSelectedDay}
-          className="flex shrink-0 items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+          className="flex shrink-0 items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) bg-(--color-canvas) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
         >
           <RotateCcw size={14} />
           {t("checklist.clearDay")}
@@ -872,7 +872,7 @@ export default function Checklist() {
           <button
             type="button"
             onClick={() => setNoteQuery("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-sm) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-control) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
           >
             {t("common.cancel")}
           </button>
@@ -893,7 +893,7 @@ export default function Checklist() {
                   <li key={`${match.date}-${match.itemId}`}>
                     <button
                       onClick={() => jumpToMatch(match)}
-                      className="flex w-full flex-col items-start px-4 py-2.5 text-left hover:bg-(--color-canvas-soft)"
+                      className="rounded-(--radius-control) flex w-full flex-col items-start px-4 py-2.5 text-left hover:bg-(--color-canvas-soft)"
                     >
                       <span className="text-[14px] font-medium text-(--color-ink)">
                         {match.itemLabel}
@@ -927,7 +927,7 @@ export default function Checklist() {
           <button
             onClick={() => selectDate(shiftDateKey(selectedDate, -1))}
             aria-label={t("checklist.prevDay")}
-            className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
+            className="rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
           >
             <ChevronLeft size={16} />
           </button>
@@ -940,14 +940,14 @@ export default function Checklist() {
           <button
             onClick={() => selectDate(shiftDateKey(selectedDate, 1))}
             aria-label={t("checklist.nextDay")}
-            className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
+            className="rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
           >
             <ChevronRight size={16} />
           </button>
           {!isToday && (
             <button
               onClick={() => selectDate(todayKey())}
-              className="rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+              className="rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
             >
               {t("checklist.today")}
             </button>
@@ -956,7 +956,7 @@ export default function Checklist() {
             <button
               onClick={() => setIsCopyPanelOpen((open) => !open)}
               aria-expanded={isCopyPanelOpen}
-              className="flex items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+              className="flex items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
             >
               <Copy size={14} />
               {t("checklist.copyPreviousDay")}
@@ -994,7 +994,7 @@ export default function Checklist() {
                       <button
                         type="button"
                         onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished, "append")}
-                        className="w-full rounded-(--radius-md) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                        className="w-full rounded-(--radius-control) bg-(--color-primary) px-2.5 py-1.5 text-[12px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
                       >
                         {t("checklist.copyAppend")}
                       </button>
@@ -1004,7 +1004,7 @@ export default function Checklist() {
                       <button
                         type="button"
                         onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished, "replace")}
-                        className="mt-1 w-full rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[12px] font-medium text-(--color-ink-secondary) hover:border-red-300 hover:text-red-600"
+                        className="mt-1 w-full rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[12px] font-medium text-(--color-ink-secondary) hover:border-red-300 hover:text-red-600"
                       >
                         {t("checklist.copyReplace")}
                       </button>
@@ -1014,7 +1014,7 @@ export default function Checklist() {
                       <button
                         type="button"
                         onClick={() => setIsCopyPanelOpen(false)}
-                        className="mt-1 w-full rounded-(--radius-md) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink)"
+                        className="mt-1 w-full rounded-(--radius-control) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink)"
                       >
                         {t("common.cancel")}
                       </button>
@@ -1097,7 +1097,7 @@ export default function Checklist() {
                   <button
                     type="submit"
                     aria-label={t("common.save")}
-                    className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-primary) hover:bg-(--color-canvas-soft)"
+                    className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-primary) hover:bg-(--color-canvas-soft)"
                   >
                     <Check size={15} />
                   </button>
@@ -1105,7 +1105,7 @@ export default function Checklist() {
                     type="button"
                     onClick={cancelEditingSection}
                     aria-label={t("common.cancel")}
-                    className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
+                    className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-ink-secondary)"
                   >
                     <X size={15} />
                   </button>
@@ -1139,14 +1139,14 @@ export default function Checklist() {
                     <button
                       onClick={() => startEditingSection(section)}
                       aria-label={t("checklist.editSectionAria")}
-                      className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                      className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => handleDeleteSection(section)}
                       aria-label={t("checklist.deleteSectionAria")}
-                      className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                      className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -1281,7 +1281,7 @@ export default function Checklist() {
                         onClick={() => promoteToFollowUp(section.id, item)}
                         aria-label={t("followUp.moveAria", { label: item.label })}
                         title={t("followUp.moveTitle")}
-                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
+                        className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <ArrowUpToLine size={13} />
                       </button>
@@ -1289,7 +1289,7 @@ export default function Checklist() {
                       <button
                         onClick={() => setEditingItemId(item.id)}
                         aria-label={t("common.edit")}
-                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
+                        className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-primary) sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Pencil size={13} />
                       </button>
@@ -1297,7 +1297,7 @@ export default function Checklist() {
                       <button
                         onClick={() => handleDeleteItem(section.id, item)}
                         aria-label={t("common.delete")}
-                        className="flex shrink-0 items-center rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -1305,7 +1305,7 @@ export default function Checklist() {
                       <button
                         onClick={() => setOpenNoteId(noteOpen ? null : item.id)}
                         className={[
-                          "flex shrink-0 items-center gap-1 rounded-(--radius-sm) px-1.5 py-1 text-[12px]",
+                          "flex shrink-0 items-center gap-1 rounded-(--radius-control) px-1.5 py-1 text-[12px]",
                           note
                             ? "text-(--color-primary)"
                             : "text-(--color-ink-faint) hover:text-(--color-ink-muted)",
@@ -1407,13 +1407,13 @@ export default function Checklist() {
                   setIsAddingSection(false);
                   setNewSectionTitle("");
                 }}
-                className="rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+                className="rounded-(--radius-control) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
               >
                 {t("common.cancel")}
               </button>
               <button
                 type="submit"
-                className="rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                className="rounded-(--radius-control) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
               >
                 {t("common.save")}
               </button>
@@ -1423,7 +1423,7 @@ export default function Checklist() {
           displayedSections.length > 0 && (
             <button
               onClick={() => setIsAddingSection(true)}
-              className="flex min-h-[64px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
+              className="flex min-h-[64px] items-center justify-center gap-1.5 rounded-(--radius-control) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
             >
               <Plus size={16} />
               {t("checklist.addSection")}

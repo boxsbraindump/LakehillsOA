@@ -134,7 +134,7 @@ export default function QuickFactsPanel() {
                   <button
                     type="button"
                     onClick={() => setScratch([])}
-                    className="rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+                    className="rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
                   >
                     {t("callBoard.clear")}
                   </button>
@@ -143,7 +143,7 @@ export default function QuickFactsPanel() {
                   type="button"
                   onClick={() => setIsOpen(false)}
                   aria-label={t("common.cancel")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
+                  className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-ink-secondary)"
                 >
                   <X size={16} />
                 </button>
@@ -176,7 +176,7 @@ export default function QuickFactsPanel() {
                         <button
                           type="button"
                           onClick={() => addCard(doc.id)}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-(--color-canvas-soft)"
+                          className="rounded-(--radius-control) flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-(--color-canvas-soft)"
                         >
                           <Plus size={13} className="shrink-0 text-(--color-primary)" />
                           <span className="min-w-0 flex-1">
@@ -260,7 +260,7 @@ export default function QuickFactsPanel() {
                               onClick={() => copyCard(card)}
                               aria-label={t(copiedId === card.id ? "callBoard.copied" : "callBoard.copy")}
                               title={t(copiedId === card.id ? "callBoard.copied" : "callBoard.copy")}
-                              className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas) hover:text-(--color-primary)"
+                              className="rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas) hover:text-(--color-primary)"
                             >
                               {copiedId === card.id ? (
                                 <Check size={14} className="text-(--color-primary)" />
@@ -274,7 +274,7 @@ export default function QuickFactsPanel() {
                               aria-label={t(isPinned ? "callBoard.unpin" : "callBoard.pin")}
                               title={t(isPinned ? "callBoard.unpin" : "callBoard.pin")}
                               className={[
-                                "rounded-(--radius-sm) p-1.5 hover:bg-(--color-canvas)",
+                                "rounded-(--radius-control) p-1.5 hover:bg-(--color-canvas)",
                                 isPinned
                                   ? "text-(--color-primary)"
                                   : "text-(--color-ink-faint) hover:text-(--color-primary)",
@@ -286,7 +286,7 @@ export default function QuickFactsPanel() {
                               type="button"
                               onClick={() => removeCard(card)}
                               aria-label={t("common.delete")}
-                              className="rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas) hover:text-red-500"
+                              className="rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas) hover:text-red-500"
                             >
                               <X size={14} />
                             </button>

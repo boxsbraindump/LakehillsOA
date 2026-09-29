@@ -524,7 +524,7 @@ export default function Sidebar() {
           <button
             type="submit"
             aria-label={t("common.save")}
-            className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-secondary) hover:bg-(--color-sidebar-hover)"
+            className="shrink-0 rounded-(--radius-control) p-1 text-(--color-secondary) hover:bg-(--color-sidebar-hover)"
           >
             <Check size={14} />
           </button>
@@ -532,7 +532,7 @@ export default function Sidebar() {
             type="button"
             onClick={() => setIsEditingWorkspaceName(false)}
             aria-label={t("common.cancel")}
-            className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)"
+            className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)"
           >
             <X size={14} />
           </button>
@@ -554,7 +554,7 @@ export default function Sidebar() {
               type="button"
               onClick={startWorkspaceRename}
               aria-label={t("workspace.rename")}
-              className="mr-1 shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition hover:text-(--color-secondary) md:opacity-0 md:group-hover/workspace:opacity-100"
+              className="mr-1 shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition hover:text-(--color-secondary) md:opacity-0 md:group-hover/workspace:opacity-100"
             >
               <Pencil size={13} />
             </button>
@@ -632,14 +632,14 @@ export default function Sidebar() {
                   onChange={(e) => setRenameValue(e.target.value)}
                   className={inlineInputClass}
                 />
-                <button type="submit" aria-label={t("common.save")} className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-secondary) hover:bg-(--color-sidebar-hover)">
+                <button type="submit" aria-label={t("common.save")} className="shrink-0 rounded-(--radius-control) p-1 text-(--color-secondary) hover:bg-(--color-sidebar-hover)">
                   <Check size={14} />
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingCategoryId(null)}
                   aria-label={t("common.cancel")}
-                  className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)"
+                  className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)"
                 >
                   <X size={14} />
                 </button>
@@ -696,7 +696,7 @@ export default function Sidebar() {
                   onClick={() => startRename(category)}
                   aria-label={t("common.edit")}
                   className={[
-                    "shrink-0 rounded-(--radius-sm) p-1",
+                    "shrink-0 rounded-(--radius-control) p-1",
                     isCategoryActive
                       ? "text-white/75 hover:text-white"
                       : "text-(--color-ink-faint) hover:text-(--color-secondary)",
@@ -710,7 +710,7 @@ export default function Sidebar() {
                   onClick={() => handleDeleteCategory(category)}
                   aria-label={t("common.delete")}
                   className={[
-                    "shrink-0 rounded-(--radius-sm) p-1",
+                    "shrink-0 rounded-(--radius-control) p-1",
                     isCategoryActive
                       ? "text-white/75 hover:text-white"
                       : "text-(--color-ink-faint) hover:text-red-500",
@@ -765,7 +765,7 @@ export default function Sidebar() {
                     type="button"
                     onClick={() => setNewCategoryTemplate(template)}
                     className={[
-                      "flex min-h-12 flex-col items-center justify-center gap-1 rounded-(--radius-sm) border px-1.5 py-1 text-[11px] font-medium",
+                      "flex min-h-12 flex-col items-center justify-center gap-1 rounded-(--radius-control) border px-1.5 py-1 text-[11px] font-medium",
                       newCategoryTemplate === template
                         ? "border-white/20 bg-(--color-sidebar-active) text-white"
                         : "border-(--color-sidebar-border) text-(--color-ink-muted) hover:bg-(--color-sidebar-hover)",
@@ -786,7 +786,7 @@ export default function Sidebar() {
                     type="button"
                     onClick={() => setNewCategoryIcon(iconKey)}
                     className={[
-                      "rounded-(--radius-sm) p-1.5",
+                      "rounded-(--radius-control) p-1.5",
                       newCategoryIcon === iconKey
                         ? "bg-(--color-sidebar-active) text-white"
                         : "text-(--color-ink-faint) hover:bg-(--color-sidebar-hover)",
@@ -805,13 +805,13 @@ export default function Sidebar() {
                   setNewCategoryTitle("");
                   setNewCategoryTemplate("checklist");
                 }}
-                className="rounded-(--radius-sm) border border-(--color-sidebar-border) px-2 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover)"
+                className="rounded-(--radius-control) border border-(--color-sidebar-border) px-2 py-1 text-[12px] font-medium text-(--color-ink-secondary) hover:bg-(--color-sidebar-hover)"
               >
                 {t("common.cancel")}
               </button>
               <button
                 type="submit"
-                className="rounded-(--radius-sm) bg-(--color-primary) px-2 py-1 text-[12px] font-medium text-white hover:bg-(--color-primary-active)"
+                className="rounded-(--radius-control) bg-(--color-primary) px-2 py-1 text-[12px] font-medium text-white hover:bg-(--color-primary-active)"
               >
                 {t("common.save")}
               </button>
@@ -824,7 +824,7 @@ export default function Sidebar() {
         ) : (
           <button
             onClick={() => setIsAddingCategory(true)}
-            className="flex items-center gap-2.5 rounded-(--radius-md) px-2 py-2 text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)"
+            className="flex items-center gap-2.5 rounded-(--radius-control) px-2 py-2 text-[14px] text-(--color-ink-muted) transition-colors hover:bg-(--color-sidebar-hover) hover:text-(--color-secondary)"
           >
             <Plus size={16} strokeWidth={2} className="shrink-0" />
             <span className="truncate">{t("sidebar.addCategory")}</span>

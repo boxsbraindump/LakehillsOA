@@ -234,7 +234,7 @@ export default function VaRfs() {
             type="button"
             disabled={!canGenerate}
             onClick={generate}
-            className="flex items-center gap-1.5 rounded-(--radius-md) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-(--radius-control) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
           >
             {busy ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
             {t("vaRfs.generate")}
@@ -242,7 +242,7 @@ export default function VaRfs() {
           <button
             type="button"
             onClick={() => setPatient(startingPatient(defaults))}
-            className="flex items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-3 py-2 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+            className="flex items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) px-3 py-2 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
           >
             <RotateCcw size={14} />
             {t("vaRfs.clear")}

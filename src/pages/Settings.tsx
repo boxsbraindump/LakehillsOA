@@ -230,7 +230,7 @@ export default function Settings() {
             </div>
             <button
               onClick={logout}
-              className="flex shrink-0 items-center gap-1.5 rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+              className="flex shrink-0 items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
             >
               <LogOut size={14} />
               {t("profileMenu.logout")}
@@ -249,7 +249,7 @@ export default function Settings() {
             <button
               onClick={() => setLang("zh")}
               className={[
-                "rounded-(--radius-md) border px-3 py-1.5 text-[13px] font-medium",
+                "rounded-(--radius-control) border px-3 py-1.5 text-[13px] font-medium",
                 lang === "zh"
                   ? "border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary)"
                   : "border-(--color-hairline) text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
@@ -260,7 +260,7 @@ export default function Settings() {
             <button
               onClick={() => setLang("en")}
               className={[
-                "rounded-(--radius-md) border px-3 py-1.5 text-[13px] font-medium",
+                "rounded-(--radius-control) border px-3 py-1.5 text-[13px] font-medium",
                 lang === "en"
                   ? "border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary)"
                   : "border-(--color-hairline) text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
@@ -294,7 +294,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleDeletePayer(payer)}
                         aria-label={t("common.delete")}
-                        className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -328,7 +328,7 @@ export default function Settings() {
                 </div>
                 <button
                   type="submit"
-                  className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                  className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-control) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
                 >
                   <Plus size={14} />
                   {t("payers.addNew")}
@@ -364,7 +364,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleDeletePlatform(platform)}
                         aria-label={t("common.delete")}
-                        className="shrink-0 rounded-(--radius-sm) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -424,7 +424,7 @@ export default function Settings() {
               </div>
               <button
                 type="submit"
-                className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+                className="flex shrink-0 items-center justify-center gap-1 rounded-(--radius-control) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
               >
                 <Plus size={14} />
                 {t("platforms.addNew")}

@@ -145,7 +145,7 @@ export default function VoiceInputButton({ onTranscript }: { onTranscript: (text
       aria-label={isListening ? t("voiceInput.stop") : t("voiceInput.start")}
       title={isListening ? t("voiceInput.stop") : t("voiceInput.start")}
       className={[
-        "inline-flex h-7 w-7 items-center justify-center rounded-(--radius-sm) transition",
+        "inline-flex h-7 w-7 items-center justify-center rounded-(--radius-control) transition",
         isListening
           ? "bg-(--color-primary) text-white"
           : "text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)",

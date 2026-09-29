@@ -133,13 +133,13 @@ export default function PaymentEntryForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-(--radius-md) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
+          className="rounded-(--radius-control) border border-(--color-hairline) px-3 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:bg-(--color-canvas-soft)"
         >
           {t("common.cancel")}
         </button>
         <button
           type="submit"
-          className="rounded-(--radius-md) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
+          className="rounded-(--radius-control) bg-(--color-primary) px-3 py-1.5 text-[13px] font-medium text-(--color-on-primary) hover:bg-(--color-primary-active)"
         >
           {t("common.save")}
         </button>

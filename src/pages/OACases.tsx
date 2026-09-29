@@ -125,7 +125,7 @@ export default function OACases() {
           <button
             type="button"
             onClick={() => setQuery("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-sm) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-(--radius-control) px-2 py-1 text-[12px] font-medium text-(--color-ink-faint) hover:bg-(--color-canvas-soft) hover:text-(--color-primary)"
           >
             {t("common.cancel")}
           </button>
@@ -197,14 +197,14 @@ export default function OACases() {
                 <button
                   onClick={() => setEditingId(c.id)}
                   aria-label={t("common.edit")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
+                  className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-primary)"
                 >
                   <Pencil size={14} />
                 </button>
                 <button
                   onClick={() => handleDelete(c)}
                   aria-label={t("common.delete")}
-                  className="rounded-(--radius-sm) p-1 text-(--color-ink-faint) hover:text-red-500"
+                  className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -260,7 +260,7 @@ export default function OACases() {
           !query.trim() && cases.length > 0 && (
             <button
               onClick={() => setIsAdding(true)}
-              className="flex min-h-[100px] items-center justify-center gap-1.5 rounded-(--radius-lg) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
+              className="flex min-h-[100px] items-center justify-center gap-1.5 rounded-(--radius-control) border border-dashed border-(--color-hairline) text-[14px] font-medium text-(--color-ink-faint) transition-transform duration-150 hover:border-(--color-primary)/40 hover:text-(--color-primary) active:scale-[0.97]"
             >
               <Plus size={16} />
               {t("oaCases.addNew")}

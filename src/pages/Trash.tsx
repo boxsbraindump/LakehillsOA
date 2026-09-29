@@ -281,7 +281,7 @@ export default function Trash() {
               </div>
               <button
                 onClick={() => handleRestore(entry)}
-                className="flex shrink-0 items-center gap-1 rounded-(--radius-md) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+                className="flex shrink-0 items-center gap-1 rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[13px] font-medium text-(--color-ink-secondary) hover:border-(--color-primary)/40 hover:text-(--color-primary)"
               >
                 <RotateCcw size={13} />
                 {t("trash.restore")}
@@ -289,7 +289,7 @@ export default function Trash() {
               <button
                 onClick={() => handlePurgeNow(entry)}
                 aria-label={t("trash.purgeNowAria")}
-                className="shrink-0 rounded-(--radius-sm) p-1.5 text-(--color-ink-faint) hover:text-red-500"
+                className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:text-red-500"
               >
                 <Trash2 size={14} />
               </button>
