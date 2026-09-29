@@ -311,11 +311,17 @@ button. The row now leaves the checkbox cell empty and spans the remaining six, 
 exactly under the patient name, and the actions sit beside the dates behind a thin rule rather
 than being flung apart. Aligning to a real column beats guessing an indent.
 
-**A wide table is not automatically better.** Widening the page to 1600px made it worse, not
-better: six short columns stretched apart with 700px of air between the name and the date. The
-columns are pinned and a trailing column absorbs the slack, so the data sits together on the
-left with inert space on the right — which is what these tools actually look like when they have
-few columns. The teal brand stays throughout; it was never the problem.
+**A wide table is not automatically better, and the page width follows the table.** This took
+three tries and the lesson is worth keeping. At 1600px six short columns stretched apart, with
+700px between a name and its date. Pinning the columns and letting a trailing column soak up the
+slack fixed that but left 400px of nothing *inside* the border, which looks broken. Letting the
+box shrink-wrap its content fixed that in turn and left the toolbar above it 500px wider than
+the table below — mismatched edges, worse again.
+
+The answer was to size the page to what the content needs rather than the other way round: the
+page is 1100px, the table fills it, and only the patient column is unconstrained, because a name
+is the one column whose width genuinely varies. Everything on the page now shares one right
+edge. The teal brand stays throughout; it was never the problem.
 
 **Every button names `--radius-control`, it does not pick a size.** The app had five different
 radii on its buttons — 4px, 5px, 8px, 12px and none — which is what “the corners look

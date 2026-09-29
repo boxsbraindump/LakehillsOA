@@ -400,7 +400,7 @@ export default function VisitLedger() {
   // A ledger is a table, and a table wants the room: 1024px centred is document
   // typesetting — six columns squeezed into the middle with the screen empty either side.
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("ledger.title")}
@@ -814,14 +814,13 @@ export default function VisitLedger() {
                   />
                 </th>
                 <SortHeader
-                  width="w-[18rem]"
                   label={t("ledger.colPatient")}
                   active={sort.key === "name"}
                   dir={sort.dir}
                   onClick={() => sortBy("name")}
                 />
                 <SortHeader
-                  width="w-32"
+                  width="w-36"
                   label={t("ledger.colVisitDate")}
                   active={sort.key === "visitDate"}
                   dir={sort.dir}
@@ -840,13 +839,13 @@ export default function VisitLedger() {
                   {t("ledger.colStatus")}
                 </th>
                 <SortHeader
-                  width="w-32"
+                  width="w-36"
                   label={t("ledger.colLastStep")}
                   active={sort.key === "lastStep"}
                   dir={sort.dir}
                   onClick={() => sortBy("lastStep")}
                 />
-                <th className="sticky top-0 z-10 w-auto bg-(--color-canvas-soft) px-1 py-2" />
+                <th className="sticky top-0 z-10 w-8 bg-(--color-canvas-soft) px-1 py-2" />
               </tr>
             </thead>
             <tbody>
