@@ -462,7 +462,7 @@ export default function CustomCategory() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
-        <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
+        <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {category.title}
         </h1>
         {/* A folder name has to be short, which leaves "what goes in here" unsaid — and

@@ -146,7 +146,7 @@ export default function VaRfs() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
-        <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
+        <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("vaRfs.title")}
         </h1>
         <p className="mt-1 text-[15px] text-(--color-ink-muted)">{t("vaRfs.subtitle")}</p>

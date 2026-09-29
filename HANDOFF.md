@@ -270,6 +270,15 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**Page titles are 20px/600, not 26px/700** — across all eight pages, not just the ledger. A
+data tool states which page you are on; it does not announce it. Hierarchy comes from weight and
+colour.
+
+**The view switch is a segmented control.** Three separately outlined buttons read as three
+unrelated actions. A shared track with one raised segment says they are one group and that
+picking one drops the others, which is what the control does. The border sits on the track, so
+the segments carry none of their own, and it is marked up as `role="tablist"` with `aria-selected`.
+
 **Scale discipline, which is most of what “professional” actually means.** Three scales had no
 discipline at all, and it is the same disease every time: values a hair apart that nobody chose
 on purpose. Icon stroke had **seven** weights across ten files — 2, 2.1, 2.2, 2.25, 2.3, 2.4,

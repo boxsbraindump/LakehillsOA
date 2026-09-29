@@ -402,7 +402,7 @@ export default function VisitLedger() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
+        <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("ledger.title")}
         </h1>
         {visits.length > 0 && (
@@ -429,29 +429,45 @@ export default function VisitLedger() {
         </p>
       )}
 
-      {/* One row of tabs, not a nav: the same records seen three ways. */}
-      <div className="mt-5 flex flex-wrap gap-1.5">
+      {/*
+        A segmented control, not three buttons.
+
+        Three separately outlined buttons read as three unrelated actions; a shared track with
+        one raised segment says these are one group and picking one drops the others, which is
+        what the control actually does. The border lives on the track, so the segments carry no
+        outlines of their own.
+      */}
+      <div
+        role="tablist"
+        aria-label={t("ledger.title")}
+        className="mt-5 inline-flex rounded-(--radius-control) border border-(--color-hairline) bg-(--color-canvas-soft) p-0.5"
+      >
         {(
           [
             ["table", "ledger.viewTable", Rows3],
             ["log", "ledger.viewLog", ListChecks],
             ["calendar", "ledger.viewCalendar", CalendarDays],
           ] as const
-        ).map(([key, label, Icon]) => (
-          <button
-            key={key}
-            onClick={() => setView(key)}
-            className={[
-              "flex items-center gap-1.5 rounded-(--radius-control) border px-3 py-1.5 text-[13px]",
-              view === key
-                ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
-                : "border-(--color-hairline) text-(--color-ink-muted) hover:text-(--color-primary)",
-            ].join(" ")}
-          >
-            <Icon size={14} />
-            {t(label)}
-          </button>
-        ))}
+        ).map(([key, label, Icon]) => {
+          const active = view === key;
+          return (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setView(key)}
+              className={[
+                "flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] transition-colors",
+                active
+                  ? "bg-(--color-canvas) font-medium text-(--color-ink) shadow-(--shadow-level-1)"
+                  : "text-(--color-ink-muted) hover:text-(--color-ink)",
+              ].join(" ")}
+            >
+              <Icon size={14} className={active ? "text-(--color-primary)" : ""} />
+              {t(label)}
+            </button>
+          );
+        })}
       </div>
 
 

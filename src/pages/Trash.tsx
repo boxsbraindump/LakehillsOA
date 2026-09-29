@@ -244,7 +244,7 @@ export default function Trash() {
   return (
     <div className="mx-auto max-w-3xl px-8 py-12">
       <div className="mb-8">
-        <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
+        <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("trash.title")}
         </h1>
         <p className="mt-1 text-[15px] text-(--color-ink-muted)">
