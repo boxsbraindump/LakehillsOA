@@ -321,6 +321,31 @@ also never had room for the day number, its dots and a name. It is 148×96 now.
 full-width, and it has now had to be removed three times: the expanded row, the day log, and the
 batch bar before them. Check what the container is actually as wide as before reaching for it.
 
+**Two page widths, named, and nothing is centred.** There were eight widths across the app —
+768, 1100, 1152 and several one-offs — so moving between Checklist, the ledger and Settings
+shifted the content box by up to 380px, which is the loudest “this is three websites” signal there
+was. Pages now name `--page-form` (768px: forms, lists, reading) or `--page-data` (1100px: the
+ledger) according to what they hold, because a form stretched wide is unreadable and a table
+squeezed narrow is useless.
+
+`mx-auto` came off with it. Centring splits the leftover width evenly either side, which is how
+a document is set; an application starts its content after the sidebar and leaves the slack on
+the right. Home keeps its centring on purpose — it is a search launcher, not a data screen.
+
+**Danger and attention are tokens now, everywhere.** Thirty-four spellings of `red-*` and `amber-*`
+across eighteen files said what `--color-danger` and `--color-warn` already say. Shade was mapped
+rather than flattened: 50 is a surface, 200-400 a border, 500+ text or a fill.
+
+**Two glyphs were doing an icon’s job** — a gear in a menu label and a tick in the reconcile
+list. Both render differently per platform and match nothing in the icon set. The tick is a
+lucide `Check`; the gear is gone, since the trailing ellipsis already says the item opens
+something.
+
+**Audit false positives, so nobody “fixes” them:** `--sidebar-w` looks undefined but is set inline
+by the drag-to-resize handle. Sidebar’s `grid-cols-3` is a small control grid, not a feature row.
+Trash does have an empty state — a keyword grep missed it — and VaRfs and Settings are forms
+that are never empty.
+
 **A wide table is not automatically better, and the page width follows the table.** This took
 three tries and the lesson is worth keeping. At 1600px six short columns stretched apart, with
 700px between a name and its date. Pinning the columns and letting a trailing column soak up the

@@ -90,6 +90,16 @@
   --tone-area-5: #7d9440;
   --tone-area-6: #4d7f9e;
 
+  /*
+   * Two page widths, and pages name one rather than each picking a number.
+   *
+   * There were eight across the app — 768, 1100, 1152, and several one-offs — so moving between
+   * Checklist, the ledger and Settings shifted the content box by up to 380px. Two tiers, chosen
+   * by what the page holds: a table needs room, a form is unreadable stretched wide.
+   */
+  --page-data: 1100px;
+  --page-form: 768px;
+
   /* Radius */
   /*
    * One corner for every button.

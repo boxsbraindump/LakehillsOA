@@ -211,7 +211,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="max-w-(--page-form) px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("settings.title")}
@@ -294,7 +294,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleDeletePayer(payer)}
                         aria-label={t("common.delete")}
-                        className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-danger) sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -364,7 +364,7 @@ export default function Settings() {
                       <button
                         onClick={() => handleDeletePlatform(platform)}
                         aria-label={t("common.delete")}
-                        className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="shrink-0 rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-danger) sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>

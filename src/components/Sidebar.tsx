@@ -713,7 +713,7 @@ export default function Sidebar() {
                     "shrink-0 rounded-(--radius-control) p-1",
                     isCategoryActive
                       ? "text-white/75 hover:text-white"
-                      : "text-(--color-ink-faint) hover:text-red-500",
+                      : "text-(--color-ink-faint) hover:text-(--color-danger)",
                   ].join(" ")}
                 >
                   <Trash2 size={14} />

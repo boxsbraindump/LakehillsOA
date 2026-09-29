@@ -126,7 +126,7 @@ export default function PaymentEntryForm({
       />
 
       {error && (
-        <p className="mt-3 text-[12px] text-red-500">{t("paymentEntryForm.payerRequired")}</p>
+        <p className="mt-3 text-[12px] text-(--color-danger)">{t("paymentEntryForm.payerRequired")}</p>
       )}
 
       <div className="mt-4 flex justify-end gap-2">

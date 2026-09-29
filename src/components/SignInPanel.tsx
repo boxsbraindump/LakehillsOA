@@ -47,14 +47,14 @@ function LoginErrorBox({ code }: { code: string }) {
   const content = ERROR_CONTENT[code] ?? ERROR_CONTENT.generic;
 
   return (
-    <div className="mt-4 rounded-(--radius-md) border border-red-200 bg-red-50/80 p-3.5 text-[13px] text-red-700">
+    <div className="mt-4 rounded-(--radius-md) border border-(--color-danger)/40 bg-(--color-danger)/8/80 p-3.5 text-[13px] text-(--color-danger)">
       <div className="flex items-start gap-2">
         <AlertCircle size={16} className="mt-0.5 shrink-0" />
         <div className="min-w-0">
           <p className="font-semibold">{t(content.title)}</p>
           <p className="mt-1 leading-relaxed">{t(content.body)}</p>
-          <p className="mt-2 leading-relaxed text-red-800">{t(content.action)}</p>
-          <p className="mt-2 text-[11px] font-medium text-red-500">
+          <p className="mt-2 leading-relaxed text-(--color-danger)">{t(content.action)}</p>
+          <p className="mt-2 text-[11px] font-medium text-(--color-danger)">
             {t("login.error.code", { code })}
           </p>
         </div>

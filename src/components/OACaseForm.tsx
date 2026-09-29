@@ -151,7 +151,7 @@ export default function OACaseForm({
         className={inputClass}
       />
 
-      {error && <p className="mt-3 text-[12px] text-red-500">{t("oaCaseForm.titleRequired")}</p>}
+      {error && <p className="mt-3 text-[12px] text-(--color-danger)">{t("oaCaseForm.titleRequired")}</p>}
 
       <div className="mt-4 flex justify-end gap-2">
         <button

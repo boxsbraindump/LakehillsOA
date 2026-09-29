@@ -105,7 +105,7 @@ export default function OACases() {
     : byTag;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+    <div className="max-w-(--page-form) px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           OA Cases
@@ -204,7 +204,7 @@ export default function OACases() {
                 <button
                   onClick={() => handleDelete(c)}
                   aria-label={t("common.delete")}
-                  className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
+                  className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
                 >
                   <Trash2 size={14} />
                 </button>

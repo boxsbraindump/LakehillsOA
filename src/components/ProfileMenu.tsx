@@ -124,7 +124,7 @@ export default function ProfileMenu({ placement = "top" }: { placement?: "top" |
                         type="button"
                         disabled={deletingWorkspaceId === item.id}
                         onClick={() => void handleDeleteWorkspace(item)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-control) text-(--color-ink-faint) opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-(--radius-control) text-(--color-ink-faint) opacity-100 transition hover:bg-(--color-danger)/8 hover:text-(--color-danger) disabled:pointer-events-none disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
                         aria-label={t("profileMenu.deleteWorkspace")}
                       >
                         <Trash2 size={14} />

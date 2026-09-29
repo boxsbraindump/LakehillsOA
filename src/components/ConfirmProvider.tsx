@@ -76,7 +76,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             className="fade-in-up w-full max-w-sm rounded-(--radius-xl) border border-(--color-hairline) bg-white p-5 shadow-(--shadow-level-2)"
           >
             <div className="flex gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) bg-red-50 text-red-600">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-danger)/8 text-(--color-danger)">
                 <AlertTriangle size={20} />
               </span>
               <div className="min-w-0">
@@ -104,7 +104,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 className={[
                   "rounded-(--radius-control) px-3 py-1.5 text-[13px] font-medium text-white transition-[background-color,transform] active:scale-[0.98]",
                   pending.tone === "danger"
-                    ? "bg-red-600 hover:bg-red-700"
+                    ? "bg-(--color-danger) hover:bg-(--color-danger)"
                     : "bg-(--color-primary) hover:bg-(--color-primary-active)",
                 ].join(" ")}
               >

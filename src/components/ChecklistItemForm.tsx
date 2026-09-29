@@ -59,10 +59,10 @@ export default function ChecklistItemForm({
         }}
         placeholder={t("checklistItemForm.contentPlaceholder")}
         aria-invalid={error || undefined}
-        className={[inputClass, "mb-1.5", error ? "border-red-400" : ""].join(" ")}
+        className={[inputClass, "mb-1.5", error ? "border-(--color-danger)/40" : ""].join(" ")}
       />
       {error && (
-        <p className="mb-1.5 text-[12px] text-red-500">{t("checklistItemForm.titleRequired")}</p>
+        <p className="mb-1.5 text-[12px] text-(--color-danger)">{t("checklistItemForm.titleRequired")}</p>
       )}
       <div className="mb-1 flex items-center justify-between gap-2">
         <label className="text-[12px] font-semibold text-(--color-ink-faint)">

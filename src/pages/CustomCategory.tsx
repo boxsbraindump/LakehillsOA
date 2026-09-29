@@ -338,7 +338,7 @@ export default function CustomCategory() {
 
   if (!category) {
     return (
-      <div className="mx-auto max-w-3xl px-8 py-12 text-center">
+      <div className="max-w-(--page-form) px-8 py-12 text-center">
         <p className="text-[15px] text-(--color-ink-muted)">{t("customCategory.notFound")}</p>
         <Link
           to="/"
@@ -451,7 +451,7 @@ export default function CustomCategory() {
         <button
           onClick={() => handleDelete(entry)}
           aria-label={t("common.delete")}
-          className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
+          className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
         >
           <Trash2 size={14} />
         </button>

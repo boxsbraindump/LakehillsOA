@@ -31,7 +31,7 @@ export default function SyncStatusBadge() {
     unauthorized: {
       icon: CloudOff,
       text: t("syncStatus.unauthorized"),
-      className: "text-red-500",
+      className: "text-(--color-danger)",
     },
   }[status];
 

@@ -144,7 +144,7 @@ export default function VaRfs() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+    <div className="max-w-(--page-form) px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("vaRfs.title")}
@@ -153,7 +153,7 @@ export default function VaRfs() {
       </div>
 
       {missingClinic && (
-        <p className="mb-4 rounded-(--radius-sm) bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
+        <p className="mb-4 rounded-(--radius-sm) bg-(--color-warn)/8 px-3 py-2 text-[13px] text-(--color-warn)">
           {t("vaRfs.fillDefaultsFirst")}
         </p>
       )}

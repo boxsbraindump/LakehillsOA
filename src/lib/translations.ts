@@ -935,7 +935,7 @@ export const translations = {
   "ledger.todayLabel": { zh: "今天", en: "Today" },
   "ledger.colService": { zh: "部位", en: "Area" },
   "ledger.noService": { zh: "—", en: "—" },
-  "ledger.manageTags": { zh: "⚙ 改这些选项…", en: "⚙ Edit these options…" },
+  "ledger.manageTags": { zh: "改这些选项…", en: "Edit these options…" },
   "ledger.tagsTitle": { zh: "部位选项", en: "Area options" },
   "ledger.tagsHelp": { zh: "直接改字就行，改完所有用到的记录都会跟着变。", en: "Edit the words directly — every visit using one follows the change." },
   "ledger.tagName": { zh: "选项名字", en: "Option name" },

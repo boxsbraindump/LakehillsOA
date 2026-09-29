@@ -206,7 +206,7 @@ export default function FollowUpBoard() {
                       <span
                         className={[
                           "ml-2 text-[12px] tabular-nums",
-                          stale ? "font-medium text-amber-700" : "text-(--color-ink-faint)",
+                          stale ? "font-medium text-(--color-warn)" : "text-(--color-ink-faint)",
                         ].join(" ")}
                       >
                         {t("followUp.daysOpen", { days: String(age) })}
@@ -244,7 +244,7 @@ export default function FollowUpBoard() {
                     type="button"
                     onClick={() => removeItem(item)}
                     aria-label={t("common.delete")}
-                    className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
+                    className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -281,7 +281,7 @@ export default function FollowUpBoard() {
               <button
                 type="button"
                 onClick={clearDone}
-                className="text-[12px] font-medium text-(--color-ink-faint) hover:text-red-500"
+                className="text-[12px] font-medium text-(--color-ink-faint) hover:text-(--color-danger)"
               >
                 {t("followUp.clearDone")}
               </button>

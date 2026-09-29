@@ -842,7 +842,7 @@ export default function Checklist() {
   })();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+    <div className="max-w-(--page-form) px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {isPersonalWorkspace ? t("checklist.personalTitle") : t("checklist.title")}
@@ -1004,7 +1004,7 @@ export default function Checklist() {
                       <button
                         type="button"
                         onClick={() => copyFromDay(copySourceDate, copyOnlyUnfinished, "replace")}
-                        className="mt-1 w-full rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[12px] font-medium text-(--color-ink-secondary) hover:border-red-300 hover:text-red-600"
+                        className="mt-1 w-full rounded-(--radius-control) border border-(--color-hairline) px-2.5 py-1.5 text-[12px] font-medium text-(--color-ink-secondary) hover:border-(--color-danger)/40 hover:text-(--color-danger)"
                       >
                         {t("checklist.copyReplace")}
                       </button>
@@ -1146,7 +1146,7 @@ export default function Checklist() {
                     <button
                       onClick={() => handleDeleteSection(section)}
                       aria-label={t("checklist.deleteSectionAria")}
-                      className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-red-500"
+                      className="rounded-(--radius-control) p-1 text-(--color-ink-faint) hover:text-(--color-danger)"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -1297,7 +1297,7 @@ export default function Checklist() {
                       <button
                         onClick={() => handleDeleteItem(section.id, item)}
                         aria-label={t("common.delete")}
-                        className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="flex shrink-0 items-center rounded-(--radius-control) p-1 text-(--color-ink-faint) opacity-100 transition-opacity hover:text-(--color-danger) sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>

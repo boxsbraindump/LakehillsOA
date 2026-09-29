@@ -363,7 +363,7 @@ export default function CustomEntryForm({
       )}
 
       {error && (
-        <p className="mt-3 text-[12px] text-red-500">
+        <p className="mt-3 text-[12px] text-(--color-danger)">
           {t(
             template === "payments"
               ? "customEntryForm.payerRequired"

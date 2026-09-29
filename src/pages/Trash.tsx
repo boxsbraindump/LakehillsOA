@@ -242,7 +242,7 @@ export default function Trash() {
   const sorted = [...trash].sort((a, b) => b.deletedAt - a.deletedAt);
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-12">
+    <div className="max-w-(--page-form) px-8 py-12">
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("trash.title")}
@@ -289,7 +289,7 @@ export default function Trash() {
               <button
                 onClick={() => handlePurgeNow(entry)}
                 aria-label={t("trash.purgeNowAria")}
-                className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:text-red-500"
+                className="shrink-0 rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:text-(--color-danger)"
               >
                 <Trash2 size={14} />
               </button>

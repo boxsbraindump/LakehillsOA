@@ -286,7 +286,7 @@ export default function QuickFactsPanel() {
                               type="button"
                               onClick={() => removeCard(card)}
                               aria-label={t("common.delete")}
-                              className="rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas) hover:text-red-500"
+                              className="rounded-(--radius-control) p-1.5 text-(--color-ink-faint) hover:bg-(--color-canvas) hover:text-(--color-danger)"
                             >
                               <X size={14} />
                             </button>

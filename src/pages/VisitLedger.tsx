@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState, type Dispatch, type SetStateAction } from 
 import {
   AlertTriangle,
   CalendarDays,
+  Check,
   ListChecks,
   ArrowDown,
   ArrowUp,
@@ -400,7 +401,7 @@ export default function VisitLedger() {
   // A ledger is a table, and a table wants the room: 1024px centred is document
   // typesetting — six columns squeezed into the middle with the screen empty either side.
   return (
-    <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="max-w-(--page-data) px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("ledger.title")}
@@ -1750,8 +1751,8 @@ function ReconcilePanel({
                                 : "border-(--color-warn)/40 text-(--color-warn) hover:border-(--color-primary)",
                             ].join(" ")}
                           >
+                            {chosen.includes(visit.id) && <Check size={12} className="shrink-0" />}
                             {visit.visitDate}
-                            {chosen.includes(visit.id) ? " ✓" : ""}
                           </button>
                         ))}
                       </div>
