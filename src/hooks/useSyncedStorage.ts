@@ -12,8 +12,13 @@ import {
  * Same interface as useLocalStorage, but also syncs through the Worker/D1 backend when
  * configured: reads localStorage instantly (no loading flicker), then reconciles with
  * the remote copy once it arrives, and pushes local edits back after a short debounce.
- * Last write wins — fine for a handful of front-desk computers, not built for
- * simultaneous conflicting edits.
+ *
+ * Last write wins by default, which is fine for a value one person edits at a time. It is not
+ * fine for a list two people work through together: whoever pushed last replaced the whole
+ * thing, so marking row 5 while a colleague marked row 20 silently threw their row away.
+ *
+ * Pass `merge` for those. It is called only when both sides have changed — local edits are
+ * pending *and* the server has something different — and its result is what both keep.
  */
 /**
  * Tracked per storage key, not per hook instance: the same key is read by several
@@ -56,7 +61,11 @@ export function updateSyncedStorage<T>(key: string, fallback: T, updater: (prev:
   void pushRemoteValue(key, next).then(() => pendingLocalEdits.delete(storageKey));
 }
 
-export function useSyncedStorage<T>(key: string, initialValue: T) {
+export function useSyncedStorage<T>(
+  key: string,
+  initialValue: T,
+  merge?: (local: T, remote: T) => T,
+) {
   const storageKey = getScopedStorageKey(key);
   const [value, setStoredValue] = useLocalStorage<T>(storageKey, initialValue);
   const hydrated = useRef(!syncEnabled);
@@ -95,9 +104,29 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
     fetchAllRemoteState().then((remote) => {
       if (cancelled) return;
       hydrated.current = true;
-      // Unsaved local work always wins over the server copy; send it instead of losing it.
       if (pendingLocalEdits.has(storageKey)) {
-        void pushRemoteValue(key, latestValue.current);
+        /*
+         * Both sides have moved. Without a merge the only options are to lose one of them, so
+         * unsaved local work used to win outright — which is a silent loss for whoever else was
+         * working at the time. With one, both are kept and the result goes to the server and
+         * the screen together.
+         */
+        const local = latestValue.current;
+        const incoming = Object.prototype.hasOwnProperty.call(remote, key)
+          ? (remote[key] as T)
+          : null;
+        const resolved = merge && incoming !== null ? merge(local, incoming) : local;
+
+        if (JSON.stringify(resolved) !== JSON.stringify(local)) {
+          // Pushed explicitly just below, so the debounced effect must not push it again.
+          skipNextPush.current = true;
+          setStoredValue(resolved);
+        }
+        void pushRemoteValue(key, resolved).then(() => {
+          if (JSON.stringify(latestValue.current) === JSON.stringify(resolved)) {
+            pendingLocalEdits.delete(storageKey);
+          }
+        });
         return;
       }
       if (!Object.prototype.hasOwnProperty.call(remote, key)) return;
@@ -110,7 +139,7 @@ export function useSyncedStorage<T>(key: string, initialValue: T) {
     return () => {
       cancelled = true;
     };
-  }, [key, setStoredValue]);
+  }, [key, setStoredValue, merge]);
 
   useEffect(() => reconcile(), [reconcile, storageKey]);
 

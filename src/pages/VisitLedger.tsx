@@ -44,6 +44,7 @@ import {
   isOpen,
   matchRemittance,
   matchesQuery,
+  mergeVisits,
   compareNames,
   currentStep,
   dateFieldFor,
@@ -173,7 +174,7 @@ export default function VisitLedger() {
   const { confirm } = useConfirm();
   const today = todayKey();
 
-  const [stored, setStored] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
+  const [stored, setStored] = useSyncedStorage<Visit[]>(STORAGE_KEY, [], mergeVisits);
   /**
    * Sample rows, for seeing what the page does before there is anything real in it.
    *
@@ -185,14 +186,28 @@ export default function VisitLedger() {
    */
   const [preview, setPreview] = useState<Visit[] | null>(null);
   const visits = preview ?? stored;
-  const setVisits: Dispatch<SetStateAction<Visit[]>> = preview
-    ? (action) =>
-        setPreview((prev) =>
-          typeof action === "function"
-            ? (action as (p: Visit[]) => Visit[])(prev ?? [])
-            : action,
-        )
-    : setStored;
+  /**
+   * Every write goes through here, so this is the one place that can stamp when a record
+   * changed — which is what lets two machines merge record by record instead of one replacing
+   * the other. Only records that actually differ are stamped, or a routine re-render would
+   * make every row look freshly edited.
+   */
+  const stamp = (next: Visit[], prev: Visit[]): Visit[] => {
+    const before = new Map(prev.map((v) => [v.id, v]));
+    const now = Date.now();
+    return next.map((visit) => {
+      const old = before.get(visit.id);
+      if (old && JSON.stringify(old) === JSON.stringify(visit)) return visit;
+      return { ...visit, updatedAt: now };
+    });
+  };
+
+  const setVisits: Dispatch<SetStateAction<Visit[]>> = (action) => {
+    const apply = (prev: Visit[]) =>
+      stamp(typeof action === "function" ? (action as (p: Visit[]) => Visit[])(prev) : action, prev);
+    if (preview) setPreview((prev) => apply(prev ?? []));
+    else setStored(apply);
+  };
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   // Newest visit first is the useful default; every column can be turned over from its header.

@@ -61,6 +61,14 @@ export interface Visit {
   /** A {@link ServiceTag} id — which part of the body this visit treated. */
   serviceTag?: string;
   /**
+   * Epoch ms of the last change to this record, stamped on every edit.
+   *
+   * Only used to decide whose copy of a record is newer when two machines have both touched
+   * the ledger — see mergeVisits. Records written before this existed have none and lose to
+   * anything that does, which is correct: they have not been edited since.
+   */
+  updatedAt?: number;
+  /**
    * Every status this visit has been through, oldest first. `status` is the last entry's
    * status; this exists so a patient's page can answer "when did we do that" — which the old
    * spreadsheet could never answer, because a cell colour overwrites the colour before it.
@@ -894,4 +902,28 @@ export function visitKey(name: string, visitDate: string, visitTime?: string): s
 
 export function visitKeys(visits: Visit[]): Set<string> {
   return new Set(visits.map((visit) => visitKey(visit.name, visit.visitDate, visit.visitTime)));
+}
+
+/**
+ * Merge two copies of the ledger, record by record.
+ *
+ * Two people work the same week at once — one marking what went to Office Ally, the other
+ * entering what came back — and the ledger is a single synced value, so whoever pushed last
+ * used to replace the other's work wholesale and without a word.
+ *
+ * Each visit carries `updatedAt`, so the newer edit of each record wins independently: marking
+ * row 5 here and row 20 there now ends with both marked.
+ *
+ * A visit present on only one side is kept. That means a delete made on one machine can be
+ * undone by a colleague who was editing at the same moment — the safe direction to fail, since
+ * a row coming back is visible and fixable, while a lost payment mark is neither.
+ */
+export function mergeVisits(local: Visit[], remote: Visit[]): Visit[] {
+  const byId = new Map<string, Visit>();
+  for (const visit of remote) byId.set(visit.id, visit);
+  for (const visit of local) {
+    const other = byId.get(visit.id);
+    if (!other || (visit.updatedAt ?? 0) >= (other.updatedAt ?? 0)) byId.set(visit.id, visit);
+  }
+  return [...byId.values()];
 }
