@@ -270,6 +270,25 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**Making it read as clinical software, not a product page.** Five things were doing the
+opposite, and they were all in the chrome rather than the layout. The working surface carried
+*two* stacked vertical gradients (one on `body`, another on `<main>`) plus a decorative 28px grid
+overlay faded through a mask — landing-page language, and data never looks settled on it. It is
+one flat neutral now. Outfit is a geometric *display* face and was setting the data tables; the
+app is Inter (already bundled, so it cost nothing), and `--font-display` keeps Outfit on the
+public page’s headings where it belongs. Shadows spread to 52px, which is a hero-card shadow —
+retuned to app scale, and `--shadow-level-3` turned out never to have been defined at all, so the
+modals and the floating bar had been rendering with no shadow. Every row carried two filled
+pills, so a screen held about a hundred blocks of colour and none of them stood out: status
+keeps its fill because that is the thing the old spreadsheet used colour for, and the body area
+is now an outline chip with a small coloured dot.
+
+**A wide table is not automatically better.** Widening the page to 1600px made it worse, not
+better: six short columns stretched apart with 700px of air between the name and the date. The
+columns are pinned and a trailing column absorbs the slack, so the data sits together on the
+left with inert space on the right — which is what these tools actually look like when they have
+few columns. The teal brand stays throughout; it was never the problem.
+
 **Every button names `--radius-control`, it does not pick a size.** The app had five different
 radii on its buttons — 4px, 5px, 8px, 12px and none — which is what “the corners look
 inconsistent” was. The cause is in the scale: `--radius-xs` (4px) and `--radius-sm` (5px) are one

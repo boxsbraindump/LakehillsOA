@@ -15,14 +15,14 @@ export interface ServiceTag {
   color: number;
 }
 
-/** Muted on purpose: a column of these sits next to the status colours and must not shout. */
+/** Outline plus a coloured dot: a column of these sits beside the status fills and must not compete. */
 export const TAG_COLORS = [
-  'tone tone-area-1',
-  'tone tone-area-2',
-  'tone tone-area-3',
-  'tone tone-area-4',
-  'tone tone-area-5',
-  'tone tone-area-6',
+  "tone tone-quiet tone-area-1",
+  "tone tone-quiet tone-area-2",
+  "tone tone-quiet tone-area-3",
+  "tone tone-quiet tone-area-4",
+  "tone tone-quiet tone-area-5",
+  "tone tone-quiet tone-area-6",
 ];
 
 export function newTagId(): string {

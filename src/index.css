@@ -13,7 +13,16 @@
 @import "@fontsource/outfit/latin-700.css";
 
 @theme {
-  --font-sans: "Outfit", "Inter", -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  /*
+   * Two faces, two jobs.
+   *
+   * Outfit is a geometric *display* face — friendly, round, wide. It carries the public page
+   * well and reads soft at 13px in a table of dates, which is most of why the working screens
+   * did not feel like clinical software. Inter is the neutral grotesque that tools of this kind
+   * are set in, and it is already bundled, so the app costs nothing extra to switch.
+   */
+  --font-sans: "Inter", -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: "Outfit", "Inter", -apple-system, system-ui, sans-serif;
 
   /* Dates and counts read as data, not prose. System stack, so this costs no download. */
   --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
@@ -102,17 +111,27 @@
   --radius-xl: 16px;
 
   /* Elevation */
+  /*
+   * Application elevation, not marketing elevation.
+   *
+   * These used to spread to 52px, which is a hero-card shadow: on a working screen it makes
+   * every panel look like it is floating off the page. App chrome is carried by 1px borders
+   * with a shadow only deep enough to say which layer is on top.
+   *
+   * Level 3 was being used by the modals and the floating batch bar and had never been defined
+   * at all — so all four of them rendered with no shadow whatsoever.
+   */
   --shadow-level-1:
-    rgba(18, 85, 78, 0.012) 0 0.175px 1.041px,
-    rgba(18, 85, 78, 0.024) 0 0.8px 2.925px,
-    rgba(18, 85, 78, 0.032) 0 2.025px 7.847px,
-    rgba(18, 85, 78, 0.055) 0 4px 18px;
+    rgba(18, 85, 78, 0.04) 0 1px 2px,
+    rgba(18, 85, 78, 0.03) 0 2px 6px -1px;
   --shadow-level-2:
-    rgba(18, 85, 78, 0.014) 0 0.3px 1.7px,
-    rgba(18, 85, 78, 0.026) 0 1.4px 4.9px,
-    rgba(18, 85, 78, 0.038) 0 4.5px 13.2px,
-    rgba(18, 85, 78, 0.06) 0 12px 28px,
-    rgba(18, 85, 78, 0.075) 0 23px 52px;
+    rgba(18, 85, 78, 0.05) 0 1px 2px,
+    rgba(18, 85, 78, 0.06) 0 4px 10px -2px,
+    rgba(18, 85, 78, 0.04) 0 10px 20px -8px;
+  --shadow-level-3:
+    rgba(18, 85, 78, 0.07) 0 2px 4px,
+    rgba(18, 85, 78, 0.09) 0 12px 28px -8px,
+    rgba(16, 32, 30, 0.06) 0 24px 48px -16px;
 
   --tracking-display: -0.018em;
   --tracking-heading: -0.012em;
@@ -124,9 +143,16 @@ body {
   padding: 0;
 }
 
+/*
+ * A flat working surface.
+ *
+ * There were two stacked vertical gradients here — one on body, another on <main> — plus a
+ * decorative 28px grid overlay faded through a mask. That is landing-page language, and data
+ * sitting on it never looks settled. Clinical tools put their tables on one flat neutral.
+ * The teal stays where it carries meaning: brand, status, focus.
+ */
 body {
-  background:
-    linear-gradient(180deg, #fbfdfc 0%, var(--color-canvas-soft) 38%, #f7faf9 100%);
+  background: var(--color-canvas-soft);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-feature-settings: "lnum" 1, "locl" 1;
@@ -134,18 +160,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  content: "";
-  background-image:
-    linear-gradient(rgba(16, 32, 30, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16, 32, 30, 0.018) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 72%);
-}
 
 #root {
   min-height: 100svh;
@@ -355,6 +369,30 @@ body::before {
   background-color: color-mix(in srgb, var(--tone) 11%, var(--color-canvas));
   border-color: color-mix(in srgb, var(--tone) 34%, var(--color-canvas));
   color: color-mix(in srgb, var(--tone) 82%, var(--color-ink));
+}
+
+/*
+ * A body area is a label, not an alarm.
+ *
+ * Status earns its fill — it is the thing the old spreadsheet used four colours for. But every
+ * row carried a second filled pill for the area as well, so a screen held around a hundred
+ * blocks of colour and none of them stood out. The area now reads as plain text behind a small
+ * coloured dot: still told apart at a glance, no longer competing with the status beside it.
+ */
+.tone-quiet {
+  background-color: transparent;
+  border-color: var(--color-hairline);
+  color: var(--color-ink-muted);
+}
+
+.tone-quiet::before {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.35rem;
+  border-radius: 9999px;
+  background-color: var(--tone);
+  content: "";
 }
 
 .tone-new { --tone: var(--tone-new); }

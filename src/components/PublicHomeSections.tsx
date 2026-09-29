@@ -77,7 +77,7 @@ export function WorkflowSection() {
     >
       <div className="mx-auto max-w-6xl px-5 py-18 sm:px-8 lg:py-24">
         <div className="max-w-2xl" data-reveal-item>
-          <h2 className="text-[34px] font-bold leading-tight text-(--color-ink) sm:text-[40px]">
+          <h2 className="font-display text-[34px] font-bold leading-tight text-(--color-ink) sm:text-[40px]">
             {t("publicHome.workflowTitle")}
           </h2>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-(--color-ink-muted)">
@@ -111,7 +111,7 @@ export function TeamKnowledgeSection() {
     <section data-landing-reveal className="bg-white">
       <div className="mx-auto grid max-w-6xl gap-12 px-5 py-18 sm:px-8 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-20 lg:py-24">
         <div data-reveal-item>
-          <h2 className="max-w-xl text-[34px] font-bold leading-tight text-(--color-ink) sm:text-[40px]">
+          <h2 className="font-display max-w-xl text-[34px] font-bold leading-tight text-(--color-ink) sm:text-[40px]">
             {t("publicHome.knowledgeTitle")}
           </h2>
           <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-(--color-ink-muted)">

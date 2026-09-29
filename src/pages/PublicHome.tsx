@@ -84,7 +84,7 @@ function WorkspacePreview() {
             <p className="text-[11px] font-semibold uppercase text-(--color-primary)">
               {t("publicHome.previewLabel")}
             </p>
-            <h2 className="mt-1 text-[22px] font-bold text-(--color-ink)">
+            <h2 className="font-display mt-1 text-[22px] font-bold text-(--color-ink)">
               {t("publicHome.previewTitle")}
             </h2>
             <div className="mt-4 flex items-center gap-2 rounded-(--radius-md) border border-(--color-hairline) bg-white px-3 py-2.5 shadow-(--shadow-level-1)">
@@ -246,7 +246,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
             </p>
             <h1
               data-hero-reveal
-              className="max-w-2xl text-[clamp(2.75rem,7vw,5.5rem)] font-bold leading-[0.96] tracking-(--tracking-display) text-(--color-ink)"
+              className="font-display max-w-2xl text-[clamp(2.75rem,7vw,5.5rem)] font-bold leading-[0.96] tracking-(--tracking-display) text-(--color-ink)"
             >
               Lake Hills OA
             </h1>
@@ -295,7 +295,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
         <section id="features" data-landing-reveal className="scroll-mt-16 bg-white">
           <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[0.9fr_1.5fr] lg:gap-20 lg:py-20">
             <div data-reveal-item>
-              <h2 className="mt-3 text-[32px] font-bold leading-tight text-(--color-ink)">
+              <h2 className="font-display mt-3 text-[32px] font-bold leading-tight text-(--color-ink)">
                 {t("publicHome.featuresTitle")}
               </h2>
               <p className="mt-4 text-[15px] leading-relaxed text-(--color-ink-muted)">
@@ -336,7 +336,7 @@ export default function PublicHome({ isChecking: checkingOverride }: { isCheckin
           className="mx-auto grid max-w-6xl scroll-mt-16 gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_400px] lg:items-center lg:gap-20 lg:py-24"
         >
           <div data-reveal-item className="max-w-xl">
-            <h2 className="mt-3 text-[32px] font-bold leading-tight text-(--color-ink)">
+            <h2 className="font-display mt-3 text-[32px] font-bold leading-tight text-(--color-ink)">
               {t("publicHome.accessTitle")}
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-(--color-ink-muted)">

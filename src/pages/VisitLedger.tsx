@@ -397,8 +397,10 @@ export default function VisitLedger() {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  // A ledger is a table, and a table wants the room: 1024px centred is document
+  // typesetting — six columns squeezed into the middle with the screen empty either side.
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="text-[26px] font-bold tracking-(--tracking-heading) text-(--color-ink)">
           {t("ledger.title")}
@@ -495,7 +497,7 @@ export default function VisitLedger() {
           would now collide with the table header that sticks there too — and half the point of
           selecting rows is doing it far down a long table, nowhere near the top. */}
       {selected.length > 0 && view === "table" && (
-        <div className="fixed inset-x-0 bottom-4 z-40 mx-auto flex w-[min(60rem,calc(100vw-2rem))] flex-wrap items-center gap-2 rounded-(--radius-lg) border border-(--color-primary)/40 bg-(--color-canvas)/95 px-3 py-2 shadow-(--shadow-level-3) backdrop-blur">
+        <div className="fixed inset-x-0 bottom-4 z-40 mx-auto flex w-[min(72rem,calc(100vw-2rem))] flex-wrap items-center gap-2 rounded-(--radius-lg) border border-(--color-primary)/40 bg-(--color-canvas)/95 px-3 py-2 shadow-(--shadow-level-3) backdrop-blur">
           <span className="text-[13px] font-medium text-(--color-ink)">
             {t("ledger.selectedCount", { count: String(selected.length) })}
           </span>
@@ -796,18 +798,20 @@ export default function VisitLedger() {
                   />
                 </th>
                 <SortHeader
+                  width="w-[18rem]"
                   label={t("ledger.colPatient")}
                   active={sort.key === "name"}
                   dir={sort.dir}
                   onClick={() => sortBy("name")}
                 />
                 <SortHeader
+                  width="w-32"
                   label={t("ledger.colVisitDate")}
                   active={sort.key === "visitDate"}
                   dir={sort.dir}
                   onClick={() => sortBy("visitDate")}
                 />
-                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 w-40 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   <button
                     onClick={() => setManagingTags(true)}
                     className="flex items-center gap-1 hover:text-(--color-primary)"
@@ -816,16 +820,17 @@ export default function VisitLedger() {
                     <Tag size={11} />
                   </button>
                 </th>
-                <th className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
+                <th className="sticky top-0 z-10 w-40 bg-(--color-canvas-soft) px-3 py-2 text-[12px] font-medium text-(--color-ink-muted)">
                   {t("ledger.colStatus")}
                 </th>
                 <SortHeader
+                  width="w-32"
                   label={t("ledger.colLastStep")}
                   active={sort.key === "lastStep"}
                   dir={sort.dir}
                   onClick={() => sortBy("lastStep")}
                 />
-                <th className="sticky top-0 z-10 w-8 bg-(--color-canvas-soft) px-1 py-2" />
+                <th className="sticky top-0 z-10 w-auto bg-(--color-canvas-soft) px-1 py-2" />
               </tr>
             </thead>
             <tbody>
@@ -1125,18 +1130,20 @@ function SortHeader({
   active,
   dir,
   onClick,
+  width = "",
 }: {
   label: string;
   active: boolean;
   dir: "asc" | "desc";
   onClick: () => void;
+  width?: string;
 }) {
   const Arrow = dir === "asc" ? ArrowUp : ArrowDown;
   return (
     <th
       scope="col"
       aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
-      className="sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-left"
+      className={["sticky top-0 z-10 bg-(--color-canvas-soft) px-3 py-2 text-left", width].join(" ")}
     >
       <button
         onClick={onClick}
