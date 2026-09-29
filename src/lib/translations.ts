@@ -821,8 +821,8 @@ export const translations = {
 
   "ledger.emptyTitle": { zh: "还没有记录", en: "Nothing here yet" },
   "ledger.emptyBody": {
-    zh: "上面填个名字按回车，就开始了。",
-    en: "Type a name above and press enter — that is the whole of it.",
+    zh: "还没有记录。把这周的人加进来就可以开始了。",
+    en: "Nothing here yet. Add this week's patients to get going.",
   },
 
   "ledger.addTitle": { zh: "加患者", en: "Add patients" },
@@ -972,6 +972,10 @@ export const translations = {
   "ledger.prevPage": { zh: "上一页", en: "Previous page" },
   "ledger.nextPage": { zh: "下一页", en: "Next page" },
   "ledger.perPage": { zh: "每页", en: "Per page" },
+  "ledger.previewLoad": { zh: "看看有数据是什么样", en: "See it with data" },
+  "ledger.previewHint": { zh: "示例数据只在这个页面上，不会存进工作区，刷新就没了。", en: "Sample rows stay on this page — nothing is saved to the workspace, and a reload clears them." },
+  "ledger.previewBanner": { zh: "这是示例数据，没有存进工作区，刷新就没了。随便点、随便改。", en: "Sample data — not saved to the workspace, cleared on reload. Click around freely." },
+  "ledger.previewExit": { zh: "退出预览", en: "Exit preview" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

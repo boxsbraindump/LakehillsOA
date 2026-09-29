@@ -270,6 +270,17 @@ a popover that opens from its trigger, a row that tints for a moment when its st
 the press travel. All of it is transform/opacity and all of it is inside
 `prefers-reduced-motion: no-preference`.
 
+**A preview that never touches storage.** An empty ledger cannot be judged — paging, sorting,
+the day log and the calendar all look like a blank page until there are rows — so the empty
+state offers sample data: twelve weeks of the clinic’s own rhythm, eighty rows, ten patients,
+statuses spread across the pipeline. It is held in React state and **never written to storage**,
+because the workspace is shared and synced: loading samples into it would put them on a
+colleague’s screen. The whole thing hangs off four lines — `visits` and `setVisits` are derived
+from either the preview array or the synced one, so every edit path below works unchanged and
+none of them knows which it is writing to. That is also what makes the preview worth having:
+sorting, paging, bulk-marking and row expansion all run the real code. Verified by editing
+through each path with an empty localStorage and confirming it stayed empty.
+
 **Paged at 50 rows, switchable to 25 or 100.** Anything that changes what the list contains —
 searching, sorting, changing the page size — returns to page one, or you land on a page that no
 longer exists. The page is clamped on read rather than corrected in an effect, so deleting the

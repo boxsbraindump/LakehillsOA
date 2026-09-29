@@ -1,10 +1,11 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import {
   AlertTriangle,
   CalendarDays,
   ListChecks,
   ArrowDown,
   ArrowUp,
+  Eye,
   Rows3,
   ChevronLeft,
   ChevronRight,
@@ -55,6 +56,7 @@ import type {
   VisitStatus,
 } from "../lib/visitLedger";
 import { readSheetFile } from "../lib/sheetImport";
+import { buildSampleLedger } from "../lib/sampleLedger";
 import {
   DEFAULT_SERVICE_TAGS,
   TAG_COLORS,
@@ -165,7 +167,26 @@ export default function VisitLedger() {
   const { confirm } = useConfirm();
   const today = todayKey();
 
-  const [visits, setVisits] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
+  const [stored, setStored] = useSyncedStorage<Visit[]>(STORAGE_KEY, []);
+  /**
+   * Sample rows, for seeing what the page does before there is anything real in it.
+   *
+   * Held in React state and never written to storage: the workspace is shared and synced, so
+   * loading samples into it would put them on a colleague's screen too. Everything below reads
+   * `visits` and writes `setVisits` without knowing which of the two it has, so the preview
+   * exercises the real edit paths — sorting, paging, marking, expanding — and throws it all
+   * away on reload.
+   */
+  const [preview, setPreview] = useState<Visit[] | null>(null);
+  const visits = preview ?? stored;
+  const setVisits: Dispatch<SetStateAction<Visit[]>> = preview
+    ? (action) =>
+        setPreview((prev) =>
+          typeof action === "function"
+            ? (action as (p: Visit[]) => Visit[])(prev ?? [])
+            : action,
+        )
+    : setStored;
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   // Newest visit first is the useful default; every column can be turned over from its header.
@@ -393,6 +414,19 @@ export default function VisitLedger() {
         )}
       </div>
 
+      {preview && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 rounded-(--radius-md) border border-(--color-warn)/40 px-3 py-2 text-[12px] tone tone-warn">
+          <Eye size={13} className="shrink-0" />
+          {t("ledger.previewBanner")}
+          <button
+            onClick={() => setPreview(null)}
+            className="ml-auto rounded-(--radius-xs) border border-(--color-warn)/50 px-2 py-0.5 font-medium"
+          >
+            {t("ledger.previewExit")}
+          </button>
+        </p>
+      )}
+
       {/* One row of tabs, not a nav: the same records seen three ways. */}
       <div className="mt-5 flex flex-wrap gap-1.5">
         {(
@@ -508,6 +542,23 @@ export default function VisitLedger() {
       {visits.length === 0 ? (
         <div className="mt-4 rounded-(--radius-lg) border border-dashed border-(--color-hairline) px-6 py-10 text-center">
           <p className="text-[14px] text-(--color-ink-muted)">{t("ledger.emptyBody")}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => setBatchOpen(true)}
+              className="rounded-(--radius-sm) bg-(--color-primary) px-3 py-2 text-[13px] font-medium text-(--color-on-primary)"
+            >
+              {t("ledger.addPatients")}
+            </button>
+            {/* Nothing here is worth looking at until there are rows in it. */}
+            <button
+              onClick={() => setPreview(buildSampleLedger())}
+              className="flex items-center gap-1.5 rounded-(--radius-sm) border border-(--color-hairline) px-3 py-2 text-[13px] text-(--color-ink-muted) hover:text-(--color-primary)"
+            >
+              <Eye size={13} />
+              {t("ledger.previewLoad")}
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-(--color-ink-faint)">{t("ledger.previewHint")}</p>
         </div>
       ) : view === "log" ? (
         <div className="mt-4">
