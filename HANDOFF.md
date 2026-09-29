@@ -275,8 +275,10 @@ to that patient, folding spellings exactly the way the modal grouped them — `m
 `groupByPatient` both normalise through `compactForSearch`, so `wen` finds `Wen Li`, `wen  li` and
 `WEN LI` alike. That left the modal three jobs, and all three moved into the table: the totals
 appear as a strip above it whenever a search narrows to exactly one person; the other two step
-dates and the change log open in the row itself, behind a disclosure at its end. Clicking a
-patient name now searches for them rather than opening anything. Net 100 lines lighter, one
+dates and the change log open in the row itself, behind a disclosure at its end. The patient name is plain text, not a
+control: people copy names out of this table, and a name you cannot drag-select — or that
+replaces the search on a stray click — is worse than one that does nothing. Searching is what
+the search box is for. Net 100 lines lighter, one
 fewer modal, and no context switch away from the row being worked on.
 
 **One way to add people, not two.** There used to be an inline name field under the search bar

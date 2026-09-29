@@ -778,12 +778,9 @@ export default function VisitLedger() {
                     />
                   </td>
                   <td className="px-3 py-1">
-                    <button
-                      onClick={() => setQuery(visit.name)}
-                      className="max-w-[16ch] truncate text-[14px] font-medium text-(--color-ink) underline-offset-2 hover:text-(--color-primary) hover:underline sm:max-w-none"
-                    >
+                    <span className="block max-w-[16ch] truncate text-[14px] font-medium text-(--color-ink) select-text sm:max-w-none">
                       {visit.name}
-                    </button>
+                    </span>
                   </td>
                   <td className="px-3 py-1">
                     <DatePicker
