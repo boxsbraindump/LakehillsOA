@@ -60,7 +60,7 @@ export default function WorkspaceOnboarding({ onComplete }: { onComplete: () => 
         </div>
       </header>
 
-      <main className="max-w-(--page-form) px-5 py-12 sm:px-8 sm:py-18">
+      <main className="mx-auto max-w-(--page-form) px-5 py-12 sm:px-8 sm:py-18">
         <div className="grid gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
           <div>
             <p className="text-[12px] font-semibold uppercase text-(--color-primary)">

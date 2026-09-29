@@ -105,7 +105,7 @@ export default function OACases() {
     : byTag;
 
   return (
-    <div className="max-w-(--page-form) px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+    <div className="mx-auto max-w-(--page-form) px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mb-6">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           OA Cases

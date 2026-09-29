@@ -339,9 +339,11 @@ was. Pages now name `--page-form` (768px: forms, lists, reading) or `--page-data
 ledger) according to what they hold, because a form stretched wide is unreadable and a table
 squeezed narrow is useless.
 
-`mx-auto` came off with it. Centring splits the leftover width evenly either side, which is how
-a document is set; an application starts its content after the sidebar and leaves the slack on
-the right. Home keeps its centring on purpose — it is a search launcher, not a data screen.
+Pages stay **centred**. Left-aligning them was tried and reverted: the argument — that centring
+splits the leftover width evenly and reads like a document — holds for wide content, but these
+pages are 768px inside an app that already has a sidebar, and flush-left left them hanging off
+one edge with all the space on the other. Centred is the owner’s call and it looks right here.
+Only the widths were unified.
 
 **Danger and attention are tokens now, everywhere.** Thirty-four spellings of `red-*` and `amber-*`
 across eighteen files said what `--color-danger` and `--color-warn` already say. Shade was mapped

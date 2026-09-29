@@ -338,7 +338,7 @@ export default function CustomCategory() {
 
   if (!category) {
     return (
-      <div className="max-w-(--page-form) px-8 py-12 text-center">
+      <div className="mx-auto max-w-(--page-form) px-8 py-12 text-center">
         <p className="text-[15px] text-(--color-ink-muted)">{t("customCategory.notFound")}</p>
         <Link
           to="/"

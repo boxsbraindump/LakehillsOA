@@ -242,7 +242,7 @@ export default function Trash() {
   const sorted = [...trash].sort((a, b) => b.deletedAt - a.deletedAt);
 
   return (
-    <div className="max-w-(--page-form) px-8 py-12">
+    <div className="mx-auto max-w-(--page-form) px-8 py-12">
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold tracking-(--tracking-heading) text-(--color-ink)">
           {t("trash.title")}
