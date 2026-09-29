@@ -202,6 +202,17 @@ for labels it has not seen, since their sheet already carries this column. A sin
 character is a valid label, so the row parser's two-character minimum applies only to Latin
 text — "头" was being silently dropped.
 
+**The same sheet can be imported again.** The clinic re-imports its spreadsheet as the week
+fills up rather than trimming it down to just the new names — and without a key, importing it a
+second time with one person added produced nine records where there should have been five. Two
+rows are the same visit when they are the same person on the same day (`visitKey`: the name
+folded through `compactForSearch`, plus the visit date). The body area is deliberately **not** in
+the key, or retyping 肩颈 as 肩颈/斜方肌 would split one visit into two.
+
+The import preview marks those rows 已有, dims them, states how many are being skipped, and the
+button counts only what will actually be added. Skipping is a checkbox rather than a rule, since
+seeing someone twice in one day is rare but not impossible.
+
 **Their sheet is one patient per COLUMN, and reading it row-wise produced garbage.** The real
 layout is a header row of patient names with each patient's visits down the column beneath —
 `09/18 肩颈` in a single cell, date and body area together, and no year anywhere. The parser

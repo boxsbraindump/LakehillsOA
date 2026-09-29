@@ -49,6 +49,8 @@ import {
   newVisitId,
   parseVisitRows,
   visitHistory,
+  visitKey,
+  visitKeys,
   withStatus,
 } from "../lib/visitLedger";
 import type {
@@ -1107,6 +1109,7 @@ export default function VisitLedger() {
       {batchOpen && (
         <BatchPanel
           today={today}
+          existing={visitKeys(visits)}
           onClose={() => setBatchOpen(false)}
           onAdd={(newRows, status, paidDate) => {
             const at = Date.now();
@@ -1481,10 +1484,13 @@ function TagManager({
 
 function BatchPanel({
   today,
+  existing,
   onClose,
   onAdd,
 }: {
   today: string;
+  /** Keys of the visits already on the books — see visitKey. */
+  existing: Set<string>;
   onClose: () => void;
   onAdd: (rows: ParsedVisitRow[], status: VisitStatus, paidDate: string) => void;
 }) {
@@ -1496,6 +1502,20 @@ function BatchPanel({
   const [paidDate, setPaidDate] = useState(today);
   const preview = useMemo(() => parseVisitRows(text, visitDate), [text, visitDate]);
   const undated = preview.filter((row) => row.usedFallbackDate).length;
+
+  /**
+   * Which pasted rows the ledger already holds.
+   *
+   * The clinic re-imports the same sheet as the week fills up rather than trimming it to just
+   * the new names, so without this a second import of one extra person duplicated everyone
+   * else. Skipping is the default and the count is stated; unticking it allows the rare case of
+   * genuinely seeing someone twice on one day.
+   */
+  const [skipExisting, setSkipExisting] = useState(true);
+  const alreadyHave = preview.filter((row) => existing.has(visitKey(row.name, row.visitDate)));
+  const toAdd = skipExisting
+    ? preview.filter((row) => !existing.has(visitKey(row.name, row.visitDate)))
+    : preview;
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
 
@@ -1569,8 +1589,16 @@ function BatchPanel({
           <div className="mt-3 max-h-40 overflow-y-auto rounded-(--radius-xs) border border-(--color-hairline)">
             <table className="w-full text-left">
               <tbody>
-                {preview.map((row, i) => (
-                  <tr key={`${row.name}-${i}`} className="border-b border-(--color-hairline) last:border-0">
+                {preview.map((row, i) => {
+                  const duplicate = existing.has(visitKey(row.name, row.visitDate));
+                  return (
+                  <tr
+                    key={`${row.name}-${i}`}
+                    className={[
+                      "border-b border-(--color-hairline) last:border-0",
+                      duplicate && skipExisting ? "opacity-45" : "",
+                    ].join(" ")}
+                  >
                     <td className="px-2.5 py-1 text-[13px] text-(--color-ink)">{row.name}</td>
                     <td className="px-2.5 py-1 text-[12px] text-(--color-ink-muted)">
                       {row.service ?? ""}
@@ -1584,8 +1612,12 @@ function BatchPanel({
                         {row.visitDate}
                       </span>
                     </td>
+                    <td className="px-2.5 py-1 text-right text-[11px] whitespace-nowrap text-(--color-ink-faint)">
+                      {duplicate ? t("ledger.alreadyHave") : ""}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1594,6 +1626,16 @@ function BatchPanel({
           <p className="mt-1 text-[11px] text-(--color-warn)">
             {t("ledger.undatedRows", { count: String(undated) })}
           </p>
+        )}
+        {alreadyHave.length > 0 && (
+          <label className="mt-1 flex items-center gap-1.5 text-[11px] text-(--color-ink-muted)">
+            <input
+              type="checkbox"
+              checked={skipExisting}
+              onChange={() => setSkipExisting(!skipExisting)}
+            />
+            {t("ledger.skipExisting", { count: String(alreadyHave.length) })}
+          </label>
         )}
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -1645,7 +1687,7 @@ function BatchPanel({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-[13px] text-(--color-ink-muted)">
-            {t("ledger.willAdd", { count: String(preview.length) })}
+            {t("ledger.willAdd", { count: String(toAdd.length) })}
           </span>
           <div className="flex gap-2">
             <button
@@ -1655,8 +1697,8 @@ function BatchPanel({
               {t("common.cancel")}
             </button>
             <button
-              disabled={preview.length === 0}
-              onClick={() => onAdd(preview, status, paidDate)}
+              disabled={toAdd.length === 0}
+              onClick={() => onAdd(toAdd, status, paidDate)}
               className="rounded-(--radius-control) bg-(--color-primary) px-3.5 py-2 text-[14px] font-medium text-(--color-on-primary) disabled:opacity-40"
             >
               {t("ledger.addConfirm")}

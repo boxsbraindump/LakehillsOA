@@ -808,3 +808,22 @@ export function currentStep(visit: Visit): {
   if (visit.status === "entered") return { field: "enteredDate", date: dates.entered };
   return {};
 }
+
+/**
+ * What makes two rows the same visit: the same person, on the same day.
+ *
+ * The clinic re-imports its spreadsheet as the week fills up rather than trimming it down to
+ * only the new names, so an import has to be able to say "I already have this one". The name is
+ * folded the same way search folds it, so "Wen Li" and "wen  li" are one person here too.
+ *
+ * The body area is deliberately not part of the key: treating the same person on the same day
+ * as two visits because someone typed 肩颈 one week and 肩颈/斜方肌 the next would defeat the
+ * point.
+ */
+export function visitKey(name: string, visitDate: string): string {
+  return `${compactForSearch(name)}|${visitDate}`;
+}
+
+export function visitKeys(visits: Visit[]): Set<string> {
+  return new Set(visits.map((visit) => visitKey(visit.name, visit.visitDate)));
+}
