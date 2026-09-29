@@ -43,6 +43,7 @@ import {
   isOpen,
   matchRemittance,
   matchesQuery,
+  compareNames,
   currentStep,
   dateFieldFor,
   operationDates,
@@ -150,10 +151,10 @@ type SortKey = "name" | "visitDate" | "lastStep";
  */
 function compareBy(a: Visit, b: Visit, key: SortKey): number {
   if (key === "name") {
-    return a.name.localeCompare(b.name) || b.visitDate.localeCompare(a.visitDate);
+    return compareNames(a.name, b.name) || b.visitDate.localeCompare(a.visitDate);
   }
   if (key === "visitDate") {
-    return a.visitDate.localeCompare(b.visitDate) || a.name.localeCompare(b.name);
+    return a.visitDate.localeCompare(b.visitDate) || compareNames(a.name, b.name);
   }
   // A visit nobody has touched yet sorts with the oldest, not above everything.
   const left = currentStep(a).date ?? "";
@@ -161,7 +162,7 @@ function compareBy(a: Visit, b: Visit, key: SortKey): number {
   return (
     left.localeCompare(right) ||
     a.visitDate.localeCompare(b.visitDate) ||
-    a.name.localeCompare(b.name)
+    compareNames(a.name, b.name)
   );
 }
 

@@ -478,7 +478,7 @@ export function groupByPatient(visits: Visit[]): PatientRecord[] {
         lastVisit: sorted[sorted.length - 1].visitDate,
       };
     })
-    .sort((a, b) => b.lastVisit.localeCompare(a.lastVisit) || a.name.localeCompare(b.name));
+    .sort((a, b) => b.lastVisit.localeCompare(a.lastVisit) || compareNames(a.name, b.name));
 }
 
 /**
@@ -523,7 +523,7 @@ export function bucketByDate(visits: Visit[], mode: DateLens): Map<string, Visit
     if (bucket) bucket.push(visit);
     else byDay.set(key, [visit]);
   }
-  for (const bucket of byDay.values()) bucket.sort((a, b) => a.name.localeCompare(b.name));
+  for (const bucket of byDay.values()) bucket.sort((a, b) => compareNames(a.name, b.name));
   return byDay;
 }
 
@@ -820,6 +820,18 @@ export function currentStep(visit: Visit): {
  * as two visits because someone typed 肩颈 one week and 肩颈/斜方肌 the next would defeat the
  * point.
  */
+/**
+ * Compare two names for ordering, ignoring case.
+ *
+ * The clinic types patients in capitals, and a plain localeCompare returns non-zero between
+ * "CICI HE" and "cici he" — which meant the date tiebreak after it never ran, and one
+ * patient’s visits came out 09-02, 09-03, 09-01. "base" sensitivity treats case and accent
+ * differences as equal so the next key decides.
+ */
+export function compareNames(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { sensitivity: "base" });
+}
+
 export function visitKey(name: string, visitDate: string): string {
   return `${compactForSearch(name)}|${visitDate}`;
 }
