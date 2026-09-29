@@ -202,6 +202,16 @@ for labels it has not seen, since their sheet already carries this column. A sin
 character is a valid label, so the row parser's two-character minimum applies only to Latin
 text — "头" was being silently dropped.
 
+**The time is editable, and it is a text field on purpose.** `<input type="time">` brings the
+operating system’s spinner and clock — the chrome this page was built to remove — and insists on
+a rigid format, while the front desk writes “2:30”. `TimeField` takes whatever you type and
+commits it through `readCellTime`, the same parser the spreadsheet import uses, so typing and
+importing are read by one set of rules including the afternoon inference. Unreadable text
+reverts rather than being dropped; emptying the field clears the time.
+
+It sits in the row where a time exists and in the expanded row always — so a missing time can be
+added, without an empty field repeating down fifty rows.
+
 **The import reads appointment times, and they go into the key.** `readCellTime` lifts a clock
 time out of a cell before anything else touches it — a colon is required precisely because it is
 the one separator a date never uses here, so a bare “2.30” cannot be mistaken for one. It

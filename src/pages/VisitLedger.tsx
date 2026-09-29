@@ -24,6 +24,7 @@ import { useToast } from "../components/ToastProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 import { Select } from "../components/Select";
 import { DatePicker } from "../components/DatePicker";
+import { TimeField } from "../components/TimeField";
 import {
   todayKey,
   formatDisplayDate,
@@ -385,6 +386,13 @@ export default function VisitLedger() {
   function setVisitDate(visit: Visit, visitDate: string) {
     if (!visitDate) return;
     setVisits((prev) => prev.map((v) => (v.id === visit.id ? { ...v, visitDate } : v)));
+  }
+
+  /** Empty clears it: a visit without a stated time is a normal thing to have. */
+  function setVisitTime(visit: Visit, visitTime: string) {
+    setVisits((prev) =>
+      prev.map((v) => (v.id === visit.id ? { ...v, visitTime: visitTime || undefined } : v)),
+    );
   }
 
   /**
@@ -908,11 +916,15 @@ export default function VisitLedger() {
                         ariaLabel={t("ledger.colVisitDate")}
                         className="-ml-[7px] font-mono text-[13px] text-(--color-ink-muted)"
                       />
-                      {/* Only shown where the sheet gave one; most rows are a date alone. */}
+                      {/* Only shown where there is one — adding a missing time is done in the
+                          expanded row, so an empty field is not repeated down fifty rows. */}
                       {visit.visitTime && (
-                        <span className="font-mono text-[12px] text-(--color-ink-faint)">
-                          {visit.visitTime}
-                        </span>
+                        <TimeField
+                          value={visit.visitTime}
+                          onChange={(time) => setVisitTime(visit, time)}
+                          ariaLabel={t("ledger.colVisitTime")}
+                          className="text-[12px] text-(--color-ink-faint)"
+                        />
                       )}
                     </span>
                   </td>
@@ -991,6 +1003,17 @@ export default function VisitLedger() {
                     <td colSpan={6} className="px-3 py-2">
                       {/* The two steps the ledger column cannot show, plus who touched it when. */}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span className="flex items-center gap-1 text-[12px]">
+                          <span className="text-(--color-ink-faint)">
+                            {t("ledger.colVisitTime")}
+                          </span>
+                          <TimeField
+                            value={visit.visitTime}
+                            onChange={(time) => setVisitTime(visit, time)}
+                            ariaLabel={t("ledger.colVisitTime")}
+                            className="text-[12px] text-(--color-ink-muted)"
+                          />
+                        </span>
                         {(
                           [
                             ["enteredDate", "ledger.colEnteredDate", steps.entered],

@@ -986,6 +986,7 @@ export const translations = {
     zh: "跳过台账里已经有的 {count} 条（同一个人、同一天同一时间）",
     en: "Skip the {count} already in the ledger (same person, same day and time)",
   },
+  "ledger.colVisitTime": { zh: "时间", en: "Time" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
