@@ -315,8 +315,16 @@ radii on its buttons — 4px, 5px, 8px, 12px and none — which is what “the c
 inconsistent” was. The cause is in the scale: `--radius-xs` (4px) and `--radius-sm` (5px) are one
 pixel apart, so nobody could choose between them deliberately and both got used for the same
 thing. `--radius-control` is 8px, matching `--radius-md` so a button and the input beside it share
-an edge. Pills stay pills, and genuinely square things stay square: calendar day cells are grid
-cells, and dropdown options are list rows.
+an edge. Genuinely square things stay square: calendar day cells are grid cells, and dropdown options
+are list rows. **The pill exemption is gone too** — status and area chips were capsules, which
+reads as a social tag rather than clinical data, and the per-page dropdown was one only because
+it shares the `Select` component with them. Every rectangle in the app is now `--radius-control`.
+Real circles (status dots, avatars, the floating action button) keep `rounded-full`; they are
+distinguished from chips by having no horizontal padding. The two capsules left are badges on
+the public page, where the shape is idiomatic — the same deliberate split as keeping Outfit
+there. The segmented control nests its segments at `calc(var(--radius-control) - 2px)`, the track
+minus its padding, so the two curves sit concentrically instead of the inner one being a
+hardcoded guess.
 
 **Matching a JSX tag needs a brace-aware scan, not a regex.** The codemod that did this first ran
 on `/<button[sS]*?>/` and silently skipped one pager button, because `disabled={page >= count}`

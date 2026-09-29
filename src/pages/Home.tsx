@@ -78,7 +78,7 @@ export default function Home() {
     <div className="flex min-h-svh flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-3xl">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="inline-flex max-w-full items-center rounded-full border border-(--color-primary)/15 bg-white/78 px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-secondary) shadow-(--shadow-level-1)">
+          <span className="inline-flex max-w-full items-center rounded-(--radius-control) border border-(--color-primary)/15 bg-white/78 px-3 py-1 text-[12px] font-semibold tracking-[0.005em] text-(--color-secondary) shadow-(--shadow-level-1)">
             {isPersonalWorkspace ? workspace?.name : "Lake Hills Acupuncture · Internal"}
           </span>
           <SplitText
@@ -147,7 +147,7 @@ export default function Home() {
                   key={doc.id}
                   to={doc.path}
                   onClick={() => trackUsage(doc)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-(--color-hairline) bg-white/82 px-3 py-1.5 text-[13px] text-(--color-ink-secondary) shadow-(--shadow-level-1) transition-[border-color,color,transform] duration-200 hover:-translate-y-0.5 hover:border-(--color-primary)/40 hover:text-(--color-secondary)"
+                  className="inline-flex items-center gap-1.5 rounded-(--radius-control) border border-(--color-hairline) bg-white/82 px-3 py-1.5 text-[13px] text-(--color-ink-secondary) shadow-(--shadow-level-1) transition-[border-color,color,transform] duration-200 hover:-translate-y-0.5 hover:border-(--color-primary)/40 hover:text-(--color-secondary)"
                 >
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full"

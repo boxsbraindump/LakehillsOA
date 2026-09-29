@@ -138,7 +138,7 @@ export default function OACases() {
             type="button"
             onClick={() => setActiveTag(null)}
             className={[
-              "rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors",
+              "rounded-(--radius-control) border px-2.5 py-1 text-[12px] font-medium transition-colors",
               activeTag === null
                 ? "border-(--color-primary) bg-(--color-primary)/10 text-(--color-primary)"
                 : "border-(--color-hairline) text-(--color-ink-muted) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
@@ -152,7 +152,7 @@ export default function OACases() {
               type="button"
               onClick={() => setActiveTag((current) => (current === tag ? null : tag))}
               className={[
-                "rounded-full border px-2.5 py-1 text-[12px] transition-colors",
+                "rounded-(--radius-control) border px-2.5 py-1 text-[12px] transition-colors",
                 activeTag === tag
                   ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
                   : "border-(--color-hairline) text-(--color-ink-muted) hover:border-(--color-primary)/40 hover:text-(--color-primary)",
@@ -213,7 +213,7 @@ export default function OACases() {
               <div className="mb-2 flex flex-wrap items-center gap-2 pr-12">
                 <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{c.title}</h2>
                 {c.payer && (
-                  <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
+                  <span className="rounded-(--radius-control) bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
                     {c.payer}
                   </span>
                 )}
@@ -243,7 +243,7 @@ export default function OACases() {
                       key={tag}
                       type="button"
                       onClick={() => setActiveTag((current) => (current === tag ? null : tag))}
-                      className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted) transition-colors hover:border-(--color-primary)/40 hover:text-(--color-primary)"
+                      className="rounded-(--radius-control) border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted) transition-colors hover:border-(--color-primary)/40 hover:text-(--color-primary)"
                     >
                       #{tag}
                     </button>

@@ -457,7 +457,7 @@ export default function VisitLedger() {
               aria-selected={active}
               onClick={() => setView(key)}
               className={[
-                "flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] transition-colors",
+                "flex items-center gap-1.5 rounded-[calc(var(--radius-control)-2px)] px-3 py-1.5 text-[13px] transition-colors",
                 active
                   ? "bg-(--color-canvas) font-medium text-(--color-ink) shadow-(--shadow-level-1)"
                   : "text-(--color-ink-muted) hover:text-(--color-ink)",
@@ -534,7 +534,7 @@ export default function VisitLedger() {
                 setSelected([]);
               }}
               className={[
-                "rounded-full border px-2.5 py-1 text-[12px] font-medium",
+                "rounded-(--radius-control) border px-2.5 py-1 text-[12px] font-medium",
                 STATUS_TONE[status],
               ].join(" ")}
             >
@@ -619,7 +619,7 @@ export default function VisitLedger() {
                           <span
                             key={status}
                             className={[
-                              "rounded-full border px-2 py-0.5 text-[12px] font-medium whitespace-nowrap",
+                              "rounded-(--radius-control) border px-2 py-0.5 text-[12px] font-medium whitespace-nowrap",
                               STATUS_TONE[status],
                             ].join(" ")}
                           >
@@ -689,7 +689,7 @@ export default function VisitLedger() {
                   setPickedDay(null);
                 }}
                 className={[
-                  "rounded-full border px-3 py-1.5 text-[13px]",
+                  "rounded-(--radius-control) border px-3 py-1.5 text-[13px]",
                   lens === mode
                     ? "border-(--color-primary) bg-(--color-primary)/10 font-medium text-(--color-primary)"
                     : "border-(--color-hairline) text-(--color-ink-muted)",
@@ -767,16 +767,16 @@ export default function VisitLedger() {
         {focused && (
           <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
             <span className="text-[13px] font-bold text-(--color-ink)">{focused.name}</span>
-            <span className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-(--color-ink-muted)">
+            <span className="rounded-(--radius-control) border border-(--color-hairline) px-2 py-0.5 text-(--color-ink-muted)">
               {t("ledger.totalVisits", { count: String(focused.total) })}
             </span>
             {focused.paid > 0 && (
-              <span className={["rounded-full border px-2 py-0.5", STATUS_TONE.paid].join(" ")}>
+              <span className={["rounded-(--radius-control) border px-2 py-0.5", STATUS_TONE.paid].join(" ")}>
                 {t("ledger.paidCountChip", { count: String(focused.paid) })}
               </span>
             )}
             {focused.open > 0 && (
-              <span className={["rounded-full border px-2 py-0.5", STATUS_TONE.submitted].join(" ")}>
+              <span className={["rounded-(--radius-control) border px-2 py-0.5", STATUS_TONE.submitted].join(" ")}>
                 {t("ledger.waitingChip", { count: String(focused.open) })}
               </span>
             )}
@@ -1241,7 +1241,7 @@ function MonthCalendar({
             >
               <span
                 className={[
-                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] tabular-nums",
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-(--radius-control) px-1 text-[11px] tabular-nums",
                   isToday
                     ? "bg-(--color-primary) font-bold text-(--color-on-primary)"
                     : "text-(--color-ink-muted)",

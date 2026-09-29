@@ -904,7 +904,7 @@ export default function Checklist() {
                       </span>
                       {match.snippet && (
                         <span className="mt-1 flex max-w-full items-start gap-2">
-                          <span className="shrink-0 rounded-full bg-(--color-primary)/10 px-2 py-0.5 text-[11px] font-semibold text-(--color-primary)">
+                          <span className="shrink-0 rounded-(--radius-control) bg-(--color-primary)/10 px-2 py-0.5 text-[11px] font-semibold text-(--color-primary)">
                             {t(`checklist.match.${match.matchedField}`)}
                           </span>
                           <span className="line-clamp-2 text-[13px] text-(--color-ink-muted)">

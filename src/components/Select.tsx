@@ -70,7 +70,7 @@ export function Select({
           }
         }}
         className={[
-          "inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-(--color-primary)/40",
+          "inline-flex cursor-pointer items-center gap-1 rounded-(--radius-control) border px-2 py-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-(--color-primary)/40",
           className,
         ].join(" ")}
       >
@@ -128,7 +128,7 @@ export function Select({
                   />
                   {option.tone ? (
                     <span
-                      className={["rounded-full border px-2 py-0.5 text-[12px]", option.tone].join(
+                      className={["rounded-(--radius-control) border px-2 py-0.5 text-[12px]", option.tone].join(
                         " ",
                       )}
                     >

@@ -406,7 +406,7 @@ export default function CustomCategory() {
     if (!entry.pinned) return null;
 
     return (
-      <span className="rounded-full bg-(--color-primary)/10 px-2.5 py-0.5 text-[12px] font-semibold text-(--color-primary)">
+      <span className="rounded-(--radius-control) bg-(--color-primary)/10 px-2.5 py-0.5 text-[12px] font-semibold text-(--color-primary)">
         {t("common.pinned")}
       </span>
     );
@@ -703,7 +703,7 @@ export default function CustomCategory() {
                 <h2 className="text-[18px] leading-tight font-bold text-(--color-ink)">{entry.title}</h2>
                 {pinnedBadge(entry)}
                 {entry.payer && (
-                  <span className="rounded-full bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
+                  <span className="rounded-(--radius-control) bg-(--color-canvas-soft) px-2.5 py-0.5 text-[12px] font-medium text-(--color-ink-secondary)">
                     {entry.payer}
                   </span>
                 )}
@@ -753,7 +753,7 @@ export default function CustomCategory() {
                   {entry.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted)"
+                      className="rounded-(--radius-control) border border-(--color-hairline) px-2 py-0.5 text-[12px] text-(--color-ink-muted)"
                     >
                       #{tag}
                     </span>
