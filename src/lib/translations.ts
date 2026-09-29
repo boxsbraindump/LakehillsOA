@@ -982,7 +982,10 @@ export const translations = {
   "ledger.submittedCount": { zh: "报了 {count} 个", en: "{count} claimed" },
   "ledger.noSubmissions": { zh: "这段时间没有报出去的记录。", en: "Nothing was claimed in this period." },
   "ledger.alreadyHave": { zh: "已有", en: "already in" },
-  "ledger.skipExisting": { zh: "跳过台账里已经有的 {count} 条（同一个人、同一天）", en: "Skip the {count} already in the ledger (same person, same day)" },
+  "ledger.skipExisting": {
+    zh: "跳过台账里已经有的 {count} 条（同一个人、同一天同一时间）",
+    en: "Skip the {count} already in the ledger (same person, same day and time)",
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

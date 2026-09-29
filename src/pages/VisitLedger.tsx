@@ -901,12 +901,20 @@ export default function VisitLedger() {
                     </span>
                   </td>
                   <td className="px-3 py-1">
-                    <DatePicker
-                      value={visit.visitDate}
-                      onChange={(date) => setVisitDate(visit, date)}
-                      ariaLabel={t("ledger.colVisitDate")}
-                      className="-ml-[7px] font-mono text-[13px] text-(--color-ink-muted)"
-                    />
+                    <span className="flex items-baseline gap-1.5">
+                      <DatePicker
+                        value={visit.visitDate}
+                        onChange={(date) => setVisitDate(visit, date)}
+                        ariaLabel={t("ledger.colVisitDate")}
+                        className="-ml-[7px] font-mono text-[13px] text-(--color-ink-muted)"
+                      />
+                      {/* Only shown where the sheet gave one; most rows are a date alone. */}
+                      {visit.visitTime && (
+                        <span className="font-mono text-[12px] text-(--color-ink-faint)">
+                          {visit.visitTime}
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td className="px-3 py-1">
                     <Select
@@ -1128,6 +1136,7 @@ export default function VisitLedger() {
                 id: newVisitId() + Math.random().toString(36).slice(2, 5),
                 name: r.name,
                 visitDate: r.visitDate,
+                ...(r.visitTime ? { visitTime: r.visitTime } : {}),
                 status,
                 paidDate: status === "paid" ? paidDate : undefined,
                 createdAt: at,
@@ -1513,9 +1522,9 @@ function BatchPanel({
    * genuinely seeing someone twice on one day.
    */
   const [skipExisting, setSkipExisting] = useState(true);
-  const alreadyHave = preview.filter((row) => existing.has(visitKey(row.name, row.visitDate)));
+  const alreadyHave = preview.filter((row) => existing.has(visitKey(row.name, row.visitDate, row.visitTime)));
   const toAdd = skipExisting
-    ? preview.filter((row) => !existing.has(visitKey(row.name, row.visitDate)))
+    ? preview.filter((row) => !existing.has(visitKey(row.name, row.visitDate, row.visitTime)))
     : preview;
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
@@ -1591,7 +1600,7 @@ function BatchPanel({
             <table className="w-full text-left">
               <tbody>
                 {preview.map((row, i) => {
-                  const duplicate = existing.has(visitKey(row.name, row.visitDate));
+                  const duplicate = existing.has(visitKey(row.name, row.visitDate, row.visitTime));
                   return (
                   <tr
                     key={`${row.name}-${i}`}
@@ -1604,7 +1613,7 @@ function BatchPanel({
                     <td className="px-2.5 py-1 text-[12px] text-(--color-ink-muted)">
                       {row.service ?? ""}
                     </td>
-                    <td className="px-2.5 py-1 text-right text-[12px] tabular-nums">
+                    <td className="px-2.5 py-1 text-right font-mono text-[12px]">
                       <span
                         className={
                           row.usedFallbackDate ? "text-(--color-warn)" : "text-(--color-ink-muted)"
@@ -1612,6 +1621,9 @@ function BatchPanel({
                       >
                         {row.visitDate}
                       </span>
+                      {row.visitTime && (
+                        <span className="ml-1.5 text-(--color-ink-faint)">{row.visitTime}</span>
+                      )}
                     </td>
                     <td className="px-2.5 py-1 text-right text-[11px] whitespace-nowrap text-(--color-ink-faint)">
                       {duplicate ? t("ledger.alreadyHave") : ""}

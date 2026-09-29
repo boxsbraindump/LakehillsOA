@@ -202,6 +202,25 @@ for labels it has not seen, since their sheet already carries this column. A sin
 character is a valid label, so the row parser's two-character minimum applies only to Latin
 text — "头" was being silently dropped.
 
+**The import reads appointment times, and they go into the key.** `readCellTime` lifts a clock
+time out of a cell before anything else touches it — a colon is required precisely because it is
+the one separator a date never uses here, so a bare “2.30” cannot be mistaken for one. It
+handles 2:30, 14:30, 2:30PM and 2:30 a.m.
+
+**A bare 1:00–6:59 is read as the afternoon.** Nobody is seen at half past two in the morning, so
+taking “2:30” literally would be right by the clock and wrong in every record. Hours 7–12 are
+left alone, since a 7:30 or 9:00 appointment really can be morning. The import preview shows the
+result, so a wrong guess is visible before anything is added.
+
+The time joins `visitKey` when present, which settles the one case a date alone could not: the same
+patient seen twice in a day is now two records rather than a duplicate to be waved through by
+hand. Where the sheet gives no time the key is unchanged, so old rows still dedupe.
+
+**Names are matched case-insensitively everywhere**, since the clinic types patients in capitals
+— dedupe, search, patient grouping and EOB reconciliation all fold through `compactForSearch`,
+and ordering goes through `compareNames` at “base” sensitivity so a case difference cannot
+swallow the tiebreak after it.
+
 **The same sheet can be imported again.** The clinic re-imports its spreadsheet as the week
 fills up rather than trimming it down to just the new names — and without a key, importing it a
 second time with one person added produced nine records where there should have been five. Two

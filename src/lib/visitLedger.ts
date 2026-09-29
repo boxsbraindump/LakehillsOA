@@ -35,6 +35,13 @@ export interface Visit {
   name: string;
   /** yyyy-mm-dd — the day the patient was seen. */
   visitDate: string;
+  /**
+   * HH:MM, 24-hour — the appointment time, when the sheet states one.
+   *
+   * Optional because plenty of rows are only ever a date. Where it exists it also separates two
+   * visits by the same person on the same day, which a date alone cannot.
+   */
+  visitTime?: string;
   status: VisitStatus;
   /**
    * The day each step actually happened — not the day somebody got round to recording it.
@@ -539,6 +546,8 @@ export interface ParsedVisitRow {
   visitDate: string;
   /** True when the row stated no date of its own and fell back to the one the user chose. */
   usedFallbackDate: boolean;
+  /** HH:MM, when the sheet gave one. */
+  visitTime?: string;
   /**
    * Whatever text the row carried besides the name — their sheet already has a column saying
    * which part of the body was treated, and re-entering that by hand would be absurd.
@@ -592,29 +601,71 @@ function withInferredYear(month: number, day: number, reference: string): string
  * Their sheet writes a visit as "09/18 肩颈" — the date and the body area share a cell, with a
  * single space between, so neither can be found by splitting on whitespace.
  */
+/**
+ * A clock time written in a cell: "2:30", "14:30", "2:30 PM".
+ *
+ * Read before anything else strips the cell, because a bare "2.30" would otherwise be taken for
+ * a date. A colon is required for exactly that reason — it is the one separator a date never
+ * uses here.
+ */
+export function readCellTime(cell: string): { time: string; rest: string } | null {
+  const match = /(?:^|[^\d:])(\d{1,2}):([0-5]\d)\s*([ap])\.?m?\.?/i.exec(cell)
+    ?? /(?:^|[^\d:])(\d{1,2}):([0-5]\d)(?![\d:])/.exec(cell);
+  if (!match) return null;
+
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const half = match[3]?.toLowerCase();
+
+  if (half === "p" && hour < 12) hour += 12;
+  else if (half === "a" && hour === 12) hour = 0;
+  else if (!half && hour >= 1 && hour <= 6) {
+    // A bare "2:30" in a clinic sheet is the afternoon. Nobody is seen at half past two in the
+    // morning, so reading it literally would be right by the clock and wrong in every record.
+    // Hours 7-12 are left alone: a 7:30 or 9:00 appointment really can be morning.
+    hour += 12;
+  }
+  if (hour > 23) return null;
+
+  const at = cell.indexOf(match[0]);
+  const rest = (cell.slice(0, at) + " " + cell.slice(at + match[0].length))
+    .replace(/\s+/g, " ")
+    .trim();
+  return { time: `${String(hour).padStart(2, "0")}:${minute}`, rest };
+}
+
 export function readCellDate(
   cell: string,
   reference: string,
-): { date: string; rest: string } | null {
+): { date: string; time?: string; rest: string } | null {
   const strip = (text: string, from: number, length: number) =>
     (text.slice(0, from) + " " + text.slice(from + length)).replace(/\s+/g, " ").trim();
 
-  const full = datesInLine(cell);
+  // Lift the time out first so nothing downstream mistakes it for part of a date.
+  const clock = readCellTime(cell);
+  const body = clock ? clock.rest : cell;
+  const withTime = (result: { date: string; rest: string }) =>
+    clock ? { ...result, time: clock.time } : result;
+
+  const full = datesInLine(body);
   if (full.length > 0) {
-    return { date: full[0], rest: cell.replace(DATE_TOKEN, " ").replace(/\s+/g, " ").trim() };
+    return withTime({
+      date: full[0],
+      rest: body.replace(DATE_TOKEN, " ").replace(/\s+/g, " ").trim(),
+    });
   }
 
-  const partial = /(?:^|[^\d])(\d{1,2})[-/.](\d{1,2})(?![\d/.-])/.exec(cell);
+  const partial = /(?:^|[^\d])(\d{1,2})[-/.](\d{1,2})(?![\d/.-])/.exec(body);
   if (!partial) return null;
   const month = Number(partial[1]);
   const day = Number(partial[2]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const at = partial.index + partial[0].length - (partial[1].length + partial[2].length + 1);
-  return {
+  return withTime({
     date: withInferredYear(month, day, reference),
-    rest: strip(cell, at, partial[1].length + partial[2].length + 1),
-  };
+    rest: strip(body, at, partial[1].length + partial[2].length + 1),
+  });
 }
 
 /**
@@ -670,6 +721,7 @@ export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitR
           name: patient,
           visitDate: read.date,
           usedFallbackDate: false,
+          ...(read.time ? { visitTime: read.time } : {}),
           ...(read.rest ? { service: read.rest } : {}),
         });
       }
@@ -679,7 +731,8 @@ export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitR
 
   const rows: ParsedVisitRow[] = [];
   for (const cells of grid) {
-    const line = cells.join("\t");
+    const clock = readCellTime(cells.join(" "));
+    const line = (clock ? cells.map((c) => readCellTime(c)?.rest ?? c) : cells).join("\t");
     const dates = datesInLine(line);
     const cleaned = line
       .replace(DATE_TOKEN, "\t")
@@ -705,6 +758,7 @@ export function parseVisitRows(text: string, fallbackDate: string): ParsedVisitR
       name,
       visitDate: dates[0] ?? fallbackDate,
       usedFallbackDate: dates.length === 0,
+      ...(clock ? { visitTime: clock.time } : {}),
       ...(rest[0] ? { service: rest[0] } : {}),
     });
   }
@@ -832,10 +886,12 @@ export function compareNames(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: "base" });
 }
 
-export function visitKey(name: string, visitDate: string): string {
-  return `${compactForSearch(name)}|${visitDate}`;
+export function visitKey(name: string, visitDate: string, visitTime?: string): string {
+  // A time, where the sheet gives one, is what separates two visits on the same day — the one
+  // case a date alone cannot settle.
+  return `${compactForSearch(name)}|${visitDate}${visitTime ? `|${visitTime}` : ""}`;
 }
 
 export function visitKeys(visits: Visit[]): Set<string> {
-  return new Set(visits.map((visit) => visitKey(visit.name, visit.visitDate)));
+  return new Set(visits.map((visit) => visitKey(visit.name, visit.visitDate, visit.visitTime)));
 }
